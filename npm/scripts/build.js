@@ -71,6 +71,41 @@ function createArchive(platform) {
   }
 }
 
+function uploadToGithubReleases(results) {
+  let version;
+  try {
+    version = execSync('git describe --tags --abbrev=0', { encoding: 'utf8' }).trim();
+  } catch {
+    const pkg = require(path.join(ROOT_DIR, 'package.json'));
+    version = pkg.version;
+  }
+
+  const archives = results.filter(r => r.archivePath && fs.existsSync(r.archivePath));
+
+  if (archives.length === 0) {
+    console.log('No archives to upload');
+    return;
+  }
+
+  console.log(`\nUploading ${archives.length} binaries to GitHub release ${version}...`);
+
+  for (const archive of archives) {
+    const assetPath = archive.archivePath;
+    const assetName = `${path.basename(path.dirname(assetPath))}.tar.gz`;
+
+    try {
+      console.log(`  Uploading ${assetName}...`);
+      execSync(`gh release upload "${version}" "${assetPath}" --repo "${process.env.GITHUB_REPOSITORY || 'sanxzy/mandor'}"`, {
+        stdio: 'pipe',
+        shell: true
+      });
+      console.log(`  Uploaded ${assetName}`);
+    } catch (error) {
+      console.error(`  Failed to upload ${assetName}:`, error.message);
+    }
+  }
+}
+
 function cleanBuildDirs() {
   if (fs.existsSync(BINARIES_DIR)) {
     for (const entry of fs.readdirSync(BINARIES_DIR)) {
@@ -125,6 +160,8 @@ function mainBuild() {
   }
 
   console.log(`\nArchives location: ${BINARIES_DIR}/`);
+
+  uploadToGithubReleases(results);
 
   return results;
 }
