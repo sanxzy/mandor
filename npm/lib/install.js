@@ -57,33 +57,40 @@ async function install(options = {}) {
  */
 function useBundledBinary(platform, arch) {
   const filename = `mandor-${platform}-${arch}`;
-  // Tarball extracts to npm/binaries/ as just "mandor" (not in subdir)
-  const bundledBinary = path.join(BUNDLE_DIR, 'mandor');
+  const tarball = path.join(BUNDLE_DIR, `${filename}.tar.gz`);
+  const cacheDir = path.join(os.homedir(), '.mandor', 'bin');
+  const dest = path.join(cacheDir, filename);
 
   console.log(`DEBUG: Looking for binary for ${platform}-${arch}`);
   console.log(`DEBUG: BUNDLE_DIR: ${BUNDLE_DIR}`);
   console.log(`DEBUG: Files in BUNDLE_DIR: ${fs.readdirSync(BUNDLE_DIR).join(', ')}`);
 
-  if (!fs.existsSync(bundledBinary)) {
-    console.log(`DEBUG: No bundled binary found at: ${bundledBinary}`);
+  // First check if binary already exists in cache
+  if (fs.existsSync(dest)) {
+    console.log(`DEBUG: Using cached binary: ${dest}`);
+    return dest;
+  }
+
+  // Check if tarball exists
+  if (!fs.existsSync(tarball)) {
+    console.log(`DEBUG: No tarball found at: ${tarball}`);
     return null;
   }
 
-  console.log(`DEBUG: Found bundled binary: ${bundledBinary}`);
+  console.log(`DEBUG: Extracting tarball: ${tarball}`);
 
-  const cacheDir = path.join(os.homedir(), '.mandor', 'bin');
   if (!fs.existsSync(cacheDir)) {
     fs.mkdirSync(cacheDir, { recursive: true });
   }
 
-  const dest = path.join(cacheDir, filename);
-
   try {
-    fs.copyFileSync(bundledBinary, dest);
+    const { execSync } = require('child_process');
+    execSync(`tar -xzf "${tarball}" -C "${cacheDir}"`, { stdio: 'pipe' });
     fs.chmodSync(dest, '755');
+    console.log(`DEBUG: Extracted to: ${dest}`);
     return dest;
   } catch (e) {
-    console.log(`DEBUG: Failed to copy: ${e.message}`);
+    console.log(`DEBUG: Failed to extract tarball: ${e.message}`);
     return null;
   }
 }
