@@ -412,20 +412,6 @@ mandor task create "Password Hashing" \
 mandor status
 ```
 
-## NPM Package Build Commands
-
-```bash
-npm run build               # Build supported platforms (auto-detects)
-npm run build:darwin:x64    # Darwin x64 (Intel Macs)
-npm run build:darwin:arm64  # Darwin arm64 (Apple Silicon)
-npm run build:linux:x64     # Linux x64
-npm run build:linux:arm64   # Linux arm64
-npm run build:win32:x64     # Windows x64
-npm run build:win32:arm64   # Windows arm64
-```
-
-Binaries are output to `npm/binaries/` directory as tar.gz archives for npm package distribution.
-
 ## Commands
 
 ### Workspace Commands

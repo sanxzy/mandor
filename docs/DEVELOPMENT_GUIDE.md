@@ -98,6 +98,55 @@ GOOS=darwin GOARCH=amd64 go build -o release/mandor-darwin-x64 ./cmd/mandor
 GOOS=windows GOARCH=amd64 go build -o release/mandor-windows-x64.exe ./cmd/mandor
 ```
 
+## NPM Package Build Commands
+
+The NPM package (`@mandor/cli`) wraps the Go binary for cross-platform distribution.
+
+```bash
+cd npm
+
+# Build supported platforms (attempts all 6, skips unsupported)
+npm run build
+
+# Build specific platforms
+npm run build:darwin:x64    # Darwin x64 (Intel Macs)
+npm run build:darwin:arm64  # Darwin arm64 (Apple Silicon)
+npm run build:linux:x64     # Linux x64
+npm run build:linux:arm64   # Linux arm64
+npm run build:win32:x64     # Windows x64
+npm run build:win32:arm64   # Windows arm64
+```
+
+Binaries are output to `npm/binaries/` directory as tar.gz archives for npm package distribution.
+
+### Package Structure
+
+```
+npm/
+├── bin/
+│   └── mandor              # CLI wrapper script
+├── lib/
+│   ├── index.js            # Package entry point
+│   ├── api.js              # Programmatic Node.js API
+│   ├── config.js           # Configuration management
+│   ├── download.js         # Binary download logic
+│   ├── install.js          # Post-install hook
+│   └── resolve.js          # Version resolution
+└── scripts/
+    └── build.js            # Cross-platform build script
+```
+
+### Programmatic Usage
+
+```javascript
+const mandor = require('@mandor/cli');
+
+const cli = new mandor.Mandor({ json: true, cwd: '/project/path' });
+await cli.init('My Project');
+await cli.projectCreate('api', { name: 'API Service' });
+const tasks = await cli.taskList({ project: 'api', status: 'pending' });
+```
+
 ## Code Style
 
 ### Formatting
