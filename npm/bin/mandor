@@ -6,7 +6,7 @@
  * @version 0.0.1
  */
 
-const { resolve } = require('./lib/resolve');
+const { resolve } = require('../lib/resolve');
 const { spawn } = require('child_process');
 const path = require('path');
 
