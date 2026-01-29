@@ -1,0 +1,18 @@
+# NPM Configuration Template
+# Copy this file to .npmrc and add your token
+
+# Registry
+registry=https://registry.npmjs.org/
+
+# Authentication - replace ${NPM_TOKEN} with your token
+# Get token from: https://www.npmjs.com/settings/tokens
+//registry.npmjs.org/:_authToken=${NPM_TOKEN}
+
+# Package access (required for scoped packages)
+@mandors:registry=https://registry.npmjs.org/
+
+# Save exact versions
+save-exact=true
+
+# Build config
+ignore-scripts=false
