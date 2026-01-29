@@ -1,145 +1,118 @@
 /**
  * @fileoverview Post-install hook for Mandor CLI
- * @description Handles binary download and caching during npm install
- * @version 0.0.1
+ * @description Handles binary extraction during npm install
+ * @version 0.0.2
  */
 
-const { downloadBinary, getCurrentPlatform } = require('./download');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { execSync } = require('child_process');
 
-/** @type {string} Cache directory for binaries */
-const CACHE_DIR = path.join(__dirname, '..', '.cache');
-
-/** @type {string} Bundled binaries directory */
+const REPO = 'sanxzy/mandor';
+const GITHUB_API = 'https://api.github.com';
 const BUNDLE_DIR = path.join(__dirname, '..', 'binaries');
+const CACHE_DIR = path.join(os.homedir(), '.mandor', 'bin');
 
-/**
- * Installs the Mandor binary for the current platform
- * @async
- * @param {Object} [options] - Installation options
- * @param {string} [options.version] - Version to install (default: 'latest')
- * @returns {Promise<string>} Path to the installed binary
- * @throws {Error} If download fails
- * @example
- * // Called automatically by npm postinstall
- * await install();
- */
+function getPlatform() {
+  const platform = os.platform();
+  const arch = os.arch();
+  const platformMap = { darwin: 'darwin', linux: 'linux', win32: 'win32' };
+  const archMap = { x64: 'x64', arm64: 'arm64', amd64: 'x64', aarch64: 'arm64' };
+  return {
+    platform: platformMap[platform] || platform,
+    arch: archMap[arch] || arch
+  };
+}
+
+async function getLatestVersion(prerelease = false) {
+  const url = prerelease
+    ? `${GITHUB_API}/repos/${REPO}/releases`
+    : `${GITHUB_API}/repos/${REPO}/releases/latest`;
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch releases: ${response.statusText}`);
+  }
+  const data = await response.json();
+  const tagName = Array.isArray(data) ? data[0].tag_name : data.tag_name;
+  return tagName.replace(/^v/, '');
+}
+
 async function install(options = {}) {
+  const { platform, arch } = getPlatform();
   const version = options.version || 'latest';
-  const { platform, arch } = getCurrentPlatform();
+  const prerelease = options.prerelease || false;
+  const osArch = `${platform}-${arch}`;
+  const assetName = `${osArch}.tar.gz`;
 
-  console.log(`Installing Mandor ${version} for ${platform}-${arch}...`);
+  console.log('Mandor Installer');
+  console.log('================');
+  console.log(`OS: ${osArch}`);
 
-  let binaryPath;
-
-  // Try bundled binary first
-  const bundledPath = useBundledBinary(platform, arch);
-  if (bundledPath) {
-    console.log(`✓ Using bundled binary`);
-    binaryPath = bundledPath;
-  } else {
-    // Download from GitHub releases
-    binaryPath = await downloadBinary(version, platform, arch);
+  let installVersion = version;
+  if (version === 'latest') {
+    console.log(`Fetching latest ${prerelease ? 'prerelease' : 'release'}...`);
+    installVersion = await getLatestVersion(prerelease);
   }
 
-  console.log(`✓ Mandor installed: ${binaryPath}`);
+  console.log(`Version: ${installVersion}`);
+  console.log('');
 
+  const cachePath = path.join(CACHE_DIR, installVersion, osArch);
+  const binaryPath = path.join(cachePath, 'mandor');
+
+  if (platform === 'win32') {
+    binaryPath = binaryPath + '.exe';
+  }
+
+  if (fs.existsSync(binaryPath)) {
+    console.log(`Using cached binary: ${binaryPath}`);
+    return binaryPath;
+  }
+
+  const bundledPath = path.join(BUNDLE_DIR, assetName);
+  if (fs.existsSync(bundledPath)) {
+    console.log(`Using bundled binary: ${bundledPath}`);
+    if (!fs.existsSync(cachePath)) {
+      fs.mkdirSync(cachePath, { recursive: true });
+    }
+    execSync(`tar -xzf "${bundledPath}" -C "${cachePath}"`, { stdio: 'inherit' });
+    fs.chmodSync(binaryPath, '755');
+    console.log(`Installed: ${binaryPath}`);
+    return binaryPath;
+  }
+
+  console.log('Downloading from GitHub releases...');
+  const downloadUrl = `https://github.com/${REPO}/releases/download/v${installVersion}/${assetName}`;
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mandor-install-'));
+  const tarball = path.join(tempDir, assetName);
+
+  const response = await fetch(downloadUrl);
+  if (!response.ok) {
+    throw new Error(`Download failed: ${response.statusText} (${downloadUrl})`);
+  }
+
+  const file = fs.createWriteStream(tarball);
+  await new Promise((resolve, reject) => {
+    response.body.pipe(file);
+    file.on('finish', resolve);
+    file.on('error', reject);
+  });
+
+  if (!fs.existsSync(cachePath)) {
+    fs.mkdirSync(cachePath, { recursive: true });
+  }
+
+  execSync(`tar -xzf "${tarball}" -C "${cachePath}"`, { stdio: 'inherit' });
+  fs.chmodSync(binaryPath, '755');
+
+  fs.rmSync(tempDir, { recursive: true });
+
+  console.log(`Installed: ${binaryPath}`);
   return binaryPath;
 }
 
-/**
- * Uses bundled binary if available for current platform
- * @param {string} platform - Target platform
- * @param {string} arch - Target architecture
- * @returns {string|null} Path to binary or null if not bundled
- */
-function useBundledBinary(platform, arch) {
-  const osArch = `${platform}-${arch}`;
-  const tarball = path.join(BUNDLE_DIR, `${osArch}.tar.gz`);
-  const version = 'latest';
-  const cacheDir = path.join(os.homedir(), '.mandor', 'bin', `${version}-${osArch}`);
-  const dest = path.join(cacheDir, 'mandor');
-
-  console.log(`DEBUG: Looking for binary for ${osArch}`);
-  console.log(`DEBUG: BUNDLE_DIR: ${BUNDLE_DIR}`);
-  console.log(`DEBUG: Files in BUNDLE_DIR: ${fs.readdirSync(BUNDLE_DIR).join(', ')}`);
-
-  // First check if binary already exists in cache
-  if (fs.existsSync(dest)) {
-    console.log(`DEBUG: Using cached binary: ${dest}`);
-    return dest;
-  }
-
-  // Check if tarball exists
-  if (!fs.existsSync(tarball)) {
-    console.log(`DEBUG: No tarball found at: ${tarball}`);
-    return null;
-  }
-
-  console.log(`DEBUG: Extracting tarball: ${tarball}`);
-
-  if (!fs.existsSync(cacheDir)) {
-    fs.mkdirSync(cacheDir, { recursive: true });
-  }
-
-  try {
-    const { execSync } = require('child_process');
-    execSync(`tar -xzf "${tarball}" -C "${cacheDir}"`, { stdio: 'pipe' });
-    fs.chmodSync(dest, '755');
-    console.log(`DEBUG: Extracted to: ${dest}`);
-    return dest;
-  } catch (e) {
-    console.log(`DEBUG: Failed to extract tarball: ${e.message}`);
-    return null;
-  }
-}
-
-/**
- * Cleans up old binary caches
- * @returns {number} Number of files removed
- * @example
- * const removed = cleanupCache();
- * console.log(`Removed ${removed} old binary files`);
- */
-function cleanupCache() {
-  if (!fs.existsSync(CACHE_DIR)) return 0;
-
-  const files = fs.readdirSync(CACHE_DIR);
-  let removed = 0;
-
-  for (const file of files) {
-    const filePath = path.join(CACHE_DIR, file);
-    const stats = fs.statSync(filePath);
-
-    // Remove files older than 30 days
-    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-    if (stats.mtimeMs < thirtyDaysAgo) {
-      fs.unlinkSync(filePath);
-      removed++;
-    }
-  }
-
-  return removed;
-}
-
-/**
- * Gets the installed binary version
- * @returns {string|null} Version string or null if not installed
- * @example
- * const version = getInstalledVersion();
- * if (version) { console.log(`Using Mandor ${version}`); }
- */
-function getInstalledVersion() {
-  const versionPath = path.join(CACHE_DIR, 'version.txt');
-  if (fs.existsSync(versionPath)) {
-    return fs.readFileSync(versionPath, 'utf-8').trim();
-  }
-  return null;
-}
-
-// Run install on postinstall
 if (require.main === module || process.env.npm_lifecycle_event === 'postinstall') {
   install().catch(error => {
     console.error('Failed to install Mandor:', error.message);
@@ -147,8 +120,4 @@ if (require.main === module || process.env.npm_lifecycle_event === 'postinstall'
   });
 }
 
-module.exports = {
-  install,
-  cleanupCache,
-  getInstalledVersion
-};
+module.exports = { install, getLatestVersion, getPlatform };
