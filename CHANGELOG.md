@@ -7,19 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-01-29
+
 ### Added
 
-- Initial CLI commands: `init`, `task`, `project`, `feature`, `issue`, `populate`, `status`, `config`, `completion`
-- Event-based task management with NDJSON storage
-- Workspace and project management
-- Shell completion support (bash, zsh, fish)
-- Configuration management with JSON and environment variable overrides
+- `mandor ai claude` command - Generate CLAUDE.md for project documentation
+- `mandor ai agents` command - Generate AGENTS.md for multi-agent coordination
+- Cross-platform build script for all supported platforms
 
 ### Changed
 
-- Improved error handling with typed domain errors (exit codes 1-3)
-- Refactored service layer for better separation of concerns
-- Updated file I/O to use atomic writes
+- Build output now uses `binaries/` directory instead of `build/`
+- Simplified AI documentation templates
+
+### Fixed
+
+- LSP errors in ai commands
 
 ## [0.0.14] - 2026-01-29
 
