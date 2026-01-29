@@ -30,6 +30,81 @@ Mandor is a CLI tool for managing tasks, features, and issues in AI agent workfl
 
 ---
 
+## Background: Why Mandor Was Built
+
+Research on **Context Rot** reveals a critical challenge for AI agents: [LLM performance degrades significantly as input token count increases](docs/background/context_rot.md). Key findings include:
+
+### The Context Rot Problem
+
+| Factor | Impact on LLM Performance |
+|--------|------------------------|
+| Input Length | Performance drops 10-40% as tokens increase |
+| Non-lexical Matching | Models struggle with semantic associations |
+| Distractors | Irrelevant content causes 15-30% error rate |
+| Task Complexity | Reasoning degrades faster than retrieval |
+
+### Why Structured Task Management Matters
+
+```
+Problem: AI agents lose track of details in long conversations
+
+Solution: Externalize task state with structured, event-based tracking
+
+Mandor provides:
+- Deterministic JSONL output for reliable parsing
+- Schema-driven entities (features, tasks, issues)
+- Dependency relationships to enforce completion order
+- Audit trail via append-only events
+- Compact context (no conversation history needed)
+```
+
+---
+
+## Advantages
+
+| Advantage | Description |
+|-----------|-------------|
+| **Compact Context** | Replace verbose task descriptions with structured JSON. AI agents receive precise, parseable data without context bloat. |
+| **Deterministic Output** | JSONL format ensures consistent, machine-readable output. No parsing ambiguity, no formatting surprises. |
+| **Complete Audit Trail** | Every change is logged in append-only events.jsonl. Trace exactly what changed, when, and by whom. |
+| **Dependency Enforcement** | Automatic blocking prevents invalid states. Tasks/features can't proceed until dependencies are satisfied. |
+| **State Recovery** | Event log enables reconstruction of any point in time. Never lose track of project state. |
+| **Schema-Driven Validation** | Configurable rules per project. Enforce consistency without hardcoded assumptions. |
+| **Zero Dependencies** | Standalone Go binary. No runtime dependencies, no complex setup, no external services. |
+| **TDD Compatible** | Every task includes defined test cases. Write tests first, track coverage, ensure quality. |
+| **Local-First** | All data stored locally. No cloud sync, no network latency, no privacy concerns. |
+
+---
+
+### The Mandor Approach
+
+Instead of stuffing everything into the context window:
+
+```bash
+# Instead of: "Remember the 15 tasks from our conversation..."
+
+# Use Mandor to externalize state:
+mandor task list --project api --status pending
+# Returns compact JSON for parsing
+
+mandor task detail auth-feature-abc-task-xyz789
+# Exact state, no ambiguity
+```
+
+### Benefits for AI Agents
+
+1. **Reduced Context Load**: Structured data replaces verbose descriptions
+2. **Complete Audit Trail**: Event log shows exactly what changed and when
+3. **Dependency Enforcement**: Auto-blocking prevents invalid state
+4. **Deterministic Output**: JSONL format is reliable to parse
+5. **State Recovery**: Events enable reconstruction of any point in time
+
+> "What matters is not just whether relevant information is present, but how that information is structured and presented." — Context Rot Research
+
+Mandor implements these principles by providing a minimal, structured interface for task management that AI agents can reliably use without context bloat.
+
+---
+
 ## Workflow & Architecture
 
 ### High-Level Data Flow
@@ -275,77 +350,6 @@ flowchart LR
 State can be reconstructed by replaying all events. Enables complete audit trail, point-in-time recovery, change history tracking, and debugging.
 
 ---
-
-## Advantages
-
-| Advantage | Description |
-|-----------|-------------|
-| **Compact Context** | Replace verbose task descriptions with structured JSON. AI agents receive precise, parseable data without context bloat. |
-| **Deterministic Output** | JSONL format ensures consistent, machine-readable output. No parsing ambiguity, no formatting surprises. |
-| **Complete Audit Trail** | Every change is logged in append-only events.jsonl. Trace exactly what changed, when, and by whom. |
-| **Dependency Enforcement** | Automatic blocking prevents invalid states. Tasks/features can't proceed until dependencies are satisfied. |
-| **State Recovery** | Event log enables reconstruction of any point in time. Never lose track of project state. |
-| **Schema-Driven Validation** | Configurable rules per project. Enforce consistency without hardcoded assumptions. |
-| **Zero Dependencies** | Standalone Go binary. No runtime dependencies, no complex setup, no external services. |
-| **TDD Compatible** | Every task includes defined test cases. Write tests first, track coverage, ensure quality. |
-| **Local-First** | All data stored locally. No cloud sync, no network latency, no privacy concerns. |
-
----
-
-## Background: Why Mandor Was Built
-
-Research on **Context Rot** reveals a critical challenge for AI agents: [LLM performance degrades significantly as input token count increases](docs/background/context_rot.md). Key findings include:
-
-### The Context Rot Problem
-
-| Factor | Impact on LLM Performance |
-|--------|------------------------|
-| Input Length | Performance drops 10-40% as tokens increase |
-| Non-lexical Matching | Models struggle with semantic associations |
-| Distractors | Irrelevant content causes 15-30% error rate |
-| Task Complexity | Reasoning degrades faster than retrieval |
-
-### Why Structured Task Management Matters
-
-```
-Problem: AI agents lose track of details in long conversations
-
-Solution: Externalize task state with structured, event-based tracking
-
-Mandor provides:
-- Deterministic JSONL output for reliable parsing
-- Schema-driven entities (features, tasks, issues)
-- Dependency relationships to enforce completion order
-- Audit trail via append-only events
-- Compact context (no conversation history needed)
-```
-
-### The Mandor Approach
-
-Instead of stuffing everything into the context window:
-
-```bash
-# Instead of: "Remember the 15 tasks from our conversation..."
-
-# Use Mandor to externalize state:
-mandor task list --project api --status pending
-# Returns compact JSON for parsing
-
-mandor task detail auth-feature-abc-task-xyz789
-# Exact state, no ambiguity
-```
-
-### Benefits for AI Agents
-
-1. **Reduced Context Load**: Structured data replaces verbose descriptions
-2. **Complete Audit Trail**: Event log shows exactly what changed and when
-3. **Dependency Enforcement**: Auto-blocking prevents invalid state
-4. **Deterministic Output**: JSONL format is reliable to parse
-5. **State Recovery**: Events enable reconstruction of any point in time
-
-> "What matters is not just whether relevant information is present, but how that information is structured and presented." — Context Rot Research
-
-Mandor implements these principles by providing a minimal, structured interface for task management that AI agents can reliably use without context bloat.
 
 ## Installation
 
