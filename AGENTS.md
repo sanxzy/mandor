@@ -9,9 +9,10 @@ go mod download              # Install dependencies
 go test ./...                # Run all tests
 go test ./tests/unit/... -v  # Run all unit tests with verbose output
 go test ./tests/unit/... -run TestName  # Run single test by name
-go build -o binaries/mandor ./cmd/mandor  # Build CLI
 go run ./cmd/mandor <command>  # Run CLI directly
 go fmt ./...                 # Format code
+
+npm run build  # Build CLI
 ```
 
 ## NPM Package (@mandor/cli)
