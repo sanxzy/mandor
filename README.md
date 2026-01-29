@@ -30,6 +30,256 @@ Mandor is a CLI tool for managing tasks, features, and issues in AI agent workfl
 
 ---
 
+## Workflow & Architecture
+
+### High-Level Data Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           AI Agent / User                                   │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              mandor CLI                                     │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│  │ mandor init │ │ mandor task │ │ mandor feat │ │ mandor issue│          │
+│  └──────┬──────┘ └──────┬──────┘ └──────┬──────┘ └──────┬──────┘          │
+│         │               │               │               │                  │
+│         └───────────────┴───────────────┴───────────────┘                  │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           Service Layer                                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  WorkspaceService │ ProjectService │ TaskService │ FeatureService   │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            Filesystem Layer                                 │
+│  ┌───────────────────────┐                    ┌───────────────────────────┐  │
+│  │   Atomic Write        │                    │     Read Operations       │  │
+│  │   (temp → rename)     │◄───────────────────│   (parse NDJSON)          │  │
+│  └───────────────────────┘                    └───────────────────────────┘  │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          Local Storage (.mandor/)                           │
+│                                                                             │
+│   ┌─────────────────────┐    ┌──────────────────────────────────────────┐   │
+│   │   workspace.json    │    │         projects/<id>/                   │   │
+│   │   (workspace meta)  │    │  ┌──────────┐ ┌──────────┐ ┌──────────┐ │   │
+│   └─────────────────────┘    │  │project   │ │features  │ │tasks     │ │   │
+│                              │  │.jsonl    │ │.jsonl    │ │.jsonl    │ │   │
+│                              │  └──────────┘ └──────────┘ └──────────┘ │   │
+│                              │  ┌──────────┐ ┌──────────────────────┐  │   │
+│                              │  │issues    │ │events.jsonl (append) │  │   │
+│                              │  │.jsonl    │ │  (audit trail)       │  │   │
+│                              │  └──────────┘ └──────────────────────┘  │   │
+│                              └──────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Entity Hierarchy
+
+```
+Workspace
+│
+├── Project (api)
+│   ├── Feature (api-feature-abc123)
+│   │   ├── Task (api-feature-abc-task-xyz789)
+│   │   └── Task (api-feature-abc-task-def456)
+│   ├── Feature (api-feature-def456)
+│   │   └── Task (api-feature-def-task-xxx)
+│   └── Issue (api-issue-ghi789)
+│
+├── Project (web)
+│   ├── Feature (web-feature-jkl012)
+│   │   └── Task (web-feature-jkl-task-mno345)
+│   └── Issue (web-issue-pqr678)
+│
+└── Events (.mandor/projects/*/events.jsonl)
+    └── All changes appended here (append-only audit trail)
+```
+
+### Feature Status Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│    ┌────────┐     ┌────────┐     ┌────────┐                                │
+│    │ draft  │────►│ active │────►│  done  │                                │
+│    └────────┘     └────────┘     └────────┘                                │
+│         │               │              ▲                                    │
+│         │               │              │                                    │
+│         ▼               ▼              │                                    │
+│    ┌────────┐     ┌────────┐          │                                    │
+│    │blocked │────►│cancelled│─────────┘                                    │
+│    └────────┘     └────────┘                                               │
+│                                                                             │
+│    • draft → blocked: dependencies not satisfied                           │
+│    • draft → active: ready to work (no deps or all done)                   │
+│    • active → done: feature implementation complete                        │
+│    • any → cancelled: feature abandoned                                    │
+│    • cancelled → active: reopen with --reopen                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Task Status Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│    ┌────────┐     ┌────────┐     ┌────────────┐     ┌────────┐            │
+│    │ pending│────►│  ready │────►│ in_progress│────►│  done  │            │
+│    └────────┘     └────────┘     └────────────┘     └────────┘            │
+│         │               │               │              ▲                    │
+│         │               │               │              │                    │
+│         │               ▼               ▼              │                    │
+│         │          ┌────────┐     ┌────────────┐       │                    │
+│         └─────────►│ blocked│────►│ cancelled  │───────┘                    │
+│                     └────────┘     └────────────┘                           │
+│                                                                             │
+│    • pending → ready: no blocking dependencies                              │
+│    • ready → in_progress: start working                                     │
+│    • in_progress → done: task completed                                     │
+│    • any → blocked: dependencies not satisfied                              │
+│    • any → cancelled: task abandoned                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Issue Status Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│    ┌────────┐     ┌────────┐     ┌────────────┐     ┌──────────┐          │
+│    │  open  │────►│  ready │────►│ in_progress│────►│ resolved │          │
+│    └────────┘     └────────┘     └────────────┘     └──────────┘          │
+│         │               │               │              │                    │
+│         │               │               │              │                    │
+│         │               ▼               ▼              │                    │
+│         │          ┌─────────┐     ┌───────────┐       │                    │
+│         └─────────►│ wontfix │────►│ cancelled │───────┘                    │
+│                     └─────────┘     └───────────┘                           │
+│                                                                             │
+│    • open → ready: no blocking dependencies                                 │
+│    • ready → in_progress: start working                                     │
+│    • in_progress → resolved: issue fixed                                    │
+│    • any → wontfix: won't fix (document reason)                             │
+│    • any → cancelled: issue abandoned                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Dependency Enforcement
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  Feature A              Feature B                                           │
+│  ┌──────────┐           ┌──────────┐                                        │
+│  │   ID:    │           │   ID:    │                                        │
+│  │  feat-A  │◄──────────│  feat-B  │  feat-B depends on feat-A              │
+│  │ Status:  │   depends │ Status:  │                                        │
+│  │  draft   │           │  blocked │                                        │
+│  └──────────┘           └──────────┘                                        │
+│                                                                             │
+│  When feat-A → active/done:                                                │
+│  ┌──────────┐           ┌──────────┐                                        │
+│  │ feat-A   │──────────►│ feat-B   │                                        │
+│  │ Status:  │           │ Status:  │                                        │
+│  │  active  │           │  active  │                                        │
+│  └──────────┘           └──────────┘                                        │
+│                                                                             │
+│  ERROR if trying to cancel feat-A:                                          │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Error: Cannot cancel feature-A.                                     │    │
+│  │  Feature is still required by:                                       │    │
+│  │  - feat-B (Payment Processing)                                       │    │
+│  │  Use --force to cancel anyway.                                       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Typical AI Agent Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     AI Agent Using Mandor                                   │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  1. CHECK CURRENT STATE                                                     │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  mandor task list --project api --status pending                     │   │
+│  │  mandor task ready --priority P0                                     │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                   │                                         │
+│                                   ▼                                         │
+│  2. SELECT AND START TASK                                                   │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  mandor task update <id> --status in_progress                        │   │
+│  │  mandor task detail <id>  # Get implementation steps, test cases     │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                   │                                         │
+│                                   ▼                                         │
+│  3. IMPLEMENT & TEST                                                        │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  # Write code following implementation_steps                         │   │
+│  │  # Create tests from test_cases                                      │   │
+│  │  # Create derivable_files                                            │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                   │                                         │
+│                                   ▼                                         │
+│  4. COMPLETE TASK                                                           │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  mandor task update <id> --status done                              │   │
+│  │  mandor status  # Check project progress                             │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                   │                                         │
+│                                   ▼                                         │
+│  5. REPEAT for next ready task                                              │
+│                                                                             │
+│  BENEFITS:                                                                  │
+│  • Compact context: Just query Mandor for current state                     │
+│  • No context rot: State externalized in NDJSON files                       │
+│  • Deterministic output: JSONL is reliable to parse                         │
+│  • Complete audit: events.jsonl tracks all changes                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Event Sourcing Pattern
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      events.jsonl (Append-Only)                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  {"ts":"2026-01-28T10:00:00Z","layer":"workspace","type":"created",...}    │
+│  {"ts":"2026-01-28T10:05:00Z","layer":"project","type":"created",...}      │
+│  {"ts":"2026-01-28T10:10:00Z","layer":"feature","type":"created",...}      │
+│  {"ts":"2026-01-28T10:15:00Z","layer":"task","type":"created",...}         │
+│  {"ts":"2026-01-28T11:00:00Z","layer":"task","type":"updated",...}         │
+│  {"ts":"2026-01-28T12:00:00Z","layer":"task","type":"updated",...}         │
+│  {"ts":"2026-01-28T12:30:00Z","layer":"task","type":"updated",...}         │
+│                              ...                                            │
+│                                                                             │
+│  State can be reconstructed by replaying all events.                       │
+│  This enables:                                                              │
+│  • Complete audit trail                                                     │
+│  • Point-in-time recovery                                                  │
+│  • Change history tracking                                                 │
+│  • Debugging: see exact sequence of changes                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Advantages
 
 | Advantage | Description |
