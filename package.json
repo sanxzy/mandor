@@ -26,7 +26,9 @@
     "build:linux:x64": "GOOS=linux GOARCH=x64 go build -o binaries/linux-x64/mandor ./cmd/mandor",
     "build:linux:arm64": "GOOS=linux GOARCH=arm64 go build -o binaries/linux-arm64/mandor ./cmd/mandor",
     "build:win32:x64": "GOOS=win32 GOARCH=x64 go build -o binaries/win32-x64/mandor.exe ./cmd/mandor",
-    "build:win32:arm64": "GOOS=win32 GOARCH=arm64 go build -o binaries/win32-arm64/mandor.exe ./cmd/mandor"
+    "build:win32:arm64": "GOOS=win32 GOARCH=arm64 go build -o binaries/win32-arm64/mandor.exe ./cmd/mandor",
+    "publish:beta": "npm publish --tag beta",
+    "publish:latest": "npm publish"
   },
   "keywords": [
     "mandor",
