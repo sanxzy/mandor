@@ -6,7 +6,6 @@ go.sum
 
 # Build outputs
 build/
-binaries/
 
 # Tests - not needed for published package
 tests/
