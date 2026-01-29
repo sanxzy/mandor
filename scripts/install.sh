@@ -153,8 +153,9 @@ install_binary() {
     fi
 
     # Download URL
-    local download_url="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${version}/${BIN_NAME}-${platform}-${arch}.tar.gz"
-    local tarball="${DOWNLOAD_DIR}/${BIN_NAME}-${platform}-${arch}.tar.gz"
+    local asset_name="${BIN_NAME}-${platform}-${arch}.tar.gz"
+    local download_url="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${version}/${asset_name}"
+    local tarball="${DOWNLOAD_DIR}/${asset_name}"
 
     # Download
     download_file "$download_url" "$tarball" "Mandor ${version} (${platform}-${arch})"
@@ -171,8 +172,8 @@ install_binary() {
 
     # Extract
     echo "Extracting..."
-    mkdir -p "$DOWNLOAD_DIR/${BIN_NAME}-${platform}-${arch}"
-    tar -xzf "$tarball" -C "$DOWNLOAD_DIR/${BIN_NAME}-${platform}-${arch}"
+    mkdir -p "${DOWNLOAD_DIR}/${BIN_NAME}-${platform}-${arch}"
+    tar -xzf "${tarball}" -C "${DOWNLOAD_DIR}/${BIN_NAME}-${platform}-${arch}"
 
     # Install binary
     local binary="${DOWNLOAD_DIR}/${BIN_NAME}-${platform}-${arch}/${BIN_NAME}"
