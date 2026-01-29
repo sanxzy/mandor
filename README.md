@@ -29,7 +29,6 @@ Mandor is a CLI tool for managing tasks, features, and issues in AI agent workfl
 - **Cross-Platform**: Written in Go, works on macOS, Linux, and Windows
 
 ---
----
 
 ## Workflow & Architecture
 
@@ -203,10 +202,10 @@ flowchart LR
         A2 -->|"unblocks"| B2
     end
 
-    style A1 fill:#f9f,stroke:#333
-    style B1 fill:#f96,stroke:#333
-    style A2 fill:#9f9,stroke:#333
-    style B2 fill:#9f9,stroke:#333
+    style A1 fill:#d32f2f,stroke:#333,color:#000
+    style B1 fill:#f57c00,stroke:#333,color:#000
+    style A2 fill:#388e3c,stroke:#333,color:#000
+    style B2 fill:#388e3c,stroke:#333,color:#000
 ```
 
 **Error when trying to cancel a required entity:**
