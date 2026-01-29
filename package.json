@@ -1,0 +1,50 @@
+{
+  "name": "@mandor/cli",
+  "version": "0.0.1",
+  "description": "Event-based task manager CLI for AI agent workflows",
+  "main": "npm/lib/index.js",
+  "bin": {
+    "mandor": "./npm/bin/mandor"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "postinstall": "node npm/lib/install.js",
+    "build": "node npm/scripts/build.js",
+    "build:darwin:x64": "GOOS=darwin GOARCH=x64 go build -o binaries/darwin-x64/mandor ./cmd/mandor",
+    "build:darwin:arm64": "GOOS=darwin GOARCH=arm64 go build -o binaries/darwin-arm64/mandor ./cmd/mandor",
+    "build:linux:x64": "GOOS=linux GOARCH=x64 go build -o binaries/linux-x64/mandor ./cmd/mandor",
+    "build:linux:arm64": "GOOS=linux GOARCH=arm64 go build -o binaries/linux-arm64/mandor ./cmd/mandor",
+    "build:win32:x64": "GOOS=win32 GOARCH=x64 go build -o binaries/win32-x64/mandor.exe ./cmd/mandor",
+    "build:win32:arm64": "GOOS=win32 GOARCH=arm64 go build -o binaries/win32-arm64/mandor.exe ./cmd/mandor"
+  },
+  "keywords": [
+    "mandor",
+    "task-manager",
+    "cli",
+    "ai-agent",
+    "workflow",
+    "event-sourcing"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sanxzy/mandor.git",
+    "directory": "npm"
+  },
+  "bugs": {
+    "url": "https://github.com/sanxzy/mandor/issues"
+  },
+  "homepage": "https://github.com/sanxzy/mandor#readme"
+}
