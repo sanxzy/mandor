@@ -139,7 +139,7 @@ func (s *FeatureService) CreateFeature(input *domain.FeatureCreateInput) (*domai
 	creator := util.GetGitUsername()
 	now := time.Now().UTC()
 
-	nanoid, err := util.GenerateNanoID()
+	nanoid, err := util.GenerateID()
 	if err != nil {
 		return nil, domain.NewSystemError("Failed to generate feature ID", err)
 	}

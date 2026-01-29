@@ -58,7 +58,7 @@ func (s *WorkspaceService) InitWorkspace(workspaceName string) (*domain.Workspac
 	os.Remove(testFile)
 
 	// Generate workspace ID
-	id, err := util.GenerateNanoID()
+	id, err := util.GenerateID()
 	if err != nil {
 		return nil, domain.NewSystemError("Cannot generate workspace ID", err)
 	}

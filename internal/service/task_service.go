@@ -211,7 +211,7 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 		return nil, domain.NewValidationError("Invalid feature ID format.")
 	}
 
-	nanoid, err := util.GenerateNanoID()
+	nanoid, err := util.GenerateID()
 	if err != nil {
 		return nil, domain.NewSystemError("Failed to generate task ID", err)
 	}

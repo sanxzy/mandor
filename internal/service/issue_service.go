@@ -155,7 +155,7 @@ func (s *IssueService) CreateIssue(input *domain.IssueCreateInput) (*domain.Issu
 	creator := util.GetGitUsername()
 	now := time.Now().UTC()
 
-	nanoid, err := util.GenerateNanoID()
+	nanoid, err := util.GenerateID()
 	if err != nil {
 		return nil, domain.NewSystemError("Failed to generate issue ID", err)
 	}
