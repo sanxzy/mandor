@@ -91,33 +91,19 @@ func (s *StatusService) GetWorkspaceStatus(projectID string) (*WorkspaceStatus, 
 
 	// Calculate stats for each project
 	for _, pid := range projectIDs {
-		metadata, err := s.reader.ReadProjectMetadata(pid)
+		projectStatus, err := s.GetProjectStatus(pid)
 		if err != nil {
 			// Skip projects that can't be read
 			continue
 		}
 
-		// For now, create empty stats (will expand with feature/task/issue counts)
-		stats := domain.ProjectStats{
-			Features: domain.EntityStats{
-				ByStatus: make(map[string]int),
-			},
-			Tasks: domain.EntityStats{
-				ByStatus: make(map[string]int),
-			},
-			Issues: domain.EntityStats{
-				ByStatus: make(map[string]int),
-				ByType:   make(map[string]int),
-			},
-		}
+		status.Projects = append(status.Projects, *projectStatus)
 
-		summary := ProjectSummary{
-			ID:    pid,
-			Name:  metadata.Name,
-			Stats: stats,
-		}
-
-		status.Projects = append(status.Projects, summary)
+		// Accumulate totals
+		status.Totals.Features += projectStatus.Stats.Features.Total
+		status.Totals.Tasks += projectStatus.Stats.Tasks.Total
+		status.Totals.Issues += projectStatus.Stats.Issues.Total
+		status.Totals.Blocked += projectStatus.Stats.Tasks.BlockedCount
 	}
 
 	return status, nil
