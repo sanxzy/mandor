@@ -1,6 +1,10 @@
 # Mandor - Event-Based Task Manager CLI for AI Agent Workflows
 
 <p align="center">
+<img src="logo.png" alt="Mandor CLI">
+</p>
+
+<p align="center">
   <strong>Deterministic JSONL output | Streaming-native architecture | Schema-driven task management</strong>
 </p>
 
