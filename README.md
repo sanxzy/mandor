@@ -69,7 +69,7 @@ Mandor provides:
 
 ## Installation
 
-Mandor can be installed via curl, npm, or built from source.
+Mandor can be installed via curl or npm.
 
 ### Option 1: curl (Recommended for macOS/Linux)
 

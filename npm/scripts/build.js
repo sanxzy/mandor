@@ -63,7 +63,7 @@ function createArchive(platform) {
   const archivePath = path.join(BINARIES_DIR, `${os}-${arch}.tar.gz`);
 
   try {
-    execSync(`tar -czf "${archivePath}" -C "${sourceDir}" .`, {
+    execSync(`tar -czf "${archivePath}" -C "${sourceDir}" ${binaryName}`, {
       stdio: 'pipe',
       shell: true
     });
