@@ -1,32 +1,15 @@
 #!/usr/bin/env node
 
-/**
- * @fileoverview Mandor CLI Node.js wrapper script
- * @description Resolves the Mandor binary path and spawns the CLI with provided arguments
- * @version 0.0.1
- */
-
-const { resolve } = require('../lib/resolve');
 const { spawn } = require('child_process');
 const path = require('path');
+const os = require('os');
 
-/**
- * Main entry point for the Mandor CLI wrapper
- * @async
- * @returns {Promise<void>} Resolves when the CLI process exits
- * @throws {Error} If binary resolution fails
- * @example
- * // Run: mandor task list --project api
- * await main();
- */
-async function main() {
-  const binaryPath = await resolve();
-  const args = process.argv.slice(2);
-  const proc = spawn(binaryPath, args, {
-    stdio: 'inherit',
-    cwd: process.cwd()
-  });
-  proc.on('exit', process.exit);
-}
+const INSTALL_DIR = path.join(os.homedir(), '.local', 'bin');
+const binaryPath = path.join(INSTALL_DIR, process.platform === 'win32' ? 'mandor.exe' : 'mandor');
 
-main().catch(console.error);
+const args = process.argv.slice(2);
+const proc = spawn(binaryPath, args, {
+  stdio: 'inherit',
+  cwd: process.cwd()
+});
+proc.on('exit', process.exit);

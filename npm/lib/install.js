@@ -25,9 +25,7 @@ function getPlatform() {
 }
 
 async function getLatestVersion(prerelease = false) {
-  const url = prerelease
-    ? `https://api.github.com/repos/${REPO}/releases`
-    : `https://api.github.com/repos/${REPO}/releases/latest`;
+  const url = `https://api.github.com/repos/${REPO}/releases`;
 
   return new Promise((resolve, reject) => {
     https.get(url, { headers: { 'User-Agent': 'Mandor-CLI' } }, (res) => {
@@ -36,8 +34,12 @@ async function getLatestVersion(prerelease = false) {
       res.on('end', () => {
         try {
           const parsed = JSON.parse(data);
-          const tagName = Array.isArray(parsed) ? parsed[0].tag_name : parsed.tag_name;
-          resolve(tagName.replace(/^v/, ''));
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const release = parsed[0];
+            resolve(release.tag_name.replace(/^v/, ''));
+          } else {
+            reject(new Error('No release found'));
+          }
         } catch (e) {
           reject(e);
         }
@@ -64,10 +66,8 @@ function downloadFile(url, dest) {
   });
 }
 
-async function install(options = {}) {
+async function install() {
   const { platform, arch } = getPlatform();
-  const version = options.version || 'latest';
-  const prerelease = options.prerelease || false;
   const osArch = `${platform}-${arch}`;
   const binaryName = platform === 'win32' ? 'mandor.exe' : 'mandor';
 
@@ -75,13 +75,9 @@ async function install(options = {}) {
   console.log('================');
   console.log(`OS: ${osArch}`);
 
-  let installVersion = version;
-  if (version === 'latest') {
-    console.log(`Fetching latest ${prerelease ? 'prerelease' : 'release'}...`);
-    installVersion = await getLatestVersion(prerelease);
-  }
-
-  console.log(`Version: ${installVersion}`);
+  console.log('Fetching latest release...');
+  const version = await getLatestVersion();
+  console.log(`Version: ${version}`);
   console.log('');
 
   const binaryPath = path.join(INSTALL_DIR, binaryName);
@@ -92,7 +88,7 @@ async function install(options = {}) {
   }
 
   console.log('Downloading from GitHub releases...');
-  const downloadUrl = `https://github.com/${REPO}/releases/download/v${installVersion}/${osArch}.tar.gz`;
+  const downloadUrl = `https://github.com/${REPO}/releases/download/v${version}/${osArch}.tar.gz`;
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mandor-'));
   const tarball = path.join(tempDir, `${osArch}.tar.gz`);
 
