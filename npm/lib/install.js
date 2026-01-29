@@ -1,7 +1,7 @@
 /**
  * @fileoverview Post-install hook for Mandor CLI
- * @description Downloads binary from GitHub releases during npm install
- * @version 0.0.4
+ * @description Downloads and extracts binary from GitHub releases
+ * @version 0.0.5
  */
 
 const fs = require('fs');
@@ -11,8 +11,7 @@ const { execSync } = require('child_process');
 const https = require('https');
 
 const REPO = 'sanxzy/mandor';
-const GITHUB_API = 'https://api.github.com';
-const CACHE_DIR = path.join(os.homedir(), '.mandor', 'bin');
+const INSTALL_DIR = path.join(os.homedir(), '.local', 'bin');
 
 function getPlatform() {
   const platform = os.platform();
@@ -27,8 +26,8 @@ function getPlatform() {
 
 async function getLatestVersion(prerelease = false) {
   const url = prerelease
-    ? `${GITHUB_API}/repos/${REPO}/releases`
-    : `${GITHUB_API}/repos/${REPO}/releases/latest`;
+    ? `https://api.github.com/repos/${REPO}/releases`
+    : `https://api.github.com/repos/${REPO}/releases/latest`;
 
   return new Promise((resolve, reject) => {
     https.get(url, { headers: { 'User-Agent': 'Mandor-CLI' } }, (res) => {
@@ -70,7 +69,7 @@ async function install(options = {}) {
   const version = options.version || 'latest';
   const prerelease = options.prerelease || false;
   const osArch = `${platform}-${arch}`;
-  const assetName = `${osArch}.tar.gz`;
+  const binaryName = platform === 'win32' ? 'mandor.exe' : 'mandor';
 
   console.log('Mandor Installer');
   console.log('================');
@@ -85,37 +84,38 @@ async function install(options = {}) {
   console.log(`Version: ${installVersion}`);
   console.log('');
 
-  const cachePath = path.join(CACHE_DIR, installVersion, osArch);
-  const binaryPath = path.join(cachePath, platform === 'win32' ? 'mandor.exe' : 'mandor');
+  const binaryPath = path.join(INSTALL_DIR, binaryName);
 
   if (fs.existsSync(binaryPath)) {
-    console.log(`Using cached binary: ${binaryPath}`);
+    console.log(`Already installed: ${binaryPath}`);
     return binaryPath;
   }
 
   console.log('Downloading from GitHub releases...');
-  const downloadUrl = `https://github.com/${REPO}/releases/download/v${installVersion}/${assetName}`;
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mandor-install-'));
-  const tarball = path.join(tempDir, assetName);
+  const downloadUrl = `https://github.com/${REPO}/releases/download/v${installVersion}/${osArch}.tar.gz`;
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mandor-'));
+  const tarball = path.join(tempDir, `${osArch}.tar.gz`);
 
   await downloadFile(downloadUrl, tarball);
 
-  if (!fs.existsSync(cachePath)) {
-    fs.mkdirSync(cachePath, { recursive: true });
-  }
+  fs.mkdirSync(INSTALL_DIR, { recursive: true });
+  execSync(`tar -xzf "${tarball}" -C "${tempDir}"`, { stdio: 'inherit' });
 
-  execSync(`tar -xzf "${tarball}" -C "${cachePath}"`, { stdio: 'inherit' });
+  const extractedBinary = path.join(tempDir, binaryName);
+  fs.copyFileSync(extractedBinary, binaryPath);
   fs.chmodSync(binaryPath, '755');
 
   fs.rmSync(tempDir, { recursive: true });
 
   console.log(`Installed: ${binaryPath}`);
+  console.log('');
+  console.log('Add to PATH:');
+  console.log(`  export PATH="${INSTALL_DIR}:$PATH"`);
   return binaryPath;
 }
 
 if (require.main === module || process.env.npm_lifecycle_event === 'postinstall') {
-  const prerelease = process.argv.includes('--prerelease') || process.argv.includes('-p');
-  install({ prerelease }).catch(error => {
+  install().catch(error => {
     console.error('Failed to install Mandor:', error.message);
     process.exit(1);
   });
