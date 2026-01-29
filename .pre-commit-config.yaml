@@ -1,0 +1,27 @@
+repos:
+  # Go formatting and linting
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.6.0
+    hooks:
+      - id: go-fmt
+      - id: go-vet
+      - id: go-mod-tidy
+      - id: go-build
+      - id: go-test
+
+  # JavaScript/Node.js linting
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.0.0
+    hooks:
+      - id: eslint
+        files: npm/lib/
+        types: [javascript]
+
+  # JavaScript formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0
+    hooks:
+      - id: prettier
+        files: npm/lib/
+        types: [javascript]
+        args: [--write]
