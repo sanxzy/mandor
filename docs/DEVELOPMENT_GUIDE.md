@@ -151,6 +151,8 @@ const tasks = await cli.taskList({ project: 'api', status: 'pending' });
 
 ### Pre-commit Hooks
 
+The project uses pre-commit hooks for automated code quality checks.
+
 ```bash
 # Install pre-commit tool
 brew install pre-commit  # macOS
@@ -166,6 +168,29 @@ pre-commit run --all-files
 # Run on staged files only
 pre-commit run
 ```
+
+#### Configured Hooks
+
+| Hook | Description | Excluded Paths |
+|------|-------------|----------------|
+| `go-fmt` | Formats Go code | None |
+| `go-vet` | Static analysis | `tests/` |
+| `go-mod-tidy` | Tidies Go modules | None |
+| `go-build` | Builds Go packages | `tests/` |
+| `go-unit-tests` | Runs unit tests | None |
+| `eslint` | Lints JavaScript | `npm/lib/` |
+
+#### Troubleshooting
+
+**Hook fails with "no Go files" error**
+- This happens when hooks run on test directories
+- `go-vet` and `go-build` exclude `tests/` directory
+- If error persists, run `pre-commit clean` then `pre-commit install`
+
+**Hooks not running on commit**
+- Verify hooks are installed: `pre-commit hooks`
+- Check hook configuration in `.pre-commit-config.yaml`
+- Run manually: `pre-commit run --all-files`
 
 ### Formatting
 
