@@ -100,7 +100,7 @@ GOOS=windows GOARCH=amd64 go build -o release/mandor-windows-x64.exe ./cmd/mando
 
 ## NPM Package Build Commands
 
-The NPM package (`@mandor/cli`) wraps the Go binary for cross-platform distribution.
+The NPM package (`@mandors/cli`) wraps the Go binary for cross-platform distribution.
 
 ```bash
 cd npm
@@ -139,7 +139,7 @@ npm/
 ### Programmatic Usage
 
 ```javascript
-const mandor = require('@mandor/cli');
+const mandor = require('@mandors/cli');
 
 const cli = new mandor.Mandor({ json: true, cwd: '/project/path' });
 await cli.init('My Project');
