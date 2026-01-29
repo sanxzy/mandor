@@ -7,9 +7,13 @@
 const { downloadBinary, getCurrentPlatform } = require('./download');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 /** @type {string} Cache directory for binaries */
 const CACHE_DIR = path.join(__dirname, '..', '.cache');
+
+/** @type {string} Bundled binaries directory */
+const BUNDLE_DIR = path.join(__dirname, '..', 'binaries');
 
 /**
  * Installs the Mandor binary for the current platform
@@ -28,10 +32,54 @@ async function install(options = {}) {
 
   console.log(`Installing Mandor ${version} for ${platform}-${arch}...`);
 
-  const binaryPath = await downloadBinary(version, platform, arch);
+  let binaryPath;
+
+  // Try bundled binary first
+  const bundledPath = useBundledBinary(platform, arch);
+  if (bundledPath) {
+    console.log(`✓ Using bundled binary`);
+    binaryPath = bundledPath;
+  } else {
+    // Download from GitHub releases
+    binaryPath = await downloadBinary(version, platform, arch);
+  }
+
   console.log(`✓ Mandor installed: ${binaryPath}`);
 
   return binaryPath;
+}
+
+/**
+ * Uses bundled binary if available for current platform
+ * @param {string} platform - Target platform
+ * @param {string} arch - Target architecture
+ * @returns {string|null} Path to binary or null if not bundled
+ */
+function useBundledBinary(platform, arch) {
+  const filename = `mandor-${platform}-${arch}`;
+  const tarball = path.join(BUNDLE_DIR, `${filename}.tar.gz`);
+
+  if (!fs.existsSync(tarball)) {
+    return null;
+  }
+
+  // Extract to cache
+  const cacheDir = path.join(os.homedir(), '.mandor', 'bin');
+  if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: true });
+  }
+
+  const dest = path.join(cacheDir, filename);
+
+  // Extract tarball
+  const { execSync } = require('child_process');
+  try {
+    execSync(`tar -xzf "${tarball}" -C "${cacheDir}"`);
+    fs.chmodSync(dest, '755');
+    return dest;
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
