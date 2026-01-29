@@ -69,48 +69,86 @@ Mandor provides:
 
 ## Installation
 
-Choose one of the following methods:
+Mandor can be installed via curl, npm, or built from source.
 
-### Option 1: curl (Recommended)
+### Option 1: curl (Recommended for macOS/Linux)
+
+The fastest way to install Mandor on macOS or Linux:
 
 ```bash
-# Install latest stable version
+# Install latest stable version (to ~/.local/bin)
 curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh
 
-# Or install to custom directory
-curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh -s -- --prefix ~/bin
+# Install to custom directory
+curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh -s -- --prefix /usr/local/bin
 
-# Install latest prerelease
+# Install latest prerelease (beta versions)
 curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh -s -- --prerelease
 
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh -s -- --version v0.0.14
+curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh -s -- --version v0.0.16
 ```
 
-Default install location: `$HOME/.local/bin/mandor`
+**Default install location:** `$HOME/.local/bin/mandor`
 
-Add to PATH if needed:
+**Add to PATH:**
 ```bash
-export PATH="$HOME/.local/bin:$PATH"
+# For bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
+
+# For zsh
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
 ```
 
-### Option 2: NPM
+**Verify installation:**
+```bash
+mandor --help
+```
+
+### Option 2: NPM (Cross-platform)
+
+Install via npm for macOS, Linux, or Windows:
 
 ```bash
 # Install globally
 npm install -g @mandor/cli
 
-# Or use npx without installing
+# Verify installation
+mandor --help
+```
+
+**Or use npx to run without installing:**
+```bash
 npx @mandor/cli init "My Project"
+```
+
+**Programmatic usage:**
+```javascript
+const mandor = require('@mandor/cli');
+
+const cli = new mandor.Mandor({ json: true, cwd: '/project/path' });
+await cli.init('My Project');
+await cli.projectCreate('api', { name: 'API Service' });
+const tasks = await cli.taskList({ project: 'api', status: 'pending' });
 ```
 
 ### Option 3: From Source
 
+Build from Go source code:
+
 ```bash
+# Clone repository
 git clone https://github.com/sanxzy/mandor.git
 cd mandor
+
+# Build binary
 go build -o build/mandor ./cmd/mandor
+
+# Install to system
 sudo mv build/mandor /usr/local/bin/
+
+# Verify
+mandor --help
 ```
 
 ### Platform Support
@@ -118,8 +156,34 @@ sudo mv build/mandor /usr/local/bin/
 | Method | macOS | Linux | Windows |
 |--------|-------|-------|---------|
 | curl | ✅ arm64, x64 | ✅ arm64, x64 | ❌ |
-| NPM | ✅ arm64, x64 | ✅ arm64, x64 | ✅ arm64, x64 |
+| npm | ✅ arm64, x64 | ✅ arm64, x64 | ✅ arm64, x64 |
 | Source | ✅ | ✅ | ✅ |
+
+### Troubleshooting
+
+**curl: command not found**
+Install curl: `brew install curl` (macOS) or `sudo apt install curl` (Linux)
+
+**mandor: command not found**
+Ensure the install directory is in your PATH (see above)
+
+**Permission denied**
+```bash
+# Fix permissions for ~/.local/bin
+chmod +x ~/.local/bin/mandor
+```
+
+**NPM permission errors**
+```bash
+# Use npx (no install)
+npx @mandor/cli init "My Project"
+
+# Or fix npm global permissions
+mkdir -p ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+```
 
 ---
 
