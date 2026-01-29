@@ -263,17 +263,17 @@ mandor status
 
 | Command | Description |
 |---------|-------------|
-| `mandor ai claude --goal <text>` | Generate CLAUDE.md for project |
-| `mandor ai agents --role <text> --agents <n> --protocol <sequential\|collaborative>` | Generate AGENTS.md for multi-agent setup |
+| `mandor ai claude` | Generate CLAUDE.md for the project |
+| `mandor ai agents` | Generate AGENTS.md for multi-agent coordination |
 
 Generate AI assistant documentation files:
 
 ```bash
 # Generate CLAUDE.md for Claude Code
-mandor ai claude --goal "Event-based task manager CLI"
+mandor ai claude
 
 # Generate AGENTS.md for multi-agent coordination
-mandor ai agents --role "Backend development team" --agents 3 --protocol collaborative
+mandor ai agents
 ```
 
 ---
