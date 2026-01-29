@@ -37,3 +37,21 @@ func NewAgentsCmd() *cobra.Command {
 
 	return cmd
 }
+
+func generateAIDoc(projectName, createdAt string) string {
+	return "# Project Task Management\n\n" +
+		"This project uses **Mandor CLI** for event-based task management.\n" +
+		"All tasks, features, and issues must be tracked using Mandor.\n\n" +
+		"---\n\n" +
+		"## Required Tool\n\n" +
+		"- Mandor CLI is mandatory for all development work.\n" +
+		"- Task management outside of Mandor is not allowed.\n\n" +
+		"---\n\n" +
+		"## Getting Started\n\n" +
+		"To view available commands and usage instructions, run:\n\n" +
+		"mandor populate\n\n" +
+		"---\n\n" +
+		"## Critical Rules\n\n" +
+		"- Always use Mandor for task creation, tracking, and updates.\n" +
+		"- All development must be tied to Mandor-managed tasks.\n"
+}
