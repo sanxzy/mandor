@@ -314,4 +314,4 @@ mandor issue update api-issue-xxx --reopen   # if needed
 
 ---
 
-**Built with for AI Agent Workflows**
+**Built for AI Agent Workflows**
