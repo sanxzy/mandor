@@ -15,7 +15,7 @@ const os = require('os');
  * @property {string} arch - Architecture (x64, arm64)
  */
 
-/** @type {PlatformConfig[]} Supported platform configurations */
+/** @type {PlatformConfig[]} All supported platform configurations */
 const PLATFORMS = [
   { os: 'darwin', arch: 'x64' },
   { os: 'darwin', arch: 'arm64' },
@@ -26,46 +26,10 @@ const PLATFORMS = [
 ];
 
 /**
- * Checks if a platform/arch combination is supported on the current system
- * @param {string} targetOs - Target OS
- * @param {string} targetArch - Target architecture
- * @returns {boolean} True if supported
- * @example
- * const supported = isSupported('darwin', 'arm64');
- */
-function isSupported(targetOs, targetArch) {
-  const currentOs = os.platform();
-  const currentArch = os.arch();
-
-  // macOS ARM64 can only build for darwin/arm64 natively
-  if (currentOs === 'darwin' && currentArch === 'arm64') {
-    return targetOs === 'darwin' && targetArch === 'arm64';
-  }
-
-  // macOS x64 can build for darwin/x64
-  if (currentOs === 'darwin' && currentArch === 'x64') {
-    return targetOs === 'darwin' && targetArch === 'x64';
-  }
-
-  // Linux can build for linux and darwin
-  if (currentOs === 'linux') {
-    return targetOs === 'linux' || (targetOs === 'darwin' && targetArch === 'arm64');
-  }
-
-  // Windows can build for win32
-  if (currentOs === 'win32') {
-    return targetOs === 'win32';
-  }
-
-  return false;
-}
-
-/**
  * Builds the Mandor binary for a specific platform
  * @param {PlatformConfig} platform - Platform configuration
  * @param {string} sourceDir - Source directory containing Go code
- * @returns {string} Path to the compiled binary
- * @throws {Error} If build fails
+ * @returns {string|null} Path to the compiled binary, or null if unsupported
  * @example
  * const binaryPath = buildForPlatform({ os: 'darwin', arch: 'arm64' }, './cmd/mandor');
  */
@@ -80,12 +44,18 @@ function buildForPlatform(platform, sourceDir) {
 
   try {
     execSync(`GOOS=${os} GOARCH=${arch} go build -o "${outputPath}" ${sourceDir}`, {
-      stdio: 'inherit',
+      stdio: 'pipe',
       shell: process.platform === 'win32'
     });
     return outputPath;
   } catch (error) {
-    console.error(`Failed to build for ${os}-${arch}:`, error.message);
+    // Check stderr for unsupported pair message
+    const stderr = error.stderr ? error.stderr.toString() : '';
+    if (stderr.includes('unsupported GOOS/GOARCH pair')) {
+      console.log(`  ⊘ Not supported on this system`);
+      return null;
+    }
+    console.error(`  ✗ Build failed:`, error.message);
     throw error;
   }
 }
@@ -93,13 +63,20 @@ function buildForPlatform(platform, sourceDir) {
 /**
  * Creates a distribution archive for a platform
  * @param {PlatformConfig} platform - Platform configuration
- * @returns {string} Path to the archive file
+ * @returns {string|null} Path to the archive file, or null if binary doesn't exist
  * @example
  * const archivePath = createArchive({ os: 'linux', arch: 'x64' });
  */
 function createArchive(platform) {
   const { os, arch } = platform;
   const sourceDir = path.join(__dirname, '..', 'binaries', `${os}-${arch}`);
+
+  // Check if binary exists
+  const binaryExists = fs.existsSync(path.join(sourceDir, os === 'win32' ? 'mandor.exe' : 'mandor'));
+  if (!binaryExists) {
+    return null;
+  }
+
   const archivePath = path.join(__dirname, '..', 'binaries', `${os}-${arch}.tar.gz`);
 
   console.log(`Creating archive for ${os}-${arch}...`);
@@ -113,8 +90,8 @@ function createArchive(platform) {
 }
 
 /**
- * Main build function - builds supported platforms and creates archives
- * @returns {Object[]} Build results for each platform
+ * Main build function - attempts to build all platforms
+ * @returns {Object[]} Build results for each successfully built platform
  * @example
  * const results = mainBuild();
  * console.log(`Built ${results.length} platforms`);
@@ -122,41 +99,66 @@ function createArchive(platform) {
 function mainBuild() {
   const sourceDir = path.join(__dirname, '..', '..', 'cmd', 'mandor');
   const results = [];
-  const skipped = [];
+  const unsupported = [];
 
   console.log(`Running on: ${os.platform()}/${os.arch()}`);
-  console.log('Starting cross-platform build...\n');
+  console.log('Building cross-platform binaries...\n');
 
+  // Build all platforms
   for (const platform of PLATFORMS) {
-    if (!isSupported(platform.os, platform.arch)) {
-      console.log(`⊘ ${platform.os}-${platform.arch}: Skipped (not supported on current system)`);
-      skipped.push(platform);
-      continue;
-    }
-
-    try {
-      const binaryPath = buildForPlatform(platform, sourceDir);
-      const archivePath = createArchive(platform);
-      const stats = fs.statSync(archivePath);
-
+    const binaryPath = buildForPlatform(platform, sourceDir);
+    if (binaryPath) {
       results.push({
         platform: platform.os,
         arch: platform.arch,
         binaryPath,
+        status: 'built'
+      });
+      console.log(`  ✓ Built successfully\n`);
+    } else {
+      unsupported.push({
+        platform: platform.os,
+        arch: platform.arch,
+        status: 'unsupported'
+      });
+    }
+  }
+
+  // Create archives for successfully built platforms
+  const archiveResults = [];
+  for (const platform of PLATFORMS) {
+    const archivePath = createArchive(platform);
+    if (archivePath) {
+      const stats = fs.statSync(archivePath);
+      archiveResults.push({
+        platform: platform.os,
+        arch: platform.arch,
         archivePath,
         archiveSize: stats.size
       });
 
-      console.log(`✓ ${platform.os}-${platform.arch}: ${(stats.size / 1024).toFixed(1)} KB\n`);
-    } catch (error) {
-      console.error(`✗ ${platform.os}-${platform.arch}: Build failed\n`);
-      throw error;
+      const existing = results.find(r => r.platform === platform.os && r.arch === platform.arch);
+      if (existing) {
+        existing.archivePath = archivePath;
+        existing.archiveSize = stats.size;
+      }
     }
   }
 
-  console.log(`\nBuild complete! Built: ${results.length}, Skipped: ${skipped.length}`);
+  // Summary
+  console.log('─'.repeat(50));
+  console.log(`Build complete!`);
+  console.log(`  Built: ${archiveResults.length} platforms`);
+  console.log(`  Unsupported: ${unsupported.length} platforms`);
 
-  return results;
+  if (unsupported.length > 0) {
+    console.log('\nUnsupported combinations (need different build environment):');
+    unsupported.forEach(u => {
+      console.log(`  - ${u.platform}/${u.arch}`);
+    });
+  }
+
+  return archiveResults;
 }
 
 // Run if executed directly
@@ -168,6 +170,8 @@ if (require.main === module) {
       Platform: `${r.platform}/${r.arch}`,
       'Archive Size': `${(r.archiveSize / 1024).toFixed(1)} KB`
     })));
+
+    console.log('Archives location: npm/binaries/');
   }
 }
 
@@ -175,6 +179,5 @@ module.exports = {
   PLATFORMS,
   buildForPlatform,
   createArchive,
-  isSupported,
   mainBuild
 };
