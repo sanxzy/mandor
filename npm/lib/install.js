@@ -57,7 +57,7 @@ async function install(options = {}) {
  */
 function useBundledBinary(platform, arch) {
   const filename = `mandor-${platform}-${arch}`;
-  const bundledBinary = path.join(BUNDLE_DIR, filename, filename);
+  const bundledBinary = path.join(BUNDLE_DIR, filename, 'mandor');
 
   if (!fs.existsSync(bundledBinary)) {
     return null;
