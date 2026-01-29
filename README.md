@@ -29,255 +29,310 @@ Mandor is a CLI tool for managing tasks, features, and issues in AI agent workfl
 - **Cross-Platform**: Written in Go, works on macOS, Linux, and Windows
 
 ---
+---
 
 ## Workflow & Architecture
 
 ### High-Level Data Flow
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           AI Agent / User                                   │
-└──────────────────────────────────┬──────────────────────────────────────────┘
-                                   │
-                                   ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              mandor CLI                                     │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
-│  │ mandor init │ │ mandor task │ │ mandor feat │ │ mandor issue│          │
-│  └──────┬──────┘ └──────┬──────┘ └──────┬──────┘ └──────┬──────┘          │
-│         │               │               │               │                  │
-│         └───────────────┴───────────────┴───────────────┘                  │
-└──────────────────────────────────┬──────────────────────────────────────────┘
-                                   │
-                                   ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           Service Layer                                     │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │  WorkspaceService │ ProjectService │ TaskService │ FeatureService   │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-└──────────────────────────────────┬──────────────────────────────────────────┘
-                                   │
-                                   ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            Filesystem Layer                                 │
-│  ┌───────────────────────┐                    ┌───────────────────────────┐  │
-│  │   Atomic Write        │                    │     Read Operations       │  │
-│  │   (temp → rename)     │◄───────────────────│   (parse NDJSON)          │  │
-│  └───────────────────────┘                    └───────────────────────────┘  │
-└──────────────────────────────────┬──────────────────────────────────────────┘
-                                   │
-                                   ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          Local Storage (.mandor/)                           │
-│                                                                             │
-│   ┌─────────────────────┐    ┌──────────────────────────────────────────┐   │
-│   │   workspace.json    │    │         projects/<id>/                   │   │
-│   │   (workspace meta)  │    │  ┌──────────┐ ┌──────────┐ ┌──────────┐ │   │
-│   └─────────────────────┘    │  │project   │ │features  │ │tasks     │ │   │
-│                              │  │.jsonl    │ │.jsonl    │ │.jsonl    │ │   │
-│                              │  └──────────┘ └──────────┘ └──────────┘ │   │
-│                              │  ┌──────────┐ ┌──────────────────────┐  │   │
-│                              │  │issues    │ │events.jsonl (append) │  │   │
-│                              │  │.jsonl    │ │  (audit trail)       │  │   │
-│                              │  └──────────┘ └──────────────────────┘  │   │
-│                              └──────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph User["AI Agent / User"]
+    end
+
+    subgraph CLI["mandor CLI"]
+        init["mandor init"]
+        task["mandor task"]
+        feature["mandor feature"]
+        issue["mandor issue"]
+    end
+
+    subgraph Service["Service Layer"]
+        WS["WorkspaceService"]
+        PS["ProjectService"]
+        TS["TaskService"]
+        FSvc["FeatureService"]
+        ISvc["IssueService"]
+    end
+
+    subgraph FS["Filesystem Layer"]
+        AW["Atomic Write (temp → rename)"]
+        RO["Read Operations (parse NDJSON)"]
+    end
+
+    subgraph Storage[".mandor/ Directory"]
+        WSMeta["workspace.json"]
+        subgraph Projects["projects/<id>/"]
+            P["project.jsonl"]
+            F["features.jsonl"]
+            T["tasks.jsonl"]
+            I["issues.jsonl"]
+            E["events.jsonl (append-only)"]
+        end
+    end
+
+    User --> CLI
+    CLI --> Service
+    Service --> FS
+    FS <--> Storage
+
+    init --> WS
+    task --> TS
+    feature --> FSvc
+    issue --> ISvc
+
+    AW --> P
+    AW --> F
+    AW --> T
+    AW --> I
+    AW --> E
+    RO --> P
+    RO --> F
+    RO --> T
+    RO --> I
 ```
 
 ### Entity Hierarchy
 
-```
-Workspace
-│
-├── Project (api)
-│   ├── Feature (api-feature-abc123)
-│   │   ├── Task (api-feature-abc-task-xyz789)
-│   │   └── Task (api-feature-abc-task-def456)
-│   ├── Feature (api-feature-def456)
-│   │   └── Task (api-feature-def-task-xxx)
-│   └── Issue (api-issue-ghi789)
-│
-├── Project (web)
-│   ├── Feature (web-feature-jkl012)
-│   │   └── Task (web-feature-jkl-task-mno345)
-│   └── Issue (web-issue-pqr678)
-│
-└── Events (.mandor/projects/*/events.jsonl)
-    └── All changes appended here (append-only audit trail)
+```mermaid
+graph TB
+    subgraph Workspace["Workspace"]
+        WS["Workspace"]
+    end
+
+    subgraph Projects["Projects"]
+        subgraph API["api"]
+            F1["api-feature-abc123"]
+            T1["api-feature-abc-task-xyz789"]
+            T2["api-feature-abc-task-def456"]
+            F2["api-feature-def456"]
+            T3["api-feature-def-task-xxx"]
+            I1["api-issue-ghi789"]
+        end
+
+        subgraph WEB["web"]
+            F3["web-feature-jkl012"]
+            T4["web-feature-jkl-task-mno345"]
+            I2["web-issue-pqr678"]
+        end
+    end
+
+    subgraph Events["Event Log"]
+        EV[".mandor/projects/*/events.jsonl (append-only audit trail)"]
+    end
+
+    WS --> API
+    WS --> WEB
+
+    F1 --> T1
+    F1 --> T2
+    F2 --> T3
+    F3 --> T4
+
+    API --> I1
+    WEB --> I2
+
+    all1[All entities] -.-> EV
 ```
 
 ### Feature Status Flow
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│    ┌────────┐     ┌────────┐     ┌────────┐                                │
-│    │ draft  │────►│ active │────►│  done  │                                │
-│    └────────┘     └────────┘     └────────┘                                │
-│         │               │              ▲                                    │
-│         │               │              │                                    │
-│         ▼               ▼              │                                    │
-│    ┌────────┐     ┌────────┐          │                                    │
-│    │blocked │────►│cancelled│─────────┘                                    │
-│    └────────┘     └────────┘                                               │
-│                                                                             │
-│    • draft → blocked: dependencies not satisfied                           │
-│    • draft → active: ready to work (no deps or all done)                   │
-│    • active → done: feature implementation complete                        │
-│    • any → cancelled: feature abandoned                                    │
-│    • cancelled → active: reopen with --reopen                              │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> draft
+    draft --> active: No deps or all done
+    draft --> blocked: Dependencies not satisfied
+    active --> done: Implementation complete
+    active --> blocked: Dependencies broken
+    blocked --> active: Dependencies resolved
+    blocked --> cancelled: Feature abandoned
+    done --> cancelled: Feature abandoned
+    cancelled --> active: Reopen with --reopen
+
+    note right of draft
+        Feature created, not yet started
+    end note
+
+    note right of active
+        Ready to work on
+    end note
+
+    note right of done
+        Implementation complete
+    end note
+
+    note right of blocked
+        Waiting on dependencies
+    end note
 ```
 
 ### Task Status Flow
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│    ┌────────┐     ┌────────┐     ┌────────────┐     ┌────────┐            │
-│    │ pending│────►│  ready │────►│ in_progress│────►│  done  │            │
-│    └────────┘     └────────┘     └────────────┘     └────────┘            │
-│         │               │               │              ▲                    │
-│         │               │               │              │                    │
-│         │               ▼               ▼              │                    │
-│         │          ┌────────┐     ┌────────────┐       │                    │
-│         └─────────►│ blocked│────►│ cancelled  │───────┘                    │
-│                     └────────┘     └────────────┘                           │
-│                                                                             │
-│    • pending → ready: no blocking dependencies                              │
-│    • ready → in_progress: start working                                     │
-│    • in_progress → done: task completed                                     │
-│    • any → blocked: dependencies not satisfied                              │
-│    • any → cancelled: task abandoned                                        │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> pending
+    pending --> ready: No blocking deps
+    pending --> blocked: Has unsatisfied deps
+    ready --> in_progress: Start working
+    in_progress --> done: Task completed
+    in_progress --> blocked: Dependencies broken
+    ready --> blocked: Dependencies broken
+    blocked --> ready: Dependencies resolved
+    blocked --> cancelled: Task abandoned
+    done --> cancelled: Task abandoned
+    cancelled --> pending: Reopen with --reopen
+
+    note right of pending
+        Task created, waiting for deps
+    end note
+
+    note right of ready
+        Available to work on
+    end note
+
+    note right of in_progress
+        Currently being worked on
+    end note
 ```
 
 ### Issue Status Flow
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│    ┌────────┐     ┌────────┐     ┌────────────┐     ┌──────────┐          │
-│    │  open  │────►│  ready │────►│ in_progress│────►│ resolved │          │
-│    └────────┘     └────────┘     └────────────┘     └──────────┘          │
-│         │               │               │              │                    │
-│         │               │               │              │                    │
-│         │               ▼               ▼              │                    │
-│         │          ┌─────────┐     ┌───────────┐       │                    │
-│         └─────────►│ wontfix │────►│ cancelled │───────┘                    │
-│                     └─────────┘     └───────────┘                           │
-│                                                                             │
-│    • open → ready: no blocking dependencies                                 │
-│    • ready → in_progress: start working                                     │
-│    • in_progress → resolved: issue fixed                                    │
-│    • any → wontfix: won't fix (document reason)                             │
-│    • any → cancelled: issue abandoned                                       │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> open
+    open --> ready: No blocking deps
+    open --> blocked: Has unsatisfied deps
+    ready --> in_progress: Start working
+    in_progress --> resolved: Issue fixed
+    in_progress --> wontfix: Won't fix
+    in_progress --> blocked: Dependencies broken
+    ready --> blocked: Dependencies broken
+    blocked --> ready: Dependencies resolved
+    blocked --> cancelled: Issue abandoned
+    resolved --> open: Reopen with --reopen
+    wontfix --> open: Reopen with --reopen
+    cancelled --> open: Reopen with --reopen
+
+    note right of open
+        Issue reported
+    end note
+
+    note right of ready
+        Available to work on
+    end note
+
+    note right of resolved
+        Issue fixed
+    end note
+
+    note right of wontfix
+        Won't fix (reason documented)
+    end note
 ```
 
 ### Dependency Enforcement
 
+```mermaid
+flowchart LR
+    subgraph Before["Dependency Blocking"]
+        A1["Feature A Status: draft"]
+        B1["Feature B Status: blocked"]
+        A1 -.->|"depends on"| B1
+        B1 -->|"requires"| A1
+    end
+
+    subgraph After["After Resolution"]
+        A2["Feature A Status: active"]
+        B2["Feature B Status: active"]
+        A2 -->|"unblocks"| B2
+    end
+
+    style A1 fill:#f9f,stroke:#333
+    style B1 fill:#f96,stroke:#333
+    style A2 fill:#9f9,stroke:#333
+    style B2 fill:#9f9,stroke:#333
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│  Feature A              Feature B                                           │
-│  ┌──────────┐           ┌──────────┐                                        │
-│  │   ID:    │           │   ID:    │                                        │
-│  │  feat-A  │◄──────────│  feat-B  │  feat-B depends on feat-A              │
-│  │ Status:  │   depends │ Status:  │                                        │
-│  │  draft   │           │  blocked │                                        │
-│  └──────────┘           └──────────┘                                        │
-│                                                                             │
-│  When feat-A → active/done:                                                │
-│  ┌──────────┐           ┌──────────┐                                        │
-│  │ feat-A   │──────────►│ feat-B   │                                        │
-│  │ Status:  │           │ Status:  │                                        │
-│  │  active  │           │  active  │                                        │
-│  └──────────┘           └──────────┘                                        │
-│                                                                             │
-│  ERROR if trying to cancel feat-A:                                          │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │  Error: Cannot cancel feature-A.                                     │    │
-│  │  Feature is still required by:                                       │    │
-│  │  - feat-B (Payment Processing)                                       │    │
-│  │  Use --force to cancel anyway.                                       │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────────────┘
+
+**Error when trying to cancel a required entity:**
+
+```
+Error: Cannot cancel task.
+Task is still required by:
+- api-feature-abc-task-123 (Task Name)
+- api-feature-abc-task-456 (Another Task)
+
+Use --force to cancel anyway.
 ```
 
 ### Typical AI Agent Workflow
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                     AI Agent Using Mandor                                   │
-└──────────────────────────────────┬──────────────────────────────────────────┘
-                                   │
-                                   ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  1. CHECK CURRENT STATE                                                     │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │  mandor task list --project api --status pending                     │   │
-│  │  mandor task ready --priority P0                                     │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                   │                                         │
-│                                   ▼                                         │
-│  2. SELECT AND START TASK                                                   │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │  mandor task update <id> --status in_progress                        │   │
-│  │  mandor task detail <id>  # Get implementation steps, test cases     │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                   │                                         │
-│                                   ▼                                         │
-│  3. IMPLEMENT & TEST                                                        │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │  # Write code following implementation_steps                         │   │
-│  │  # Create tests from test_cases                                      │   │
-│  │  # Create derivable_files                                            │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                   │                                         │
-│                                   ▼                                         │
-│  4. COMPLETE TASK                                                           │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │  mandor task update <id> --status done                              │   │
-│  │  mandor status  # Check project progress                             │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                   │                                         │
-│                                   ▼                                         │
-│  5. REPEAT for next ready task                                              │
-│                                                                             │
-│  BENEFITS:                                                                  │
-│  • Compact context: Just query Mandor for current state                     │
-│  • No context rot: State externalized in NDJSON files                       │
-│  • Deterministic output: JSONL is reliable to parse                         │
-│  • Complete audit: events.jsonl tracks all changes                          │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Workflow["AI Agent Workflow"]
+        A["1. Check Current State"]
+        B["2. Select & Start Task"]
+        C["3. Implement & Test"]
+        D["4. Complete Task"]
+        E["5. Repeat for Next Task"]
+
+        A --> B --> C --> D --> E
+    end
+
+    subgraph Commands["Commands"]
+        C1["mandor task list --project api --status pending"]
+        C2["mandor task ready --priority P0"]
+        C3["mandor task update <id> --status in_progress"]
+        C4["mandor task detail <id>"]
+        C5["Write code from implementation_steps"]
+        C6["Create tests from test_cases"]
+        C7["mandor task update <id> --status done"]
+        C8["mandor status"]
+    end
+
+    A --> C1
+    A --> C2
+    B --> C3
+    B --> C4
+    C --> C5
+    C --> C6
+    D --> C7
+    D --> C8
+
+    note right of Workflow
+        BENEFITS:
+        - Compact context: Query Mandor for state
+        - No context rot: State externalized
+        - Deterministic output: JSONL is reliable
+        - Complete audit: events.jsonl tracks all
+    end note
 ```
 
 ### Event Sourcing Pattern
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                      events.jsonl (Append-Only)                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  {"ts":"2026-01-28T10:00:00Z","layer":"workspace","type":"created",...}    │
-│  {"ts":"2026-01-28T10:05:00Z","layer":"project","type":"created",...}      │
-│  {"ts":"2026-01-28T10:10:00Z","layer":"feature","type":"created",...}      │
-│  {"ts":"2026-01-28T10:15:00Z","layer":"task","type":"created",...}         │
-│  {"ts":"2026-01-28T11:00:00Z","layer":"task","type":"updated",...}         │
-│  {"ts":"2026-01-28T12:00:00Z","layer":"task","type":"updated",...}         │
-│  {"ts":"2026-01-28T12:30:00Z","layer":"task","type":"updated",...}         │
-│                              ...                                            │
-│                                                                             │
-│  State can be reconstructed by replaying all events.                       │
-│  This enables:                                                              │
-│  • Complete audit trail                                                     │
-│  • Point-in-time recovery                                                  │
-│  • Change history tracking                                                 │
-│  • Debugging: see exact sequence of changes                                 │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+```mermaid
+flowchart LR
+    subgraph Events["events.jsonl (Append-Only)"]
+        E1[{"ts":"2026-01-28T10:00:00Z","layer":"workspace","type":"created"}]
+        E2[{"ts":"2026-01-28T10:05:00Z","layer":"project","type":"created"}]
+        E3[{"ts":"2026-01-28T10:10:00Z","layer":"feature","type":"created"}]
+        E4[{"ts":"2026-01-28T10:15:00Z","layer":"task","type":"created"}]
+        E5[{"ts":"2026-01-28T11:00:00Z","layer":"task","type":"updated"}]
+        E6["..."]
+    end
 
+    E1 --> E2 --> E3 --> E4 --> E5 --> E6
+
+    note right of Events
+        State can be reconstructed
+        by replaying all events.
+
+        Enables:
+        - Complete audit trail
+        - Point-in-time recovery
+        - Change history tracking
+        - Debugging: see exact sequence
+    end note
+```
 ---
 
 ## Advantages
