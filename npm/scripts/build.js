@@ -11,8 +11,6 @@ const os = require('os');
 
 const ROOT_DIR = path.join(__dirname, '..', '..');
 const BINARIES_DIR = path.join(ROOT_DIR, 'binaries');
-const NPM_DIR = path.join(ROOT_DIR, 'npm');
-const NPM_BINARIES_DIR = path.join(NPM_DIR, 'binaries');
 
 const PLATFORMS = [
   { os: 'darwin', arch: 'x64' },
@@ -73,21 +71,6 @@ function createArchive(platform) {
   }
 }
 
-function copyToNpm() {
-  fs.mkdirSync(NPM_BINARIES_DIR, { recursive: true });
-
-  for (const platform of PLATFORMS) {
-    const { os, arch } = platform;
-    const archivePath = path.join(BINARIES_DIR, `${os}-${arch}.tar.gz`);
-    const destPath = path.join(NPM_BINARIES_DIR, `${os}-${arch}.tar.gz`);
-
-    if (fs.existsSync(archivePath)) {
-      fs.cpSync(archivePath, destPath);
-      console.log(`Copied ${os}-${arch}.tar.gz to npm/`);
-    }
-  }
-}
-
 function cleanBuildDirs() {
   if (fs.existsSync(BINARIES_DIR)) {
     for (const entry of fs.readdirSync(BINARIES_DIR)) {
@@ -103,7 +86,6 @@ function mainBuild() {
   console.log('Building cross-platform binaries...\n');
 
   cleanBuildDirs();
-  fs.mkdirSync(NPM_BINARIES_DIR, { recursive: true });
 
   const results = [];
   const unsupported = [];
@@ -130,9 +112,6 @@ function mainBuild() {
     }
   }
 
-  console.log('Copying archives to npm/binaries/ for npm package...');
-  copyToNpm();
-
   console.log('─'.repeat(50));
   console.log(`Build complete!`);
   console.log(`  Built: ${results.length} platforms`);
@@ -146,7 +125,6 @@ function mainBuild() {
   }
 
   console.log(`\nArchives location: ${BINARIES_DIR}/`);
-  console.log(`NPM package binaries: ${NPM_BINARIES_DIR}/`);
 
   return results;
 }
@@ -162,4 +140,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { PLATFORMS, buildForPlatform, createArchive, mainBuild, copyToNpm };
+module.exports = { PLATFORMS, buildForPlatform, createArchive, mainBuild };
