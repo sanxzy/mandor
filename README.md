@@ -69,21 +69,57 @@ Mandor provides:
 
 ## Installation
 
-### From Source
+Choose one of the following methods:
+
+### Option 1: curl (Recommended)
 
 ```bash
-git clone https://github.com/budisantoso/mandor.git
+# Install latest stable version
+curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh
+
+# Or install to custom directory
+curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh -s -- --prefix ~/bin
+
+# Install latest prerelease
+curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh -s -- --prerelease
+
+# Install specific version
+curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh -s -- --version v0.0.14
+```
+
+Default install location: `$HOME/.local/bin/mandor`
+
+Add to PATH if needed:
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### Option 2: NPM
+
+```bash
+# Install globally
+npm install -g @mandor/cli
+
+# Or use npx without installing
+npx @mandor/cli init "My Project"
+```
+
+### Option 3: From Source
+
+```bash
+git clone https://github.com/sanxzy/mandor.git
 cd mandor
 go build -o build/mandor ./cmd/mandor
 sudo mv build/mandor /usr/local/bin/
 ```
 
-### From NPM
+### Platform Support
 
-```bash
-npm install -g @mandor/cli
-npx @mandor/cli init "My Project"
-```
+| Method | macOS | Linux | Windows |
+|--------|-------|-------|---------|
+| curl | ✅ arm64, x64 | ✅ arm64, x64 | ❌ |
+| NPM | ✅ arm64, x64 | ✅ arm64, x64 | ✅ arm64, x64 |
+| Source | ✅ | ✅ | ✅ |
 
 ---
 
