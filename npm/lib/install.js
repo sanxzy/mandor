@@ -61,7 +61,17 @@ function useBundledBinary(platform, arch) {
 
   console.log(`DEBUG: Checking bundled binary at: ${bundledBinary}`);
   console.log(`DEBUG: BUNDLE_DIR: ${BUNDLE_DIR}`);
-  console.log(`DEBUG: Files in BUNDLE_DIR: ${fs.existsSync(BUNDLE_DIR) ? fs.readdirSync(BUNDLE_DIR) : 'not exists'}`);
+  console.log(`DEBUG: Bundle dir exists: ${fs.existsSync(BUNDLE_DIR)}`);
+
+  if (fs.existsSync(BUNDLE_DIR)) {
+    console.log(`DEBUG: Files in BUNDLE_DIR: ${fs.readdirSync(BUNDLE_DIR).join(', ')}`);
+    const platformDir = path.join(BUNDLE_DIR, filename);
+    if (fs.existsSync(platformDir)) {
+      console.log(`DEBUG: Files in ${filename}: ${fs.readdirSync(platformDir).join(', ')}`);
+    } else {
+      console.log(`DEBUG: ${filename} directory does not exist`);
+    }
+  }
 
   if (!fs.existsSync(bundledBinary)) {
     console.log(`DEBUG: Bundled binary not found`);
