@@ -36,8 +36,17 @@ async function getLatestVersion(prerelease = false) {
       res.on('end', () => {
         try {
           const parsed = JSON.parse(data);
-          const tagName = Array.isArray(parsed) ? parsed[0].tag_name : parsed.tag_name;
-          resolve(tagName.replace(/^v/, ''));
+          let tagName = null;
+          if (parsed && parsed.tag_name) {
+            tagName = parsed.tag_name;
+          } else if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].tag_name) {
+            tagName = parsed[0].tag_name;
+          }
+          if (tagName) {
+            resolve(tagName.replace(/^v/, ''));
+          } else {
+            reject(new Error('No release found'));
+          }
         } catch (e) {
           reject(e);
         }
