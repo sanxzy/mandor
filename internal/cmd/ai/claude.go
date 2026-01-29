@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"mandor/internal/ai"
 	"mandor/internal/domain"
 )
 
@@ -16,17 +15,17 @@ func NewClaudeCmd() *cobra.Command {
 		Use:   "claude",
 		Short: "Generate CLAUDE.md for the project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectRoot, err := ai.FindProjectRoot()
+			cwd, err := os.Getwd()
 			if err != nil {
-				return domain.NewValidationError("failed to find project root: " + err.Error())
+				return domain.NewValidationError("failed to get current directory: " + err.Error())
 			}
 
 			now := time.Now().UTC().Format("2006-01-02")
-			projectName := filepath.Base(projectRoot)
+			projectName := filepath.Base(cwd)
 
 			content := generateAIDoc(projectName, now)
 
-			targetPath := filepath.Join(projectRoot, "CLAUDE.md")
+			targetPath := filepath.Join(cwd, "CLAUDE.md")
 
 			if err := os.WriteFile(targetPath, []byte(content), 0644); err != nil {
 				return domain.NewSystemError("failed to write file", err)
