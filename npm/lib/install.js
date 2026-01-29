@@ -1,7 +1,7 @@
 /**
  * @fileoverview Post-install hook for Mandor CLI
- * @description Handles binary extraction during npm install
- * @version 0.0.2
+ * @description Downloads binary from GitHub releases during npm install
+ * @version 0.0.3
  */
 
 const fs = require('fs');
@@ -11,7 +11,6 @@ const { execSync } = require('child_process');
 
 const REPO = 'sanxzy/mandor';
 const GITHUB_API = 'https://api.github.com';
-const BUNDLE_DIR = path.join(__dirname, '..', 'binaries');
 const CACHE_DIR = path.join(os.homedir(), '.mandor', 'bin');
 
 function getPlatform() {
@@ -60,26 +59,10 @@ async function install(options = {}) {
   console.log('');
 
   const cachePath = path.join(CACHE_DIR, installVersion, osArch);
-  const binaryPath = path.join(cachePath, 'mandor');
-
-  if (platform === 'win32') {
-    binaryPath = binaryPath + '.exe';
-  }
+  const binaryPath = path.join(cachePath, platform === 'win32' ? 'mandor.exe' : 'mandor');
 
   if (fs.existsSync(binaryPath)) {
     console.log(`Using cached binary: ${binaryPath}`);
-    return binaryPath;
-  }
-
-  const bundledPath = path.join(BUNDLE_DIR, assetName);
-  if (fs.existsSync(bundledPath)) {
-    console.log(`Using bundled binary: ${bundledPath}`);
-    if (!fs.existsSync(cachePath)) {
-      fs.mkdirSync(cachePath, { recursive: true });
-    }
-    execSync(`tar -xzf "${bundledPath}" -C "${cachePath}"`, { stdio: 'inherit' });
-    fs.chmodSync(binaryPath, '755');
-    console.log(`Installed: ${binaryPath}`);
     return binaryPath;
   }
 
@@ -90,6 +73,7 @@ async function install(options = {}) {
 
   const response = await fetch(downloadUrl);
   if (!response.ok) {
+    fs.rmSync(tempDir, { recursive: true });
     throw new Error(`Download failed: ${response.statusText} (${downloadUrl})`);
   }
 
@@ -114,7 +98,8 @@ async function install(options = {}) {
 }
 
 if (require.main === module || process.env.npm_lifecycle_event === 'postinstall') {
-  install().catch(error => {
+  const prerelease = process.argv.includes('--prerelease') || process.argv.includes('-p');
+  install({ prerelease }).catch(error => {
     console.error('Failed to install Mandor:', error.message);
     process.exit(1);
   });

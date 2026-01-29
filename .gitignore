@@ -33,3 +33,7 @@ npm/*.local
 # OS
 Thumbs.db
 .DS_Store
+
+# Keep binaries directories (for releases)
+!binaries/
+!npm/binaries/

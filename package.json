@@ -19,9 +19,7 @@
     "node": ">=16.0.0"
   },
   "scripts": {
-    "postinstall": "node npm/lib/install.js",
-    "prepublishOnly": "npm run build",
-    "preversion": "npm run build",
+    "postinstall": "node npm/lib/install.js --prerelease",
     "build": "node npm/scripts/build.js",
     "build:darwin:x64": "GOOS=darwin GOARCH=x64 go build -o binaries/darwin-x64/mandor ./cmd/mandor",
     "build:darwin:arm64": "GOOS=darwin GOARCH=arm64 go build -o binaries/darwin-arm64/mandor ./cmd/mandor",
