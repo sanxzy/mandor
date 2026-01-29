@@ -57,32 +57,23 @@ async function install(options = {}) {
  */
 function useBundledBinary(platform, arch) {
   const filename = `mandor-${platform}-${arch}`;
-  
-  // Try both: directory structure and direct binary file
-  const bundledBinaryDir = path.join(BUNDLE_DIR, filename, 'mandor');
-  const bundledBinaryFile = path.join(BUNDLE_DIR, filename);
+  const bundledBinary = path.join(BUNDLE_DIR, filename);
 
   console.log(`DEBUG: Looking for binary for ${platform}-${arch}`);
   console.log(`DEBUG: BUNDLE_DIR: ${BUNDLE_DIR}`);
   console.log(`DEBUG: Files in BUNDLE_DIR: ${fs.readdirSync(BUNDLE_DIR).join(', ')}`);
 
-  let bundledBinary = null;
-  let foundMethod = '';
-
-  if (fs.existsSync(bundledBinaryDir)) {
-    bundledBinary = bundledBinaryDir;
-    foundMethod = 'directory structure';
-  } else if (fs.existsSync(bundledBinaryFile) && fs.statSync(bundledBinaryFile).isFile()) {
-    bundledBinary = bundledBinaryFile;
-    foundMethod = 'direct file';
-  }
-
-  if (!bundledBinary) {
-    console.log(`DEBUG: No bundled binary found`);
+  if (!fs.existsSync(bundledBinary)) {
+    console.log(`DEBUG: No bundled binary found at: ${bundledBinary}`);
     return null;
   }
 
-  console.log(`DEBUG: Found bundled binary via ${foundMethod}: ${bundledBinary}`);
+  if (!fs.statSync(bundledBinary).isFile()) {
+    console.log(`DEBUG: ${bundledBinary} is not a file`);
+    return null;
+  }
+
+  console.log(`DEBUG: Found bundled binary: ${bundledBinary}`);
 
   const cacheDir = path.join(os.homedir(), '.mandor', 'bin');
   if (!fs.existsSync(cacheDir)) {
