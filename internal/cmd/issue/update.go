@@ -162,6 +162,85 @@ func NewUpdateCmd() *cobra.Command {
 				fmt.Fprintf(out, "  Changes: %s\n", strings.Join(changes, ", "))
 			}
 
+			// Show issue detail unless status is "resolved"
+			if input.Status == nil || *input.Status != domain.IssueStatusResolved {
+				fmt.Fprintln(out)
+				detailInput := &domain.IssueDetailInput{
+					ProjectID:      projectID,
+					IssueID:        issueID,
+					JSON:           false,
+					IncludeDeleted: false,
+					Events:         false,
+					Timestamps:     false,
+				}
+
+				detailOutput, err := svc.GetIssueDetail(detailInput)
+				if err == nil {
+					fmt.Fprintf(out, "ISSUE: %s", detailOutput.ID)
+					if detailOutput.Status == domain.IssueStatusCancelled {
+						fmt.Fprint(out, " [CANCELLED]")
+					}
+					fmt.Fprintln(out)
+					fmt.Fprintln(out, strings.Repeat("-", 60))
+
+					fmt.Fprintf(out, "  Name:        %s\n", detailOutput.Name)
+					fmt.Fprintf(out, "  Type:        %s\n", detailOutput.IssueType)
+					fmt.Fprintf(out, "  Priority:    %s\n", detailOutput.Priority)
+					fmt.Fprintf(out, "  Status:      %s\n", detailOutput.Status)
+					fmt.Fprintf(out, "  Project:     %s\n", detailOutput.ProjectID)
+
+					if detailOutput.Goal != "" {
+						fmt.Fprintf(out, "\n  Goal:        %s\n", detailOutput.Goal)
+					}
+
+					fmt.Fprintf(out, "\n  Depends on:  %d issue(s)\n", len(detailOutput.DependsOn))
+					for _, depID := range detailOutput.DependsOn {
+						dep, err := svc.ReadDependency(projectID, depID)
+						statusIcon := "○"
+						if err == nil {
+							switch dep.Status {
+							case domain.IssueStatusResolved, domain.IssueStatusWontFix:
+								statusIcon = "✓"
+							case domain.IssueStatusCancelled:
+								statusIcon = "✗"
+							}
+						}
+						fmt.Fprintf(out, "    %s %s\n", statusIcon, depID)
+					}
+
+					fmt.Fprintf(out, "\n  Affected Files:      %d\n", len(detailOutput.AffectedFiles))
+					for _, f := range detailOutput.AffectedFiles {
+						fmt.Fprintf(out, "    - %s\n", f)
+					}
+
+					fmt.Fprintf(out, "\n  Affected Tests:      %d\n", len(detailOutput.AffectedTests))
+					for _, t := range detailOutput.AffectedTests {
+						fmt.Fprintf(out, "    - %s\n", t)
+					}
+
+					fmt.Fprintf(out, "\n  Implementation Steps: %d\n", len(detailOutput.ImplementationSteps))
+					for i, step := range detailOutput.ImplementationSteps {
+						fmt.Fprintf(out, "    %d. %s\n", i+1, step)
+					}
+
+					if len(detailOutput.LibraryNeeds) > 0 {
+						fmt.Fprintf(out, "\n  Library Needs:       %d\n", len(detailOutput.LibraryNeeds))
+						for _, lib := range detailOutput.LibraryNeeds {
+							fmt.Fprintf(out, "    - %s\n", lib)
+						}
+					}
+
+					fmt.Fprintf(out, "\n  Created:     %s by %s\n", detailOutput.CreatedAt, detailOutput.CreatedBy)
+					fmt.Fprintf(out, "  Updated:     %s by %s\n", detailOutput.LastUpdatedAt, detailOutput.LastUpdatedBy)
+
+					if detailOutput.Reason != "" && detailOutput.Status == domain.IssueStatusCancelled {
+						fmt.Fprintf(out, "\n  Cancellation Reason: %s\n", detailOutput.Reason)
+					}
+
+					fmt.Fprintf(out, "\n  Events:      %d\n", detailOutput.Events)
+				}
+			}
+
 			return nil
 		},
 	}

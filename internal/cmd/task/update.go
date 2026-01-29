@@ -137,15 +137,70 @@ func NewUpdateCmd() *cobra.Command {
 			out := cmd.OutOrStdout()
 			if updateDryRun {
 				fmt.Fprintln(out, "[DRY RUN] Changes:")
-			} else {
-				fmt.Fprintf(out, "Task updated: %s\n", taskID)
+				for _, change := range changes {
+					fmt.Fprintf(out, "  - %s\n", change)
+				}
+				return nil
 			}
+
+			fmt.Fprintf(out, "Task updated: %s\n", taskID)
 			for _, change := range changes {
 				fmt.Fprintf(out, "  - %s\n", change)
 			}
 
+			// Show task detail unless status is "done"
+			if statusPtr == nil || *statusPtr != domain.TaskStatusDone {
+				fmt.Fprintln(out)
+				detailInput := &domain.TaskDetailInput{
+					TaskID:         taskID,
+					JSON:           false,
+					IncludeDeleted: false,
+					Events:         false,
+					Dependencies:   false,
+					Timestamps:     false,
+				}
+
+				detailOutput, err := svc.GetTaskDetail(detailInput)
+				if err == nil {
+					fmt.Fprintf(out, "Task: %s\n", detailOutput.ID)
+					fmt.Fprintf(out, "  Name:               %s\n", detailOutput.Name)
+					fmt.Fprintf(out, "  Feature:            %s\n", detailOutput.FeatureID)
+					fmt.Fprintf(out, "  Project:            %s\n", detailOutput.ProjectID)
+					fmt.Fprintf(out, "  Status:             %s\n", detailOutput.Status)
+					fmt.Fprintf(out, "  Priority:           %s\n", detailOutput.Priority)
+					fmt.Fprintf(out, "  Goal:               %s\n", detailOutput.Goal)
+					fmt.Fprintf(out, "  Implementation Steps (%d):\n", len(detailOutput.ImplementationSteps))
+					for i, step := range detailOutput.ImplementationSteps {
+						fmt.Fprintf(out, "    %d. %s\n", i+1, step)
+					}
+					fmt.Fprintf(out, "  Test Cases (%d):\n", len(detailOutput.TestCases))
+					for i, tc := range detailOutput.TestCases {
+						fmt.Fprintf(out, "    %d. %s\n", i+1, tc)
+					}
+					fmt.Fprintf(out, "  Derivable Files (%d):\n", len(detailOutput.DerivableFiles))
+					for _, f := range detailOutput.DerivableFiles {
+						fmt.Fprintf(out, "    - %s\n", f)
+					}
+					fmt.Fprintf(out, "  Library Needs (%d):\n", len(detailOutput.LibraryNeeds))
+					for _, lib := range detailOutput.LibraryNeeds {
+						fmt.Fprintf(out, "    - %s\n", lib)
+					}
+					if len(detailOutput.DependsOn) > 0 {
+						fmt.Fprintf(out, "  Depends On (%d):\n", len(detailOutput.DependsOn))
+						for _, dep := range detailOutput.DependsOn {
+							fmt.Fprintf(out, "    - %s\n", dep)
+						}
+					}
+					fmt.Fprintf(out, "  Created:   %s\n", detailOutput.CreatedAt)
+					fmt.Fprintf(out, "  Updated:   %s\n", detailOutput.UpdatedAt)
+					fmt.Fprintf(out, "  CreatedBy: %s\n", detailOutput.CreatedBy)
+					fmt.Fprintf(out, "  UpdatedBy: %s\n", detailOutput.UpdatedBy)
+					fmt.Fprintf(out, "  Events:    %d\n", detailOutput.Events)
+				}
+			}
+
 			_, warning := util.GetGitUsernameWithWarning()
-			if warning != "" && !updateDryRun {
+			if warning != "" {
 				fmt.Fprintln(out)
 				fmt.Fprintln(out, warning)
 				fmt.Fprintln(out, "  Run: git config user.name \"Your Name\"")
