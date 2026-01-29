@@ -1,10 +1,10 @@
 {
   "name": "@mandors/cli",
-  "version": "0.0.21",
+  "version": "0.0.25",
   "description": "Event-based task manager CLI for AI agent workflows",
   "main": "npm/lib/index.js",
   "bin": {
-    "mandor": "./npm/bin/mandor"
+    "mandor": "npm/bin/mandor"
   },
   "os": [
     "darwin",
@@ -19,7 +19,7 @@
     "node": ">=16.0.0"
   },
   "scripts": {
-    "postinstall": "node npm/lib/install.js --prerelease",
+    "postinstall": "node npm/lib/install.js",
     "build": "node npm/scripts/build.js",
     "build:darwin:x64": "GOOS=darwin GOARCH=x64 go build -o binaries/darwin-x64/mandor ./cmd/mandor",
     "build:darwin:arm64": "GOOS=darwin GOARCH=arm64 go build -o binaries/darwin-arm64/mandor ./cmd/mandor",
