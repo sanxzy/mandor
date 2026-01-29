@@ -132,37 +132,12 @@ await cli.projectCreate('api', { name: 'API Service' });
 const tasks = await cli.taskList({ project: 'api', status: 'pending' });
 ```
 
-### Option 3: From Source
-
-Build from Go source code:
-
-```bash
-# Clone repository
-git clone https://github.com/sanxzy/mandor.git
-cd mandor
-
-# Build binary
-go build -o binaries/mandor ./cmd/mandor
-
-# Install to system
-sudo mv binaries/mandor /usr/local/bin/
-
-# Verify
-mandor --help
-```
-
-**Or use npm to build cross-platform binaries:**
-```bash
-npm run build  # Builds all platforms to binaries/
-```
-
 ### Platform Support
 
 | Method | macOS | Linux | Windows |
 |--------|-------|-------|---------|
 | curl | ✅ arm64, x64 | ✅ arm64, x64 | ❌ |
 | npm | ✅ arm64, x64 | ✅ arm64, x64 | ✅ arm64, x64 |
-| Source | ✅ | ✅ | ✅ |
 
 ### Troubleshooting
 
