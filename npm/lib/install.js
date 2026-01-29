@@ -1,13 +1,14 @@
 /**
  * @fileoverview Post-install hook for Mandor CLI
  * @description Downloads binary from GitHub releases during npm install
- * @version 0.0.3
+ * @version 0.0.4
  */
 
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
+const https = require('https');
 
 const REPO = 'sanxzy/mandor';
 const GITHUB_API = 'https://api.github.com';
@@ -29,13 +30,39 @@ async function getLatestVersion(prerelease = false) {
     ? `${GITHUB_API}/repos/${REPO}/releases`
     : `${GITHUB_API}/repos/${REPO}/releases/latest`;
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch releases: ${response.statusText}`);
-  }
-  const data = await response.json();
-  const tagName = Array.isArray(data) ? data[0].tag_name : data.tag_name;
-  return tagName.replace(/^v/, '');
+  return new Promise((resolve, reject) => {
+    https.get(url, { headers: { 'User-Agent': 'Mandor-CLI' } }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          const tagName = Array.isArray(parsed) ? parsed[0].tag_name : parsed.tag_name;
+          resolve(tagName.replace(/^v/, ''));
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
+function downloadFile(url, dest) {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(dest);
+    https.get(url, (res) => {
+      if (res.statusCode === 302 || res.statusCode === 301) {
+        return downloadFile(res.headers.location, dest).then(resolve).catch(reject);
+      }
+      res.pipe(file);
+      file.on('finish', () => {
+        file.close(resolve);
+      });
+    }).on('error', (err) => {
+      fs.unlink(dest, () => {});
+      reject(err);
+    });
+  });
 }
 
 async function install(options = {}) {
@@ -71,18 +98,7 @@ async function install(options = {}) {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mandor-install-'));
   const tarball = path.join(tempDir, assetName);
 
-  const response = await fetch(downloadUrl);
-  if (!response.ok) {
-    fs.rmSync(tempDir, { recursive: true });
-    throw new Error(`Download failed: ${response.statusText} (${downloadUrl})`);
-  }
-
-  const file = fs.createWriteStream(tarball);
-  await new Promise((resolve, reject) => {
-    response.body.pipe(file);
-    file.on('finish', resolve);
-    file.on('error', reject);
-  });
+  await downloadFile(downloadUrl, tarball);
 
   if (!fs.existsSync(cachePath)) {
     fs.mkdirSync(cachePath, { recursive: true });
