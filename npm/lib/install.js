@@ -56,12 +56,12 @@ async function install(options = {}) {
  * @returns {string|null} Path to binary or null if not bundled
  */
 function useBundledBinary(platform, arch) {
-  const filename = `mandor-${platform}-${arch}`;
-  const tarball = path.join(BUNDLE_DIR, `${filename}.tar.gz`);
+  const osArch = `${platform}-${arch}`;
+  const tarball = path.join(BUNDLE_DIR, `${osArch}.tar.gz`);
   const cacheDir = path.join(os.homedir(), '.mandor', 'bin');
-  const dest = path.join(cacheDir, filename);
+  const dest = path.join(cacheDir, osArch);
 
-  console.log(`DEBUG: Looking for binary for ${platform}-${arch}`);
+  console.log(`DEBUG: Looking for binary for ${osArch}`);
   console.log(`DEBUG: BUNDLE_DIR: ${BUNDLE_DIR}`);
   console.log(`DEBUG: Files in BUNDLE_DIR: ${fs.readdirSync(BUNDLE_DIR).join(', ')}`);
 
