@@ -57,13 +57,12 @@ async function install(options = {}) {
  */
 function useBundledBinary(platform, arch) {
   const filename = `mandor-${platform}-${arch}`;
-  const tarball = path.join(BUNDLE_DIR, `${filename}.tar.gz`);
+  const bundledBinary = path.join(BUNDLE_DIR, filename, filename);
 
-  if (!fs.existsSync(tarball)) {
+  if (!fs.existsSync(bundledBinary)) {
     return null;
   }
 
-  // Extract to cache
   const cacheDir = path.join(os.homedir(), '.mandor', 'bin');
   if (!fs.existsSync(cacheDir)) {
     fs.mkdirSync(cacheDir, { recursive: true });
@@ -71,10 +70,8 @@ function useBundledBinary(platform, arch) {
 
   const dest = path.join(cacheDir, filename);
 
-  // Extract tarball
-  const { execSync } = require('child_process');
   try {
-    execSync(`tar -xzf "${tarball}" -C "${cacheDir}"`);
+    fs.copyFileSync(bundledBinary, dest);
     fs.chmodSync(dest, '755');
     return dest;
   } catch (e) {
