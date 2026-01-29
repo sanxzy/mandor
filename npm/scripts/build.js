@@ -7,6 +7,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 /**
  * @typedef {Object} PlatformConfig
@@ -25,13 +26,48 @@ const PLATFORMS = [
 ];
 
 /**
+ * Checks if a platform/arch combination is supported on the current system
+ * @param {string} targetOs - Target OS
+ * @param {string} targetArch - Target architecture
+ * @returns {boolean} True if supported
+ * @example
+ * const supported = isSupported('darwin', 'arm64');
+ */
+function isSupported(targetOs, targetArch) {
+  const currentOs = os.platform();
+  const currentArch = os.arch();
+
+  // macOS ARM64 can only build for darwin/arm64 natively
+  if (currentOs === 'darwin' && currentArch === 'arm64') {
+    return targetOs === 'darwin' && targetArch === 'arm64';
+  }
+
+  // macOS x64 can build for darwin/x64
+  if (currentOs === 'darwin' && currentArch === 'x64') {
+    return targetOs === 'darwin' && targetArch === 'x64';
+  }
+
+  // Linux can build for linux and darwin
+  if (currentOs === 'linux') {
+    return targetOs === 'linux' || (targetOs === 'darwin' && targetArch === 'arm64');
+  }
+
+  // Windows can build for win32
+  if (currentOs === 'win32') {
+    return targetOs === 'win32';
+  }
+
+  return false;
+}
+
+/**
  * Builds the Mandor binary for a specific platform
  * @param {PlatformConfig} platform - Platform configuration
  * @param {string} sourceDir - Source directory containing Go code
  * @returns {string} Path to the compiled binary
  * @throws {Error} If build fails
  * @example
- * const binaryPath = buildForPlatform({ os: 'darwin', arch: 'x64' }, './cmd/mandor');
+ * const binaryPath = buildForPlatform({ os: 'darwin', arch: 'arm64' }, './cmd/mandor');
  */
 function buildForPlatform(platform, sourceDir) {
   const { os, arch } = platform;
@@ -59,7 +95,7 @@ function buildForPlatform(platform, sourceDir) {
  * @param {PlatformConfig} platform - Platform configuration
  * @returns {string} Path to the archive file
  * @example
- * const archivePath = createArchive({ os: 'darwin', arch: 'x64' });
+ * const archivePath = createArchive({ os: 'linux', arch: 'x64' });
  */
 function createArchive(platform) {
   const { os, arch } = platform;
@@ -77,22 +113,8 @@ function createArchive(platform) {
 }
 
 /**
- * Gets the binary filename for a platform
- * @param {PlatformConfig} platform - Platform configuration
- * @returns {string} Binary filename
- * @example
- * const filename = getBinaryName({ os: 'linux', arch: 'x64' });
- * // Returns: 'mandor-linux-x64'
- */
-function getBinaryName(platform) {
-  const { os, arch } = platform;
-  return `mandor-${os}-${arch}`;
-}
-
-/**
- * Main build function - builds all platforms and creates archives
+ * Main build function - builds supported platforms and creates archives
  * @returns {Object[]} Build results for each platform
- * @throws {Error} If any build fails
  * @example
  * const results = mainBuild();
  * console.log(`Built ${results.length} platforms`);
@@ -100,10 +122,18 @@ function getBinaryName(platform) {
 function mainBuild() {
   const sourceDir = path.join(__dirname, '..', '..', 'cmd', 'mandor');
   const results = [];
+  const skipped = [];
 
+  console.log(`Running on: ${os.platform()}/${os.arch()}`);
   console.log('Starting cross-platform build...\n');
 
   for (const platform of PLATFORMS) {
+    if (!isSupported(platform.os, platform.arch)) {
+      console.log(`⊘ ${platform.os}-${platform.arch}: Skipped (not supported on current system)`);
+      skipped.push(platform);
+      continue;
+    }
+
     try {
       const binaryPath = buildForPlatform(platform, sourceDir);
       const archivePath = createArchive(platform);
@@ -124,27 +154,27 @@ function mainBuild() {
     }
   }
 
+  console.log(`\nBuild complete! Built: ${results.length}, Skipped: ${skipped.length}`);
+
   return results;
 }
 
 // Run if executed directly
 if (require.main === module) {
-  mainBuild().then(results => {
-    console.log('Build complete!');
+  const results = mainBuild();
+  if (results.length > 0) {
+    console.log('\nBuilt platforms:');
     console.table(results.map(r => ({
       Platform: `${r.platform}/${r.arch}`,
       'Archive Size': `${(r.archiveSize / 1024).toFixed(1)} KB`
     })));
-  }).catch(error => {
-    console.error('Build failed:', error);
-    process.exit(1);
-  });
+  }
 }
 
 module.exports = {
   PLATFORMS,
   buildForPlatform,
   createArchive,
-  getBinaryName,
+  isSupported,
   mainBuild
 };
