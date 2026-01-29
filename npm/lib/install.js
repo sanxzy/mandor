@@ -59,9 +59,16 @@ function useBundledBinary(platform, arch) {
   const filename = `mandor-${platform}-${arch}`;
   const bundledBinary = path.join(BUNDLE_DIR, filename, 'mandor');
 
+  console.log(`DEBUG: Checking bundled binary at: ${bundledBinary}`);
+  console.log(`DEBUG: BUNDLE_DIR: ${BUNDLE_DIR}`);
+  console.log(`DEBUG: Files in BUNDLE_DIR: ${fs.existsSync(BUNDLE_DIR) ? fs.readdirSync(BUNDLE_DIR) : 'not exists'}`);
+
   if (!fs.existsSync(bundledBinary)) {
+    console.log(`DEBUG: Bundled binary not found`);
     return null;
   }
+
+  console.log(`DEBUG: Found bundled binary`);
 
   const cacheDir = path.join(os.homedir(), '.mandor', 'bin');
   if (!fs.existsSync(cacheDir)) {
@@ -75,6 +82,7 @@ function useBundledBinary(platform, arch) {
     fs.chmodSync(dest, '755');
     return dest;
   } catch (e) {
+    console.log(`DEBUG: Failed to copy: ${e.message}`);
     return null;
   }
 }
