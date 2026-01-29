@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-01-29
+
+### Changed
+
+- Simplified `mandor ai` commands
+- `mandor ai claude` outputs CLAUDE.md
+- `mandor ai agents` outputs AGENTS.md
+- Removed all flags (--goal, --replace, --agents, --protocol)
+- Inlined template generation
+
 ## [0.1.0] - 2026-01-29
 
 ### Added
