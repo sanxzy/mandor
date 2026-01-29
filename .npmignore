@@ -1,0 +1,49 @@
+# Go source code - not needed for npm package
+cmd/
+internal/
+go.mod
+go.sum
+
+# Build outputs
+build/
+
+# Tests - not needed for published package
+tests/
+test/
+
+# Documentation reference files - not for npm distribution
+docs/
+README.md
+AGENTS.md
+DEVELOPMENT_GUIDE.md
+
+# Version control
+.git
+.gitignore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.log
+npm-debug.log
+
+# CI/CD
+.github/
+
+# Root level files that shouldn't be in npm package
+*.md
+!package.json
+
+# Node.js
+node_modules/
+npm-debug.log

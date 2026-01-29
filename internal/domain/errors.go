@@ -8,10 +8,10 @@ import (
 type ExitCode int
 
 const (
-	ExitSuccess           ExitCode = 0 // Success
-	ExitSystemError       ExitCode = 1 // System error (permission denied, disk full, etc.)
-	ExitValidationError   ExitCode = 2 // Validation error (invalid input, already exists, etc.)
-	ExitPermissionError   ExitCode = 3 // Permission error (cannot write to directory)
+	ExitSuccess         ExitCode = 0 // Success
+	ExitSystemError     ExitCode = 1 // System error (permission denied, disk full, etc.)
+	ExitValidationError ExitCode = 2 // Validation error (invalid input, already exists, etc.)
+	ExitPermissionError ExitCode = 3 // Permission error (cannot write to directory)
 )
 
 // MandorError represents an error in the Mandor system

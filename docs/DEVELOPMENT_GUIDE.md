@@ -98,7 +98,99 @@ GOOS=darwin GOARCH=amd64 go build -o release/mandor-darwin-x64 ./cmd/mandor
 GOOS=windows GOARCH=amd64 go build -o release/mandor-windows-x64.exe ./cmd/mandor
 ```
 
+## NPM Package Build Commands
+
+The NPM package (`@mandors/cli`) wraps the Go binary for cross-platform distribution.
+
+```bash
+cd npm
+
+# Build supported platforms (attempts all 6, skips unsupported)
+npm run build
+
+# Build specific platforms
+npm run build:darwin:x64    # Darwin x64 (Intel Macs)
+npm run build:darwin:arm64  # Darwin arm64 (Apple Silicon)
+npm run build:linux:x64     # Linux x64
+npm run build:linux:arm64   # Linux arm64
+npm run build:win32:x64     # Windows x64
+npm run build:win32:arm64   # Windows arm64
+```
+
+Binaries are output to `npm/binaries/` directory as tar.gz archives for npm package distribution.
+
+### Package Structure
+
+```
+npm/
+├── bin/
+│   └── mandor              # CLI wrapper script
+├── lib/
+│   ├── index.js            # Package entry point
+│   ├── api.js              # Programmatic Node.js API
+│   ├── config.js           # Configuration management
+│   ├── download.js         # Binary download logic
+│   ├── install.js          # Post-install hook
+│   └── resolve.js          # Version resolution
+└── scripts/
+    └── build.js            # Cross-platform build script
+```
+
+### Programmatic Usage
+
+```javascript
+const mandor = require('@mandors/cli');
+
+const cli = new mandor.Mandor({ json: true, cwd: '/project/path' });
+await cli.init('My Project');
+await cli.projectCreate('api', { name: 'API Service' });
+const tasks = await cli.taskList({ project: 'api', status: 'pending' });
+```
+
 ## Code Style
+
+### Pre-commit Hooks
+
+The project uses pre-commit hooks for automated code quality checks.
+
+```bash
+# Install pre-commit tool
+brew install pre-commit  # macOS
+pip install pre-commit   # or via pip
+
+# Install hooks in this repo
+cd Mandor
+pre-commit install
+
+# Run on all files (auto before commit)
+pre-commit run --all-files
+
+# Run on staged files only
+pre-commit run
+```
+
+#### Configured Hooks
+
+| Hook | Description | Excluded Paths |
+|------|-------------|----------------|
+| `go-fmt` | Formats Go code | None |
+| `go-vet` | Static analysis | `tests/` |
+| `go-mod-tidy` | Tidies Go modules | None |
+| `go-build` | Builds Go packages | `tests/` |
+| `go-unit-tests` | Runs unit tests | None |
+| `eslint` | Lints JavaScript | `npm/lib/` |
+
+#### Troubleshooting
+
+**Hook fails with "no Go files" error**
+- This happens when hooks run on test directories
+- `go-vet` and `go-build` exclude `tests/` directory
+- If error persists, run `pre-commit clean` then `pre-commit install`
+
+**Hooks not running on commit**
+- Verify hooks are installed: `pre-commit hooks`
+- Check hook configuration in `.pre-commit-config.yaml`
+- Run manually: `pre-commit run --all-files`
 
 ### Formatting
 

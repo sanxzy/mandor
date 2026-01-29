@@ -1,0 +1,22 @@
+repos:
+  # Go formatting and linting
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-fmt
+      - id: go-vet
+        types: [go]
+        exclude: '^tests/'
+      - id: go-mod-tidy
+      - id: go-build
+        types: [go]
+        exclude: '^tests/'
+      - id: go-unit-tests
+
+  # JavaScript/Node.js linting (ESLint 9 requires flat config, skipping for now)
+  # - repo: https://github.com/pre-commit/mirrors-eslint
+  #   rev: v9.39.1
+  #   hooks:
+  #     - id: eslint
+  #       files: npm/lib/
+  #       types: [javascript]

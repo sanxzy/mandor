@@ -1,0 +1,39 @@
+# Build outputs
+build/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go workspace
+go.work
+go.work.sum
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Local data
+.mandor/
+*.log
+
+# NPM
+node_modules/
+npm/debug.log
+npm/*.local
+.npmrc
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Keep binaries directories (for releases)
+!binaries/
+!npm/binaries/

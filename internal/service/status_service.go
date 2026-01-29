@@ -29,16 +29,16 @@ func NewStatusService() (*StatusService, error) {
 
 // WorkspaceStatus represents the overall workspace status
 type WorkspaceStatus struct {
-	Workspace    *domain.Workspace   `json:"workspace"`
-	Projects     []ProjectSummary    `json:"projects"`
-	Dependencies DependencySummary   `json:"dependencies"`
-	Totals       TotalStats          `json:"totals"`
+	Workspace    *domain.Workspace `json:"workspace"`
+	Projects     []ProjectSummary  `json:"projects"`
+	Dependencies DependencySummary `json:"dependencies"`
+	Totals       TotalStats        `json:"totals"`
 }
 
 // ProjectSummary represents a project in status output
 type ProjectSummary struct {
-	ID    string `json:"id"`
-	Name  string `json:"name,omitempty"`
+	ID    string              `json:"id"`
+	Name  string              `json:"name,omitempty"`
 	Stats domain.ProjectStats `json:"stats"`
 }
 
@@ -157,13 +157,13 @@ func (s *StatusService) GetProjectStatus(projectID string) (*ProjectSummary, err
 		if err := json.Unmarshal(raw, &feature); err != nil {
 			return nil
 		}
-		
+
 		status, ok := feature["status"].(string)
 		if ok {
 			stats.Features.ByStatus[status]++
 			stats.Features.Total++
 		}
-		
+
 		return nil
 	})
 
@@ -173,7 +173,7 @@ func (s *StatusService) GetProjectStatus(projectID string) (*ProjectSummary, err
 		if err := json.Unmarshal(raw, &task); err != nil {
 			return nil
 		}
-		
+
 		status, ok := task["status"].(string)
 		if ok {
 			stats.Tasks.ByStatus[status]++
@@ -182,7 +182,7 @@ func (s *StatusService) GetProjectStatus(projectID string) (*ProjectSummary, err
 				stats.Tasks.BlockedCount++
 			}
 		}
-		
+
 		return nil
 	})
 
@@ -192,16 +192,16 @@ func (s *StatusService) GetProjectStatus(projectID string) (*ProjectSummary, err
 		if err := json.Unmarshal(raw, &issue); err != nil {
 			return nil
 		}
-		
+
 		if status, ok := issue["status"].(string); ok {
 			stats.Issues.ByStatus[status]++
 			stats.Issues.Total++
 		}
-		
+
 		if issueType, ok := issue["type"].(string); ok {
 			stats.Issues.ByType[issueType]++
 		}
-		
+
 		return nil
 	})
 

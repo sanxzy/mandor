@@ -314,5 +314,3 @@ func TestReadyCmd_NoDefaultProjectAndNoFilter(t *testing.T) {
 		t.Errorf("Expected 'No project specified' error, got: %v", err)
 	}
 }
-
-

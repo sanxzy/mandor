@@ -10,27 +10,27 @@ import (
 )
 
 var (
-	updateProjectID  string
-	updateName       string
-	updateGoal       string
-	updateType       string
-	updatePriority   string
-	updateStatus     string
-	updateReason     string
-	updateDependsOn  string
-	updateDependsAdd string
+	updateProjectID     string
+	updateName          string
+	updateGoal          string
+	updateType          string
+	updatePriority      string
+	updateStatus        string
+	updateReason        string
+	updateDependsOn     string
+	updateDependsAdd    string
 	updateDependsRemove string
 	updateAffectedFiles string
 	updateAffectedTests string
-	updateImplSteps  string
-	updateLibraries  string
-	updateStart      bool
-	updateResolve    bool
-	updateWontFix    bool
-	updateReopen     bool
-	updateCancel     bool
-	updateForce      bool
-	updateDryRun     bool
+	updateImplSteps     string
+	updateLibraries     string
+	updateStart         bool
+	updateResolve       bool
+	updateWontFix       bool
+	updateReopen        bool
+	updateCancel        bool
+	updateForce         bool
+	updateDryRun        bool
 )
 
 func NewUpdateCmd() *cobra.Command {

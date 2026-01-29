@@ -269,5 +269,3 @@ func TestReadyCmd_InvalidPriority(t *testing.T) {
 		t.Errorf("Expected 'Invalid priority' error, got: %v", err)
 	}
 }
-
-
