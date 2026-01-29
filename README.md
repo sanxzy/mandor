@@ -370,6 +370,21 @@ mandor --version
 mandor --help
 ```
 
+### From NPM Package
+
+```bash
+# Install globally
+npm install -g @mandor/cli
+
+# Or use npx to run without installation
+npx @mandor/cli init "My Project"
+
+# Programmatic usage in Node.js
+const mandor = require('@mandor/cli');
+const cli = new mandor.Mandor({ json: true });
+await cli.init('My Project');
+```
+
 ## Quick Start
 
 ```bash
@@ -396,6 +411,20 @@ mandor task create "Password Hashing" \
 # 5. Check status
 mandor status
 ```
+
+## NPM Package Build Commands
+
+```bash
+npm run build               # Build supported platforms (auto-detects)
+npm run build:darwin:x64    # Darwin x64 (Intel Macs)
+npm run build:darwin:arm64  # Darwin arm64 (Apple Silicon)
+npm run build:linux:x64     # Linux x64
+npm run build:linux:arm64   # Linux arm64
+npm run build:win32:x64     # Windows x64
+npm run build:win32:arm64   # Windows arm64
+```
+
+Binaries are output to `npm/binaries/` directory as tar.gz archives for npm package distribution.
 
 ## Commands
 

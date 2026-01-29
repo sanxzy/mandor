@@ -14,6 +14,51 @@ go run ./cmd/mandor <command>  # Run CLI directly
 go fmt ./...                 # Format code
 ```
 
+## NPM Package (@mandor/cli)
+
+### Build Commands
+```bash
+npm run build               # Build supported platforms (attempts all 6)
+npm run build:darwin:x64    # Build Darwin x64
+npm run build:darwin:arm64  # Build Darwin arm64
+npm run build:linux:x64     # Build Linux x64
+npm run build:linux:arm64   # Build Linux arm64
+npm run build:win32:x64     # Build Windows x64
+npm run build:win32:arm64   # Build Windows arm64
+```
+
+### Package Structure
+```
+npm/
+├── bin/
+│   └── mandor              # CLI wrapper script
+├── lib/
+│   ├── index.js            # Package entry point
+│   ├── api.js              # Programmatic Node.js API
+│   ├── config.js           # Configuration management
+│   ├── download.js         # Binary download logic
+│   ├── install.js          # Post-install hook
+│   └── resolve.js          # Version resolution
+└── scripts/
+    └── build.js            # Cross-platform build script
+```
+
+### NPM Installation
+```bash
+npm install @mandor/cli      # Install via npm
+npx mandor init "My Project" # Run directly
+```
+
+### Programmatic Usage
+```javascript
+const mandor = require('@mandor/cli');
+
+const cli = new mandor.Mandor({ json: true, cwd: '/project/path' });
+await cli.init('My Project');
+await cli.projectCreate('api', { name: 'API Service' });
+const tasks = await cli.taskList({ project: 'api', status: 'pending' });
+```
+
 ## Code Style Guidelines
 
 ### Go Conventions
@@ -80,6 +125,7 @@ internal/domain/             # Data models & validation
 internal/fs/                 # Filesystem I/O
 internal/util/               # Utilities
 tests/unit/                  # Unit tests (mirrors internal structure)
+npm/                         # NPM package (cross-platform binary distribution)
 ```
 
 ## Important Reminders
