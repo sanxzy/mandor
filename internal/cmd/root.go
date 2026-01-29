@@ -52,6 +52,9 @@ For more information, visit: https://github.com/budisantoso/mandor`,
 	// Add AI commands
 	rootCmd.AddCommand(ai.NewAICmd())
 
+	// Add version command
+	rootCmd.AddCommand(NewVersionCmd())
+
 	return rootCmd
 }
 

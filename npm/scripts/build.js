@@ -31,8 +31,11 @@ function buildForPlatform(platform) {
 
   console.log(`Building for ${os}-${arch}...`);
 
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+  const version = pkg.version;
+
   try {
-    execSync(`GOOS=${os} GOARCH=${arch} go build -o "${outputPath}" ./cmd/mandor`, {
+    execSync(`GOOS=${os} GOARCH=${arch} go build -ldflags "-X mandor/internal/cmd.version=${version}" -o "${outputPath}" ./cmd/mandor`, {
       stdio: 'pipe',
       shell: process.platform === 'win32'
     });
