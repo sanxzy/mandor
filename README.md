@@ -148,22 +148,6 @@ stateDiagram-v2
     blocked --> cancelled: Feature abandoned
     done --> cancelled: Feature abandoned
     cancelled --> active: Reopen with --reopen
-
-    note right of draft
-        Feature created, not yet started
-    end note
-
-    note right of active
-        Ready to work on
-    end note
-
-    note right of done
-        Implementation complete
-    end note
-
-    note right of blocked
-        Waiting on dependencies
-    end note
 ```
 
 ### Task Status Flow
@@ -181,18 +165,6 @@ stateDiagram-v2
     blocked --> cancelled: Task abandoned
     done --> cancelled: Task abandoned
     cancelled --> pending: Reopen with --reopen
-
-    note right of pending
-        Task created, waiting for deps
-    end note
-
-    note right of ready
-        Available to work on
-    end note
-
-    note right of in_progress
-        Currently being worked on
-    end note
 ```
 
 ### Issue Status Flow
@@ -212,22 +184,6 @@ stateDiagram-v2
     resolved --> open: Reopen with --reopen
     wontfix --> open: Reopen with --reopen
     cancelled --> open: Reopen with --reopen
-
-    note right of open
-        Issue reported
-    end note
-
-    note right of ready
-        Available to work on
-    end note
-
-    note right of resolved
-        Issue fixed
-    end note
-
-    note right of wontfix
-        Won't fix (reason documented)
-    end note
 ```
 
 ### Dependency Enforcement
@@ -297,15 +253,9 @@ flowchart TB
     C --> C6
     D --> C7
     D --> C8
-
-    note right of Workflow
-        BENEFITS:
-        - Compact context: Query Mandor for state
-        - No context rot: State externalized
-        - Deterministic output: JSONL is reliable
-        - Complete audit: events.jsonl tracks all
-    end note
 ```
+
+**Benefits:** Compact context, no context rot, deterministic output, complete audit trail.
 
 ### Event Sourcing Pattern
 
@@ -321,18 +271,11 @@ flowchart LR
     end
 
     E1 --> E2 --> E3 --> E4 --> E5 --> E6
-
-    note right of Events
-        State can be reconstructed
-        by replaying all events.
-
-        Enables:
-        - Complete audit trail
-        - Point-in-time recovery
-        - Change history tracking
-        - Debugging: see exact sequence
-    end note
 ```
+
+State can be reconstructed by replaying all events. Enables complete audit trail, point-in-time recovery, change history tracking, and debugging.
+```
+
 ---
 
 ## Advantages
