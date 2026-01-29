@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	readyProjectID  string
-	readyFeatureID  string
-	readyPriority   string
-	readyJSON       bool
+	readyProjectID string
+	readyFeatureID string
+	readyPriority  string
+	readyJSON      bool
 )
 
 func NewReadyCmd() *cobra.Command {

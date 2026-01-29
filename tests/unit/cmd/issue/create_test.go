@@ -208,20 +208,20 @@ func TestCreateCmd_WithDependency(t *testing.T) {
 	writeTestProjectForIssueCmd(t, tmpDir, "auth")
 
 	depIssue := &domain.Issue{
-		ID:                   "auth-issue-dep123",
-		ProjectID:            "auth",
-		Name:                 "Dependency Issue",
-		Goal:                 "Test goal",
-		IssueType:            "bug",
-		Priority:             "P2",
-		Status:               domain.IssueStatusReady,
-		AffectedFiles:        []string{"src/dep.ts"},
-		AffectedTests:        []string{"tests/dep.test.ts"},
-		ImplementationSteps:  []string{"Step 1"},
-		CreatedAt:            time.Now().UTC(),
-		LastUpdatedAt:        time.Now().UTC(),
-		CreatedBy:            "testuser",
-		LastUpdatedBy:        "testuser",
+		ID:                  "auth-issue-dep123",
+		ProjectID:           "auth",
+		Name:                "Dependency Issue",
+		Goal:                "Test goal",
+		IssueType:           "bug",
+		Priority:            "P2",
+		Status:              domain.IssueStatusReady,
+		AffectedFiles:       []string{"src/dep.ts"},
+		AffectedTests:       []string{"tests/dep.test.ts"},
+		ImplementationSteps: []string{"Step 1"},
+		CreatedAt:           time.Now().UTC(),
+		LastUpdatedAt:       time.Now().UTC(),
+		CreatedBy:           "testuser",
+		LastUpdatedBy:       "testuser",
 	}
 
 	issuesPath := filepath.Join(tmpDir, ".mandor", "projects", "auth", "issues.jsonl")

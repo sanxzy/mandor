@@ -1,8 +1,8 @@
 package main
 
 import (
-	"os"
 	"mandor/internal/cmd"
+	"os"
 )
 
 func main() {

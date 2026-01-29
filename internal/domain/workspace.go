@@ -4,14 +4,14 @@ import "time"
 
 // Workspace represents the root workspace configuration
 type Workspace struct {
-	ID             string                 `json:"id"`
-	Name           string                 `json:"name"`
-	Version        string                 `json:"version"`
-	SchemaVersion  string                 `json:"schema_version"`
-	CreatedAt      time.Time              `json:"created_at"`
-	LastUpdatedAt  time.Time              `json:"last_updated_at"`
-	CreatedBy      string                 `json:"created_by"`
-	Config         WorkspaceConfig        `json:"config"`
+	ID            string          `json:"id"`
+	Name          string          `json:"name"`
+	Version       string          `json:"version"`
+	SchemaVersion string          `json:"schema_version"`
+	CreatedAt     time.Time       `json:"created_at"`
+	LastUpdatedAt time.Time       `json:"last_updated_at"`
+	CreatedBy     string          `json:"created_by"`
+	Config        WorkspaceConfig `json:"config"`
 }
 
 // WorkspaceConfig holds workspace-level configuration

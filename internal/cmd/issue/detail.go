@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	detailProjectID  string
-	detailJSON       bool
+	detailProjectID      string
+	detailJSON           bool
 	detailIncludeDeleted bool
-	detailEvents     bool
-	detailTimestamps bool
+	detailEvents         bool
+	detailTimestamps     bool
 )
 
 func NewDetailCmd() *cobra.Command {

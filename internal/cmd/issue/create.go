@@ -11,17 +11,17 @@ import (
 )
 
 var (
-	createProjectID  string
-	createName       string
-	createGoal       string
-	createType       string
-	createPriority   string
-	createDependsOn  string
+	createProjectID     string
+	createName          string
+	createGoal          string
+	createType          string
+	createPriority      string
+	createDependsOn     string
 	createAffectedFiles string
 	createAffectedTests string
-	createImplSteps  string
-	createLibraries  string
-	createYes        bool
+	createImplSteps     string
+	createLibraries     string
+	createYes           bool
 )
 
 func NewCreateCmd() *cobra.Command {

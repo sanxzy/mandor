@@ -12,14 +12,14 @@ import (
 )
 
 var (
-	listProjectID  string
-	listType       string
-	listStatus     string
-	listPriority   string
-	listJSON       bool
-	listSort       string
-	listOrder      string
-	listVerbose    bool
+	listProjectID string
+	listType      string
+	listStatus    string
+	listPriority  string
+	listJSON      bool
+	listSort      string
+	listOrder     string
+	listVerbose   bool
 )
 
 func NewListCmd() *cobra.Command {

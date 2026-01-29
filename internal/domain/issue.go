@@ -3,13 +3,13 @@ package domain
 import "time"
 
 const (
-	IssueStatusOpen      = "open"
-	IssueStatusReady     = "ready"
+	IssueStatusOpen       = "open"
+	IssueStatusReady      = "ready"
 	IssueStatusInProgress = "in_progress"
-	IssueStatusBlocked   = "blocked"
-	IssueStatusResolved  = "resolved"
-	IssueStatusWontFix   = "wontfix"
-	IssueStatusCancelled = "cancelled"
+	IssueStatusBlocked    = "blocked"
+	IssueStatusResolved   = "resolved"
+	IssueStatusWontFix    = "wontfix"
+	IssueStatusCancelled  = "cancelled"
 )
 
 const (
@@ -21,23 +21,23 @@ const (
 )
 
 type Issue struct {
-	ID                   string    `json:"id"`
-	ProjectID            string    `json:"project_id"`
-	Name                 string    `json:"name"`
-	Goal                 string    `json:"goal,omitempty"`
-	IssueType            string    `json:"issue_type"`
-	Priority             string    `json:"priority"`
-	Status               string    `json:"status"`
-	DependsOn            []string  `json:"depends_on,omitempty"`
-	Reason               string    `json:"reason,omitempty"`
-	AffectedFiles        []string  `json:"affected_files,omitempty"`
-	AffectedTests        []string  `json:"affected_tests,omitempty"`
-	ImplementationSteps  []string  `json:"implementation_steps,omitempty"`
-	LibraryNeeds         []string  `json:"library_needs,omitempty"`
-	CreatedAt            time.Time `json:"created_at"`
-	LastUpdatedAt        time.Time `json:"last_updated_at"`
-	CreatedBy            string    `json:"created_by"`
-	LastUpdatedBy        string    `json:"last_updated_by"`
+	ID                  string    `json:"id"`
+	ProjectID           string    `json:"project_id"`
+	Name                string    `json:"name"`
+	Goal                string    `json:"goal,omitempty"`
+	IssueType           string    `json:"issue_type"`
+	Priority            string    `json:"priority"`
+	Status              string    `json:"status"`
+	DependsOn           []string  `json:"depends_on,omitempty"`
+	Reason              string    `json:"reason,omitempty"`
+	AffectedFiles       []string  `json:"affected_files,omitempty"`
+	AffectedTests       []string  `json:"affected_tests,omitempty"`
+	ImplementationSteps []string  `json:"implementation_steps,omitempty"`
+	LibraryNeeds        []string  `json:"library_needs,omitempty"`
+	CreatedAt           time.Time `json:"created_at"`
+	LastUpdatedAt       time.Time `json:"last_updated_at"`
+	CreatedBy           string    `json:"created_by"`
+	LastUpdatedBy       string    `json:"last_updated_by"`
 }
 
 type IssueEvent struct {
@@ -109,19 +109,19 @@ type IssueUpdateInput struct {
 }
 
 type IssueListItem struct {
-	ID                    string `json:"id"`
-	Name                  string `json:"name"`
-	IssueType             string `json:"issue_type"`
-	Status                string `json:"status"`
-	Priority              string `json:"priority"`
-	ProjectID             string `json:"project_id"`
-	DependsOnCount        int    `json:"depends_on_count"`
-	AffectedFilesCount    int    `json:"affected_files_count"`
-	AffectedTestsCount    int    `json:"affected_tests_count"`
-	ImplementationStepsCount int `json:"implementation_steps_count"`
-	LibraryNeedsCount     int    `json:"library_needs_count"`
-	CreatedAt             string `json:"created_at"`
-	LastUpdatedAt         string `json:"last_updated_at"`
+	ID                       string `json:"id"`
+	Name                     string `json:"name"`
+	IssueType                string `json:"issue_type"`
+	Status                   string `json:"status"`
+	Priority                 string `json:"priority"`
+	ProjectID                string `json:"project_id"`
+	DependsOnCount           int    `json:"depends_on_count"`
+	AffectedFilesCount       int    `json:"affected_files_count"`
+	AffectedTestsCount       int    `json:"affected_tests_count"`
+	ImplementationStepsCount int    `json:"implementation_steps_count"`
+	LibraryNeedsCount        int    `json:"library_needs_count"`
+	CreatedAt                string `json:"created_at"`
+	LastUpdatedAt            string `json:"last_updated_at"`
 }
 
 type IssueListOutput struct {
@@ -131,24 +131,24 @@ type IssueListOutput struct {
 }
 
 type IssueDetailOutput struct {
-	ID                    string   `json:"id"`
-	ProjectID             string   `json:"project_id"`
-	Name                  string   `json:"name"`
-	Goal                  string   `json:"goal,omitempty"`
-	IssueType             string   `json:"issue_type"`
-	Priority              string   `json:"priority"`
-	Status                string   `json:"status"`
-	DependsOn             []string `json:"depends_on"`
-	Reason                string   `json:"reason,omitempty"`
-	AffectedFiles         []string `json:"affected_files"`
-	AffectedTests         []string `json:"affected_tests"`
-	ImplementationSteps   []string `json:"implementation_steps"`
-	LibraryNeeds          []string `json:"library_needs"`
-	Events                int      `json:"events"`
-	CreatedAt             string   `json:"created_at"`
-	LastUpdatedAt         string   `json:"last_updated_at"`
-	CreatedBy             string   `json:"created_by"`
-	LastUpdatedBy         string   `json:"last_updated_by"`
+	ID                  string   `json:"id"`
+	ProjectID           string   `json:"project_id"`
+	Name                string   `json:"name"`
+	Goal                string   `json:"goal,omitempty"`
+	IssueType           string   `json:"issue_type"`
+	Priority            string   `json:"priority"`
+	Status              string   `json:"status"`
+	DependsOn           []string `json:"depends_on"`
+	Reason              string   `json:"reason,omitempty"`
+	AffectedFiles       []string `json:"affected_files"`
+	AffectedTests       []string `json:"affected_tests"`
+	ImplementationSteps []string `json:"implementation_steps"`
+	LibraryNeeds        []string `json:"library_needs"`
+	Events              int      `json:"events"`
+	CreatedAt           string   `json:"created_at"`
+	LastUpdatedAt       string   `json:"last_updated_at"`
+	CreatedBy           string   `json:"created_by"`
+	LastUpdatedBy       string   `json:"last_updated_by"`
 }
 
 func ValidateIssueID(id string) bool {

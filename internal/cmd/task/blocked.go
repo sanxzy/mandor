@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	blockedProjectID  string
-	blockedFeatureID  string
-	blockedPriority   string
-	blockedJSON       bool
+	blockedProjectID string
+	blockedFeatureID string
+	blockedPriority  string
+	blockedJSON      bool
 )
 
 func NewBlockedCmd() *cobra.Command {
