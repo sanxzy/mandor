@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"mandor/internal/cmd/ai"
 	"mandor/internal/cmd/feature"
 	"mandor/internal/cmd/issue"
 	"mandor/internal/cmd/populate"
@@ -47,6 +48,9 @@ For more information, visit: https://github.com/budisantoso/mandor`,
 
 	// Add populate command
 	rootCmd.AddCommand(populate.NewPopulateCmd())
+
+	// Add AI commands
+	rootCmd.AddCommand(ai.NewAICmd())
 
 	return rootCmd
 }
