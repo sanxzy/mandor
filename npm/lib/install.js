@@ -58,8 +58,9 @@ async function install(options = {}) {
 function useBundledBinary(platform, arch) {
   const osArch = `${platform}-${arch}`;
   const tarball = path.join(BUNDLE_DIR, `${osArch}.tar.gz`);
-  const cacheDir = path.join(os.homedir(), '.mandor', 'bin');
-  const dest = path.join(cacheDir, osArch);
+  const version = 'latest';
+  const cacheDir = path.join(os.homedir(), '.mandor', 'bin', `${version}-${osArch}`);
+  const dest = path.join(cacheDir, 'mandor');
 
   console.log(`DEBUG: Looking for binary for ${osArch}`);
   console.log(`DEBUG: BUNDLE_DIR: ${BUNDLE_DIR}`);
