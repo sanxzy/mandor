@@ -142,13 +142,18 @@ git clone https://github.com/sanxzy/mandor.git
 cd mandor
 
 # Build binary
-go build -o build/mandor ./cmd/mandor
+go build -o binaries/mandor ./cmd/mandor
 
 # Install to system
-sudo mv build/mandor /usr/local/bin/
+sudo mv binaries/mandor /usr/local/bin/
 
 # Verify
 mandor --help
+```
+
+**Or use npm to build cross-platform binaries:**
+```bash
+npm run build  # Builds all platforms to binaries/
 ```
 
 ### Platform Support
@@ -278,6 +283,23 @@ mandor status
 |---------|-------------|
 | `mandor populate [--markdown\|--json]` | Full CLI reference |
 | `mandor completion [bash\|zsh\|fish]` | Shell completion |
+
+### AI Documentation
+
+| Command | Description |
+|---------|-------------|
+| `mandor ai claude --goal <text>` | Generate CLAUDE.md for project |
+| `mandor ai agents --role <text> --agents <n> --protocol <sequential\|collaborative>` | Generate AGENTS.md for multi-agent setup |
+
+Generate AI assistant documentation files:
+
+```bash
+# Generate CLAUDE.md for Claude Code
+mandor ai claude --goal "Event-based task manager CLI"
+
+# Generate AGENTS.md for multi-agent coordination
+mandor ai agents --role "Backend development team" --agents 3 --protocol collaborative
+```
 
 ---
 
