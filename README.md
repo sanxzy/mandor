@@ -62,7 +62,7 @@ flowchart TB
 
     subgraph Storage[".mandor/ Directory"]
         WSMeta["workspace.json"]
-        subgraph Projects["projects/<id>/"]
+        subgraph Projects["projects/PROJECT_ID/"]
             P["project.jsonl"]
             F["features.jsonl"]
             T["tasks.jsonl"]
@@ -237,11 +237,11 @@ flowchart TB
     subgraph Commands["Commands"]
         C1["mandor task list --project api --status pending"]
         C2["mandor task ready --priority P0"]
-        C3["mandor task update <id> --status in_progress"]
-        C4["mandor task detail <id>"]
+        C3["mandor task update TASK_ID --status in_progress"]
+        C4["mandor task detail TASK_ID"]
         C5["Write code from implementation_steps"]
         C6["Create tests from test_cases"]
-        C7["mandor task update <id> --status done"]
+        C7["mandor task update TASK_ID --status done"]
         C8["mandor status"]
     end
 
