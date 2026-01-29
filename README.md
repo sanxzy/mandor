@@ -261,20 +261,19 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    subgraph Events["events.jsonl (Append-Only)"]
-        E1[{"ts":"2026-01-28T10:00:00Z","layer":"workspace","type":"created"}]
-        E2[{"ts":"2026-01-28T10:05:00Z","layer":"project","type":"created"}]
-        E3[{"ts":"2026-01-28T10:10:00Z","layer":"feature","type":"created"}]
-        E4[{"ts":"2026-01-28T10:15:00Z","layer":"task","type":"created"}]
-        E5[{"ts":"2026-01-28T11:00:00Z","layer":"task","type":"updated"}]
-        E6["..."]
+    subgraph Events[events.jsonl Append-Only]
+        E1[workspace created]
+        E2[project created]
+        E3[feature created]
+        E4[task created]
+        E5[task updated]
+        E6[...]
     end
 
     E1 --> E2 --> E3 --> E4 --> E5 --> E6
 ```
 
 State can be reconstructed by replaying all events. Enables complete audit trail, point-in-time recovery, change history tracking, and debugging.
-```
 
 ---
 
