@@ -149,6 +149,24 @@ const tasks = await cli.taskList({ project: 'api', status: 'pending' });
 
 ## Code Style
 
+### Pre-commit Hooks
+
+```bash
+# Install pre-commit tool
+brew install pre-commit  # macOS
+pip install pre-commit   # or via pip
+
+# Install hooks in this repo
+cd Mandor
+pre-commit install
+
+# Run on all files (auto before commit)
+pre-commit run --all-files
+
+# Run on staged files only
+pre-commit run
+```
+
 ### Formatting
 
 ```bash

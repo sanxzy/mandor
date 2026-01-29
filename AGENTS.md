@@ -134,4 +134,4 @@ npm/                         # NPM package (cross-platform binary distribution)
 - Commands added to `root.go`'s `rootCmd.AddCommand()`
 - Tests MUST pass before considering work complete
 - Never include `master_docs/` in git commits
-- **Git**: Use `git commit --no-verify` to skip pre-commit hooks (hooks have false positives on test directories)
+- **Pre-commit hooks**: Configured in `.pre-commit-config.yaml`. Hooks exclude `tests/` directory for non-test file checks
