@@ -23,7 +23,7 @@ var (
 
 func NewCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create <name> --feature <id> --goal <text> --implementation-steps <steps> --test-cases <cases> --derivable-files <files> --library-needs <libs> [--priority <P0-P5>] [--depends-on <ids>] [-y]",
+		Use:   "create <name> --feature <id> --goal <text> --implementation-steps <steps> --test-cases <cases> --derivable-files <files> [--library-needs <libs>] [--priority <P0-P5>] [--depends-on <ids>] [-y]",
 		Short: "Create a new task",
 		Long:  "Create a new task in the specified feature with the given details.",
 		Args:  cobra.ExactArgs(1),
@@ -65,9 +65,6 @@ func NewCreateCmd() *cobra.Command {
 			}
 
 			libraries := splitByComma(createLibraries)
-			if len(libraries) == 0 || (len(libraries) == 1 && libraries[0] == "") {
-				return domain.NewValidationError("Library needs are required (--library-needs).")
-			}
 
 			var dependsOnList []string
 			if createDependsOn != "" {
