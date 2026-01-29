@@ -20,6 +20,8 @@
   },
   "scripts": {
     "postinstall": "node npm/lib/install.js",
+    "prepublishOnly": "npm run build",
+    "preversion": "npm run build",
     "build": "node npm/scripts/build.js",
     "build:darwin:x64": "GOOS=darwin GOARCH=x64 go build -o binaries/darwin-x64/mandor ./cmd/mandor",
     "build:darwin:arm64": "GOOS=darwin GOARCH=arm64 go build -o binaries/darwin-arm64/mandor ./cmd/mandor",
@@ -27,6 +29,10 @@
     "build:linux:arm64": "GOOS=linux GOARCH=arm64 go build -o binaries/linux-arm64/mandor ./cmd/mandor",
     "build:win32:x64": "GOOS=win32 GOARCH=x64 go build -o binaries/win32-x64/mandor.exe ./cmd/mandor",
     "build:win32:arm64": "GOOS=win32 GOARCH=arm64 go build -o binaries/win32-arm64/mandor.exe ./cmd/mandor",
+    "version:major": "npm version major && git push --follow-tags",
+    "version:minor": "npm version minor && git push --follow-tags",
+    "version:patch": "npm version patch && git push --follow-tags",
+    "version:beta": "npm version prerelease --preid=beta && git push --follow-tags",
     "publish:beta": "npm publish --tag beta --access public",
     "publish:latest": "npm publish --access public"
   },
