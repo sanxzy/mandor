@@ -57,7 +57,8 @@ async function install(options = {}) {
  */
 function useBundledBinary(platform, arch) {
   const filename = `mandor-${platform}-${arch}`;
-  const bundledBinary = path.join(BUNDLE_DIR, filename);
+  // Tarball extracts to npm/binaries/ as just "mandor" (not in subdir)
+  const bundledBinary = path.join(BUNDLE_DIR, 'mandor');
 
   console.log(`DEBUG: Looking for binary for ${platform}-${arch}`);
   console.log(`DEBUG: BUNDLE_DIR: ${BUNDLE_DIR}`);
@@ -65,11 +66,6 @@ function useBundledBinary(platform, arch) {
 
   if (!fs.existsSync(bundledBinary)) {
     console.log(`DEBUG: No bundled binary found at: ${bundledBinary}`);
-    return null;
-  }
-
-  if (!fs.statSync(bundledBinary).isFile()) {
-    console.log(`DEBUG: ${bundledBinary} is not a file`);
     return null;
   }
 
