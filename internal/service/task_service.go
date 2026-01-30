@@ -132,6 +132,13 @@ func (s *TaskService) ValidateCreateInput(input *domain.TaskCreateInput) error {
 }
 
 func (s *TaskService) validateDependencies(projectID, selfID string, dependsOn []string) error {
+	// Read schema to check if cross-project dependencies are allowed
+	schema, err := s.reader.ReadProjectSchema(projectID)
+	if err != nil {
+		return domain.NewSystemError("Cannot read project schema", err)
+	}
+	allowCrossProject := schema.Rules.Task.Dependency != "same_project_only" && schema.Rules.Task.Dependency != "disabled"
+
 	for _, depID := range dependsOn {
 		if depID == selfID {
 			return domain.NewValidationError("Self-dependency detected. Task cannot depend on itself.")
@@ -142,11 +149,11 @@ func (s *TaskService) validateDependencies(projectID, selfID string, dependsOn [
 			return domain.NewValidationError("Invalid dependency ID format: " + depID)
 		}
 
-		if depProjectID != projectID {
-			return domain.NewValidationError(fmt.Sprintf("Cross-project dependency detected: %s -> %s. Same project only.", selfID, depID))
+		if depProjectID != projectID && !allowCrossProject {
+			return domain.NewValidationError(fmt.Sprintf("Cross-project dependency detected: %s -> %s. Cross-project dependencies are disabled.", selfID, depID))
 		}
 
-		dep, err := s.reader.ReadTask(projectID, depID)
+		dep, err := s.reader.ReadTask(depProjectID, depID)
 		if err != nil {
 			if _, ok := err.(*domain.MandorError); ok {
 				return domain.NewValidationError("Dependency not found: " + depID)
@@ -725,7 +732,12 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 			if depID == doneTaskID {
 				hasDone = true
 			}
-			dep, err := s.reader.ReadTask(projectID, depID)
+			// Parse the dependency ID to get the project it belongs to
+			depProjectID, _, err := s.ParseTaskID(depID)
+			if err != nil {
+				return err
+			}
+			dep, err := s.reader.ReadTask(depProjectID, depID)
 			if err != nil {
 				return err
 			}

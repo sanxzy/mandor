@@ -90,12 +90,30 @@ func (s *IssueService) ValidateCreateInput(input *domain.IssueCreateInput) error
 }
 
 func (s *IssueService) validateDependencies(projectID, selfID string, dependsOn []string) error {
+	// Read schema to check if cross-project dependencies are allowed
+	schema, err := s.reader.ReadProjectSchema(projectID)
+	if err != nil {
+		return domain.NewSystemError("Cannot read project schema", err)
+	}
+	allowCrossProject := schema.Rules.Issue.Dependency != "same_project_only" && schema.Rules.Issue.Dependency != "disabled"
+
 	for _, depID := range dependsOn {
 		if depID == selfID {
 			return domain.NewValidationError("Self-dependency detected. Issue cannot depend on itself.")
 		}
 
-		dep, err := s.reader.ReadIssue(projectID, depID)
+		// Parse issue ID to get project
+		depProjectID := extractProjectIDFromIssueID(depID)
+		if depProjectID == "" {
+			return domain.NewValidationError("Invalid issue ID format: " + depID)
+		}
+
+		// Check if cross-project and not allowed
+		if depProjectID != projectID && !allowCrossProject {
+			return domain.NewValidationError(fmt.Sprintf("Cross-project dependency detected: %s -> %s. Cross-project dependencies are disabled.", selfID, depID))
+		}
+
+		dep, err := s.reader.ReadIssue(depProjectID, depID)
 		if err != nil {
 			if _, ok := err.(*domain.MandorError); ok {
 				return domain.NewValidationError("Dependency not found: " + depID)
@@ -624,7 +642,12 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 			if depID == resolvedIssueID {
 				hasResolved = true
 			}
-			dep, err := s.reader.ReadIssue(projectID, depID)
+			// Parse the dependency ID to get the project it belongs to
+			depProjectID := extractProjectIDFromIssueID(depID)
+			if depProjectID == "" {
+				return domain.NewValidationError("Invalid issue ID format: " + depID)
+			}
+			dep, err := s.reader.ReadIssue(depProjectID, depID)
 			if err != nil {
 				return err
 			}
@@ -657,4 +680,14 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 	})
 
 	return unblockedAny, err
+}
+
+// extractProjectIDFromIssueID extracts the project ID from an issue ID
+// Issue ID format: <project>-issue-<nanoid>
+func extractProjectIDFromIssueID(issueID string) string {
+	parts := strings.Split(issueID, "-issue-")
+	if len(parts) != 2 {
+		return ""
+	}
+	return parts[0]
 }
