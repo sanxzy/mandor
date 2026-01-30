@@ -634,6 +634,13 @@ func (s *TaskService) UpdateTask(input *domain.TaskUpdateInput) ([]string, error
 		changes = append(changes, "status")
 	}
 
+	task.UpdatedAt = now
+	task.UpdatedBy = updater
+
+	if err := s.writer.ReplaceTask(projectID, task); err != nil {
+		return nil, err
+	}
+
 	if input.Status != nil && *input.Status == domain.TaskStatusDone {
 		unblocked, err := s.unblockDependents(projectID, input.TaskID)
 		if err != nil {
@@ -642,13 +649,6 @@ func (s *TaskService) UpdateTask(input *domain.TaskUpdateInput) ([]string, error
 		if unblocked {
 			changes = append(changes, "dependent_unblocked")
 		}
-	}
-
-	task.UpdatedAt = now
-	task.UpdatedBy = updater
-
-	if err := s.writer.ReplaceTask(projectID, task); err != nil {
-		return nil, err
 	}
 
 	event := &domain.TaskEvent{

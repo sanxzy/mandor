@@ -484,14 +484,6 @@ func (s *IssueService) UpdateIssue(input *domain.IssueUpdateInput) ([]string, er
 		}
 		issue.Status = domain.IssueStatusResolved
 		changes = append(changes, "status")
-
-		unblocked, err := s.unblockDependents(input.ProjectID, issue.ID)
-		if err != nil {
-			return nil, err
-		}
-		if unblocked {
-			changes = append(changes, "dependent_unblocked")
-		}
 	}
 
 	if input.WontFix {
@@ -519,6 +511,16 @@ func (s *IssueService) UpdateIssue(input *domain.IssueUpdateInput) ([]string, er
 
 	if err := s.writer.ReplaceIssue(input.ProjectID, issue); err != nil {
 		return nil, err
+	}
+
+	if input.Resolve || input.WontFix {
+		unblocked, err := s.unblockDependents(input.ProjectID, issue.ID)
+		if err != nil {
+			return nil, err
+		}
+		if unblocked {
+			changes = append(changes, "dependent_unblocked")
+		}
 	}
 
 	event := &domain.IssueEvent{
