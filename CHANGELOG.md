@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-01-30
+
+### Fixed
+
+- Move unblockDependents call to after task/issue write to disk to ensure dependents read updated state
+- Dependencies now correctly unblock when parent task/issue is marked as done/resolved/wontfixed
+
+### Added
+
+- Cross-project task and issue dependency support (gated by project schema configuration)
+- Parser for extracting project IDs from task/issue dependency chains
+
 ## [0.1.1] - 2026-01-29
 
 ### Changed
