@@ -134,7 +134,7 @@ func NewCreateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&createAffectedFiles, "affected-files", "", "Comma-separated affected files (required)")
 	cmd.Flags().StringVar(&createAffectedTests, "affected-tests", "", "Comma-separated affected tests (required)")
 	cmd.Flags().StringVar(&createImplSteps, "implementation-steps", "", "Comma-separated implementation steps (required)")
-	cmd.Flags().StringVar(&createLibraries, "library-needs", "", "Comma-separated required libraries")
+	cmd.Flags().StringVar(&createLibraries, "library-needs", "", "Comma-separated required libraries (optional)")
 	cmd.Flags().BoolVarP(&createYes, "yes", "y", false, "Skip confirmation prompts")
 
 	return cmd

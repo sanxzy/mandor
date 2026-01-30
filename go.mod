@@ -2,10 +2,7 @@ module mandor
 
 go 1.21
 
-require (
-	github.com/matoous/go-nanoid/v2 v2.1.0
-	github.com/spf13/cobra v1.10.2
-)
+require github.com/spf13/cobra v1.10.2
 
 require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

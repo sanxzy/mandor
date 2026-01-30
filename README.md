@@ -179,9 +179,10 @@ mandor project create api --name "API Service" --goal "Implement REST API"
 # 3. Create feature
 mandor feature create "User Auth" --project api --goal "Implement login/logout"
 
-# 4. Create task
+# 4. Get feature ID and create task
+FEATURE_ID=$(mandor feature list --project api --json | jq -r '.[0].id')
 mandor task create "Password Hashing" \
-  --feature api-feature-xxx \
+  --feature $FEATURE_ID \
   --goal "Implement bcrypt hashing" \
   --implementation-steps "Install bcrypt,Create utility,Write tests" \
   --test-cases "Hash validation,Password comparison" \
@@ -237,6 +238,8 @@ mandor status
 | `mandor task blocked [--project <id>]` | List blocked tasks |
 
 **Status flow:** `pending` → `ready` → `in_progress` → `done` (or `blocked` → `cancelled`)
+
+**Note on `--library-needs`:** This flag is required. Provide comma-separated library names (e.g., `"bcrypt,lodash"`), or use `"none"` if the task requires no new external libraries.
 
 ### Issue
 
@@ -358,24 +361,43 @@ Cannot cancel entities that other entities depend on. Use `--force` to override.
 mandor init "My Project"
 mandor project create api --name "API Service" --goal "Implement API"
 
+# Create features
 mandor feature create "User Auth" --project api --goal "Login/logout/registration"
-mandor feature create "Payments" --project api --goal "Stripe integration" \
-  --depends api-feature-xxx
 
-FEATURE_ID=$(mandor feature list --project api --json | jq -r '.[0].id')
+# Get feature ID for creating tasks
+AUTH_FEATURE_ID=$(mandor feature list --project api --json | jq -r '.[] | select(.name == "User Auth") | .id')
+
+# Create tasks under the User Auth feature
 mandor task create "Password Hashing" \
-  --feature $FEATURE_ID \
-  --goal "Implement bcrypt" \
+  --feature $AUTH_FEATURE_ID \
+  --goal "Implement bcrypt hashing" \
   --implementation-steps "Install bcrypt,Create utility,Write tests" \
-  --test-cases "Hash validation" \
+  --test-cases "Hash validation,Password comparison" \
   --derivable-files "src/utils/password.ts" \
   --library-needs "bcrypt"
 
-mandor issue create "Fix memory leak" --project api \
-  --type bug --goal "Fix goroutine leak" \
-  --affected-files "src/handlers/auth.go" \
-  --affected-tests "src/handlers/auth_test.go" \
-  --implementation-steps "Identify leak,Add cleanup"
+mandor task create "JWT Token Management" \
+  --feature $AUTH_FEATURE_ID \
+  --goal "Implement JWT token generation and validation" \
+  --implementation-steps "Review JWT spec,Implement token generation,Add validation middleware" \
+  --test-cases "Token generation works,Token validation works,Expired tokens rejected" \
+  --derivable-files "src/utils/jwt.ts,src/middleware/auth.ts" \
+  --library-needs "jsonwebtoken"
+
+# Task with no new external libraries
+mandor task create "Update Login Endpoint" \
+  --feature $AUTH_FEATURE_ID \
+  --goal "Refactor existing login endpoint" \
+  --implementation-steps "Review current endpoint,Refactor logic,Update tests" \
+  --test-cases "Endpoint returns correct status,Authentication works,Errors handled" \
+  --derivable-files "src/handlers/auth.ts" \
+  --library-needs "none"
+
+mandor issue create "Fix security vulnerability" --project api \
+  --type security --goal "Fix JWT signing vulnerability" \
+  --affected-files "src/utils/jwt.ts" \
+  --affected-tests "src/utils/jwt.test.ts" \
+  --implementation-steps "Review JWT library,Update to secure version,Verify signature"
 
 mandor status
 ```

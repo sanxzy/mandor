@@ -23,7 +23,7 @@ var (
 
 func NewCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create <name> --feature <id> --goal <text> --implementation-steps <steps> --test-cases <cases> --derivable-files <files> [--library-needs <libs>] [--priority <P0-P5>] [--depends-on <ids>] [-y]",
+		Use:   "create <name> --feature <id> --goal <text> --implementation-steps <steps> --test-cases <cases> --derivable-files <files> --library-needs <libs> [--priority <P0-P5>] [--depends-on <ids>] [-y]",
 		Short: "Create a new task",
 		Long:  "Create a new task in the specified feature with the given details.",
 		Args:  cobra.ExactArgs(1),
@@ -62,6 +62,10 @@ func NewCreateCmd() *cobra.Command {
 			derivableFiles := splitByComma(createDerivable)
 			if len(derivableFiles) == 0 || (len(derivableFiles) == 1 && derivableFiles[0] == "") {
 				return domain.NewValidationError("Derivable files are required (--derivable-files).")
+			}
+
+			if createLibraries == "" {
+				return domain.NewValidationError("Library needs are required (--library-needs).")
 			}
 
 			libraries := splitByComma(createLibraries)
@@ -123,7 +127,7 @@ func NewCreateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&createImplSteps, "implementation-steps", "", "Implementation steps (comma-separated, required)")
 	cmd.Flags().StringVar(&createTestCases, "test-cases", "", "Test cases (comma-separated, required)")
 	cmd.Flags().StringVar(&createDerivable, "derivable-files", "", "Derivable files (comma-separated, required)")
-	cmd.Flags().StringVar(&createLibraries, "library-needs", "", "Required libraries (comma-separated, required)")
+	cmd.Flags().StringVar(&createLibraries, "library-needs", "", "Required libraries (comma-separated, required). Use \"none\" if no external libraries are needed.")
 	cmd.Flags().StringVar(&createPriority, "priority", "P3", "Priority (P0-P5)")
 	cmd.Flags().StringVar(&createDependsOn, "depends-on", "", "Comma-separated task IDs this task depends on")
 	cmd.Flags().BoolVarP(&createYes, "yes", "y", false, "Skip confirmation prompts")
