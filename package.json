@@ -1,6 +1,6 @@
 {
   "name": "@mandors/cli",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "Event-based task manager CLI for AI agent workflows",
   "main": "npm/lib/index.js",
   "bin": {
