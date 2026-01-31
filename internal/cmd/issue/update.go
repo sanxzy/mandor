@@ -94,37 +94,37 @@ func NewUpdateCmd() *cobra.Command {
 			}
 
 			if updateDependsOn != "" {
-				deps := splitByComma(updateDependsOn)
+				deps := splitByPipe(updateDependsOn)
 				input.DependsOn = &deps
 			}
 
 			if updateDependsAdd != "" {
-				deps := splitByComma(updateDependsAdd)
+				deps := splitByPipe(updateDependsAdd)
 				input.DependsAdd = &deps
 			}
 
 			if updateDependsRemove != "" {
-				deps := splitByComma(updateDependsRemove)
+				deps := splitByPipe(updateDependsRemove)
 				input.DependsRemove = &deps
 			}
 
 			if updateAffectedFiles != "" {
-				files := splitByComma(updateAffectedFiles)
+				files := splitByPipe(updateAffectedFiles)
 				input.AffectedFiles = &files
 			}
 
 			if updateAffectedTests != "" {
-				tests := splitByComma(updateAffectedTests)
+				tests := splitByPipe(updateAffectedTests)
 				input.AffectedTests = &tests
 			}
 
 			if updateImplSteps != "" {
-				steps := splitByComma(updateImplSteps)
+				steps := splitByPipe(updateImplSteps)
 				input.ImplementationSteps = &steps
 			}
 
 			if updateLibraries != "" {
-				libs := splitByComma(updateLibraries)
+				libs := splitByPipe(updateLibraries)
 				input.LibraryNeeds = &libs
 			}
 

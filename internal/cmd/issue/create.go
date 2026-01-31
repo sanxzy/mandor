@@ -52,29 +52,29 @@ func NewCreateCmd() *cobra.Command {
 				return domain.NewValidationError("Issue goal is required (--goal).")
 			}
 
-			affectedFiles := splitByComma(createAffectedFiles)
+			affectedFiles := splitByPipe(createAffectedFiles)
 			if len(affectedFiles) == 0 || (len(affectedFiles) == 1 && affectedFiles[0] == "") {
 				return domain.NewValidationError("Affected files are required (--affected-files).")
 			}
 
-			affectedTests := splitByComma(createAffectedTests)
+			affectedTests := splitByPipe(createAffectedTests)
 			if len(affectedTests) == 0 || (len(affectedTests) == 1 && affectedTests[0] == "") {
 				return domain.NewValidationError("Affected tests are required (--affected-tests).")
 			}
 
-			implSteps := splitByComma(createImplSteps)
+			implSteps := splitByPipe(createImplSteps)
 			if len(implSteps) == 0 || (len(implSteps) == 1 && implSteps[0] == "") {
 				return domain.NewValidationError("Implementation steps are required (--implementation-steps).")
 			}
 
-			libraries := splitByComma(createLibraries)
+			libraries := splitByPipe(createLibraries)
 			if len(libraries) == 0 || (len(libraries) == 1 && libraries[0] == "") {
 				libraries = []string{}
 			}
 
 			var dependsOnList []string
 			if createDependsOn != "" {
-				dependsOnList = splitByComma(createDependsOn)
+				dependsOnList = splitByPipe(createDependsOn)
 			}
 
 			input := &domain.IssueCreateInput{
@@ -125,26 +125,26 @@ func NewCreateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&createProjectID, "project", "p", "", "Project ID (required)")
-	cmd.Flags().StringVarP(&createType, "type", "t", "", "Issue type: bug, improvement, debt, security, performance (required)")
-	cmd.Flags().StringVar(&createName, "name", "", "Issue name")
-	cmd.Flags().StringVarP(&createGoal, "goal", "g", "", "Issue goal (required)")
+	cmd.Flags().StringVarP(&createProjectID, "project", "p", "", "Project ID (required, use -p or --project)")
+	cmd.Flags().StringVarP(&createType, "type", "t", "", "Issue type: bug, improvement, debt, security, performance (required, use -t or --type)")
+	cmd.Flags().StringVar(&createName, "name", "", "Issue name (required for CLI, or use positional argument)")
+	cmd.Flags().StringVarP(&createGoal, "goal", "g", "", "Issue goal (required, min 200 chars, include problem description, impact analysis, and acceptance criteria)")
 	cmd.Flags().StringVar(&createPriority, "priority", "P2", "Priority (P0-P5)")
-	cmd.Flags().StringVar(&createDependsOn, "depends-on", "", "Comma-separated issue IDs this issue depends on")
-	cmd.Flags().StringVar(&createAffectedFiles, "affected-files", "", "Comma-separated affected files (required)")
-	cmd.Flags().StringVar(&createAffectedTests, "affected-tests", "", "Comma-separated affected tests (required)")
-	cmd.Flags().StringVar(&createImplSteps, "implementation-steps", "", "Comma-separated implementation steps (required)")
-	cmd.Flags().StringVar(&createLibraries, "library-needs", "", "Comma-separated required libraries (optional)")
+	cmd.Flags().StringVar(&createDependsOn, "depends-on", "", "Pipe-separated issue IDs this issue depends on")
+	cmd.Flags().StringVar(&createAffectedFiles, "affected-files", "", "Pipe-separated affected files (required)")
+	cmd.Flags().StringVar(&createAffectedTests, "affected-tests", "", "Pipe-separated affected tests (required)")
+	cmd.Flags().StringVar(&createImplSteps, "implementation-steps", "", "Pipe-separated implementation steps (required)")
+	cmd.Flags().StringVar(&createLibraries, "library-needs", "", "Pipe-separated required libraries (optional)")
 	cmd.Flags().BoolVarP(&createYes, "yes", "y", false, "Skip confirmation prompts")
 
 	return cmd
 }
 
-func splitByComma(s string) []string {
+func splitByPipe(s string) []string {
 	if s == "" {
 		return []string{}
 	}
-	parts := strings.Split(s, ",")
+	parts := strings.Split(s, "|")
 	result := make([]string, 0, len(parts))
 	for _, p := range parts {
 		trimmed := strings.TrimSpace(p)

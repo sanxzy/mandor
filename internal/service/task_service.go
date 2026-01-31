@@ -43,15 +43,26 @@ func (s *TaskService) WorkspaceInitialized() bool {
 }
 
 func (s *TaskService) ParseTaskID(taskID string) (projectID, featureID string, err error) {
-	parts := strings.Split(taskID, "-task-")
-	if len(parts) != 2 {
+	// Task ID format: <project>-feature-<feature>-task-<nanoid>
+	// Find the last occurrence of "-task-" to handle project IDs with hyphens
+	taskSeparator := "-task-"
+	taskIdx := strings.LastIndex(taskID, taskSeparator)
+	if taskIdx == -1 {
 		return "", "", domain.NewValidationError(fmt.Sprintf("Invalid task ID format: %s", taskID))
 	}
-	featureParts := strings.Split(parts[0], "-feature-")
-	if len(featureParts) != 2 {
+
+	featureIDStr := taskID[:taskIdx]
+
+	// Parse feature ID: <project>-feature-<feature>
+	featureSeparator := "-feature-"
+	featureIdx := strings.Index(featureIDStr, featureSeparator)
+	if featureIdx == -1 {
 		return "", "", domain.NewValidationError(fmt.Sprintf("Invalid task ID format: %s", taskID))
 	}
-	return featureParts[0], parts[0], nil
+
+	projectID = featureIDStr[:featureIdx]
+	featureID = featureIDStr
+	return projectID, featureID, nil
 }
 
 func (s *TaskService) extractProjectIDFromFeatureID(featureID string) (string, error) {
@@ -96,8 +107,12 @@ func (s *TaskService) ValidateCreateInput(input *domain.TaskCreateInput) error {
 		return domain.NewValidationError("Task goal is required (--goal).")
 	}
 
-	if len(input.Goal) > 500 {
-		return domain.NewValidationError("Goal must be 500 characters or less.")
+	if !domain.ValidateTaskGoalLength(input.Goal) {
+		minLen := domain.TaskGoalMinLength
+		if util.IsDevelopment() {
+			minLen = domain.TaskGoalMinLengthDevelopment
+		}
+		return domain.NewValidationError(fmt.Sprintf("Task goal must be at least %d characters. Current length: %d characters.", minLen, len(input.Goal)))
 	}
 
 	if len(input.ImplementationSteps) == 0 {
@@ -186,7 +201,13 @@ func (s *TaskService) validateNoCycle(projectID, selfID string, dependsOn []stri
 		}
 		visited[taskID] = true
 
-		t, err := s.reader.ReadTask(projectID, taskID)
+		// Extract project ID from task ID for cross-project dependencies
+		depProjectID, _, err := s.ParseTaskID(taskID)
+		if err != nil {
+			return false
+		}
+
+		t, err := s.reader.ReadTask(depProjectID, taskID)
 		if err != nil {
 			return false
 		}
@@ -302,7 +323,13 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 
 func (s *TaskService) checkDependenciesDone(projectID string, dependsOn []string) (bool, error) {
 	for _, depID := range dependsOn {
-		dep, err := s.reader.ReadTask(projectID, depID)
+		// Extract project ID from task ID for cross-project dependencies
+		depProjectID, _, err := s.ParseTaskID(depID)
+		if err != nil {
+			return false, domain.NewValidationError("Invalid dependency ID format: " + depID)
+		}
+
+		dep, err := s.reader.ReadTask(depProjectID, depID)
 		if err != nil {
 			return false, domain.NewValidationError("Dependency not found: " + depID)
 		}
@@ -716,14 +743,28 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 	unblockedAny := false
 	now := time.Now().UTC()
 
+	// First handle same-project dependencies
+	var allTasks []*domain.Task
 	err := s.reader.ReadNDJSON(s.paths.ProjectTasksPath(projectID), func(raw []byte) error {
 		var task domain.Task
 		if err := json.Unmarshal(raw, &task); err != nil {
 			return err
 		}
+		allTasks = append(allTasks, &task)
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
 
+	// Track which tasks need to be written back
+	tasksToWrite := make(map[string]*domain.Task)
+	eventsToAppend := []*domain.TaskEvent{}
+
+	// Process all tasks to find those that should unblock
+	for _, task := range allTasks {
 		if task.Status != domain.TaskStatusBlocked {
-			return nil
+			continue
 		}
 
 		hasDone := false
@@ -735,11 +776,11 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 			// Parse the dependency ID to get the project it belongs to
 			depProjectID, _, err := s.ParseTaskID(depID)
 			if err != nil {
-				return err
+				return false, err
 			}
 			dep, err := s.reader.ReadTask(depProjectID, depID)
 			if err != nil {
-				return err
+				return false, err
 			}
 			if dep.Status != domain.TaskStatusDone && dep.Status != domain.TaskStatusCancelled {
 				allDone = false
@@ -749,9 +790,8 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 		if hasDone && allDone {
 			task.Status = domain.TaskStatusReady
 			task.UpdatedAt = now
-			if err := s.writer.ReplaceTask(projectID, &task); err != nil {
-				return err
-			}
+			tasksToWrite[task.ID] = task
+			unblockedAny = true
 
 			event := &domain.TaskEvent{
 				Layer: "task",
@@ -760,14 +800,104 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 				By:    "system",
 				Ts:    now,
 			}
+			eventsToAppend = append(eventsToAppend, event)
+		}
+	}
+
+	// If we have same-project updates, write them
+	if unblockedAny {
+		if err := s.writer.ReplaceTasks(projectID, allTasks, tasksToWrite); err != nil {
+			return false, err
+		}
+		for _, event := range eventsToAppend {
 			if err := s.writer.AppendTaskEvent(projectID, event); err != nil {
-				return err
+				return false, err
 			}
-			unblockedAny = true
+		}
+	}
+
+	// Now handle cross-project dependencies: find all projects and check for tasks that depend on doneTaskID
+	projects, err := s.reader.ListProjects(false)
+	if err != nil {
+		return unblockedAny, err
+	}
+
+	for _, otherProjectID := range projects {
+		if otherProjectID == projectID {
+			continue // Already handled
 		}
 
-		return nil
-	})
+		var otherProjectTasks []*domain.Task
+		err := s.reader.ReadNDJSON(s.paths.ProjectTasksPath(otherProjectID), func(raw []byte) error {
+			var task domain.Task
+			if err := json.Unmarshal(raw, &task); err != nil {
+				return err
+			}
+			otherProjectTasks = append(otherProjectTasks, &task)
+			return nil
+		})
+		if err != nil {
+			continue // Skip if project tasks can't be read
+		}
 
-	return unblockedAny, err
+		otherTasksToWrite := make(map[string]*domain.Task)
+		otherEventsToAppend := []*domain.TaskEvent{}
+
+		// Process all tasks in other project
+		for _, task := range otherProjectTasks {
+			if task.Status != domain.TaskStatusBlocked {
+				continue
+			}
+
+			hasDone := false
+			allDone := true
+			for _, depID := range task.DependsOn {
+				if depID == doneTaskID {
+					hasDone = true
+				}
+				depProjectID, _, err := s.ParseTaskID(depID)
+				if err != nil {
+					continue
+				}
+				dep, err := s.reader.ReadTask(depProjectID, depID)
+				if err != nil {
+					allDone = false
+					continue
+				}
+				if dep.Status != domain.TaskStatusDone && dep.Status != domain.TaskStatusCancelled {
+					allDone = false
+				}
+			}
+
+			if hasDone && allDone {
+				task.Status = domain.TaskStatusReady
+				task.UpdatedAt = now
+				otherTasksToWrite[task.ID] = task
+				unblockedAny = true
+
+				event := &domain.TaskEvent{
+					Layer: "task",
+					Type:  "ready",
+					ID:    task.ID,
+					By:    "system",
+					Ts:    now,
+				}
+				otherEventsToAppend = append(otherEventsToAppend, event)
+			}
+		}
+
+		// Write updates for other project if any
+		if len(otherTasksToWrite) > 0 {
+			if err := s.writer.ReplaceTasks(otherProjectID, otherProjectTasks, otherTasksToWrite); err != nil {
+				continue // Skip error for other project
+			}
+			for _, event := range otherEventsToAppend {
+				if err := s.writer.AppendTaskEvent(otherProjectID, event); err != nil {
+					continue
+				}
+			}
+		}
+	}
+
+	return unblockedAny, nil
 }

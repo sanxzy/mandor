@@ -2,7 +2,6 @@ package task
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"mandor/internal/domain"
@@ -76,32 +75,32 @@ func NewUpdateCmd() *cobra.Command {
 			}
 
 			if updateImplSteps != "" {
-				steps := splitByComma(updateImplSteps)
+				steps := splitByPipe(updateImplSteps)
 				implStepsPtr = &steps
 			}
 			if updateTestCases != "" {
-				cases := splitByComma(updateTestCases)
+				cases := splitByPipe(updateTestCases)
 				testCasesPtr = &cases
 			}
 			if updateDerivable != "" {
-				files := splitByComma(updateDerivable)
+				files := splitByPipe(updateDerivable)
 				derivablePtr = &files
 			}
 			if updateLibraries != "" {
-				libs := splitByComma(updateLibraries)
+				libs := splitByPipe(updateLibraries)
 				librariesPtr = &libs
 			}
 
 			if updateDependsOn != "" {
-				deps := splitByComma(updateDependsOn)
+				deps := splitByPipe(updateDependsOn)
 				dependsOnPtr = &deps
 			}
 			if updateDependsAdd != "" {
-				deps := splitByComma(updateDependsAdd)
+				deps := splitByPipe(updateDependsAdd)
 				dependsAddPtr = &deps
 			}
 			if updateDependsRemove != "" {
-				deps := splitByComma(updateDependsRemove)
+				deps := splitByPipe(updateDependsRemove)
 				dependsRemovePtr = &deps
 			}
 
@@ -213,15 +212,15 @@ func NewUpdateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&updateName, "name", "", "New task name")
 	cmd.Flags().StringVar(&updateGoal, "goal", "", "New task goal")
 	cmd.Flags().StringVar(&updatePriority, "priority", "", "New priority (P0-P5)")
-	cmd.Flags().StringVar(&updateImplSteps, "implementation-steps", "", "Update implementation steps (comma-separated)")
-	cmd.Flags().StringVar(&updateTestCases, "test-cases", "", "Update test cases (comma-separated)")
-	cmd.Flags().StringVar(&updateDerivable, "derivable-files", "", "Update derivable files (comma-separated)")
-	cmd.Flags().StringVar(&updateLibraries, "library-needs", "", "Update library needs (comma-separated)")
+	cmd.Flags().StringVar(&updateImplSteps, "implementation-steps", "", "Update implementation steps (pipe-separated)")
+	cmd.Flags().StringVar(&updateTestCases, "test-cases", "", "Update test cases (pipe-separated)")
+	cmd.Flags().StringVar(&updateDerivable, "derivable-files", "", "Update derivable files (pipe-separated)")
+	cmd.Flags().StringVar(&updateLibraries, "library-needs", "", "Update library needs (pipe-separated)")
 	cmd.Flags().StringVar(&updateStatus, "status", "", "New status (ready, in_progress, done)")
 	cmd.Flags().StringVar(&updateReason, "reason", "", "Cancellation reason (required with --cancel)")
-	cmd.Flags().StringVar(&updateDependsOn, "depends", "", "Set all dependencies (comma-separated)")
-	cmd.Flags().StringVar(&updateDependsAdd, "depends-add", "", "Add dependencies (comma-separated)")
-	cmd.Flags().StringVar(&updateDependsRemove, "depends-remove", "", "Remove dependencies (comma-separated)")
+	cmd.Flags().StringVar(&updateDependsOn, "depends", "", "Set all dependencies (pipe-separated)")
+	cmd.Flags().StringVar(&updateDependsAdd, "depends-add", "", "Add dependencies (pipe-separated)")
+	cmd.Flags().StringVar(&updateDependsRemove, "depends-remove", "", "Remove dependencies (pipe-separated)")
 	cmd.Flags().BoolVar(&updateReopen, "reopen", false, "Reopen a cancelled task")
 	cmd.Flags().BoolVar(&updateCancel, "cancel", false, "Cancel the task")
 	cmd.Flags().BoolVar(&updateForce, "force", false, "Force operation (e.g., cancel with dependents)")
@@ -229,20 +228,4 @@ func NewUpdateCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&updateYes, "yes", "y", false, "Skip confirmation")
 
 	return cmd
-}
-
-func splitByComma(s string) []string {
-	if s == "" {
-		return nil
-	}
-	var result []string
-	start := 0
-	for i := 0; i < len(s); i++ {
-		if s[i] == ',' {
-			result = append(result, strings.TrimSpace(s[start:i]))
-			start = i + 1
-		}
-	}
-	result = append(result, strings.TrimSpace(s[start:]))
-	return result
 }

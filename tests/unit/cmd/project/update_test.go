@@ -138,6 +138,11 @@ func TestUpdateCmd_UpdateGoalTooShort(t *testing.T) {
 
 	writeTestProjectForCmd(t, tmpDir, "testproj", domain.ProjectStatusActive)
 
+	// Force production mode for this test so validation fails
+	oldEnv := os.Getenv("MANDOR_ENV")
+	os.Setenv("MANDOR_ENV", "production")
+	defer os.Setenv("MANDOR_ENV", oldEnv)
+
 	cmd := project.NewUpdateCmd()
 	cmd.SetArgs([]string{"testproj", "--goal", "short goal"})
 	err := cmd.Execute()

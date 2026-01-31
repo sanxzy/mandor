@@ -560,6 +560,38 @@ func (w *Writer) ReplaceTask(projectID string, task *domain.Task) error {
 	return nil
 }
 
+// ReplaceTasks updates multiple tasks atomically. allTasks is all tasks from file,
+// tasksToUpdate is a map of task IDs to updated task objects.
+func (w *Writer) ReplaceTasks(projectID string, allTasks []*domain.Task, tasksToUpdate map[string]*domain.Task) error {
+	tasksPath := w.paths.ProjectTasksPath(projectID)
+
+	// Build final task list with updates applied
+	var finalTasks []*domain.Task
+	for _, t := range allTasks {
+		if updated, exists := tasksToUpdate[t.ID]; exists {
+			finalTasks = append(finalTasks, updated)
+		} else {
+			finalTasks = append(finalTasks, t)
+		}
+	}
+
+	// Write all tasks atomically
+	file, err := os.OpenFile(tasksPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return domain.NewSystemError("Cannot open tasks file for writing", err)
+	}
+	defer file.Close()
+
+	for _, t := range finalTasks {
+		encoder := json.NewEncoder(file)
+		if err := encoder.Encode(t); err != nil {
+			return domain.NewSystemError("Cannot write task", err)
+		}
+	}
+
+	return nil
+}
+
 func (r *Reader) ReadIssue(projectID, issueID string) (*domain.Issue, error) {
 	var issue *domain.Issue
 	err := r.ReadNDJSON(r.paths.ProjectIssuesPath(projectID), func(raw []byte) error {

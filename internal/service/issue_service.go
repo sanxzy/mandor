@@ -54,6 +54,14 @@ func (s *IssueService) ValidateCreateInput(input *domain.IssueCreateInput) error
 		return domain.NewValidationError("Issue goal is required (--goal).")
 	}
 
+	if !domain.ValidateIssueGoalLength(input.Goal) {
+		minLen := domain.IssueGoalMinLength
+		if util.IsDevelopment() {
+			minLen = domain.IssueGoalMinLengthDevelopment
+		}
+		return domain.NewValidationError(fmt.Sprintf("Issue goal must be at least %d characters. Current length: %d characters.", minLen, len(input.Goal)))
+	}
+
 	if strings.TrimSpace(input.IssueType) == "" {
 		return domain.NewValidationError("Issue type is required (--type).")
 	}

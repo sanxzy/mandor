@@ -61,6 +61,10 @@ For more information, visit: https://github.com/budisantoso/mandor`,
 // ExecuteWithCode executes the command and returns the appropriate exit code
 func ExecuteWithCode() int {
 	rootCmd := NewRootCmd()
+	// Disable automatic error printing from cobra
+	rootCmd.SilenceErrors = true
+	rootCmd.SilenceUsage = true
+
 	err := rootCmd.Execute()
 
 	if err == nil {

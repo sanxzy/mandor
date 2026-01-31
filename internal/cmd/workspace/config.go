@@ -45,12 +45,29 @@ func newConfigGetCmd() *cobra.Command {
 			}
 
 			if len(args) == 0 {
-				// Show all config
+				// Show all config with workspace metadata
+				fmt.Println("Workspace Information")
+				fmt.Println("═════════════════════")
+				fmt.Printf("Name:             %s\n", ws.Name)
+				fmt.Printf("ID:               %s\n", ws.ID)
+				fmt.Printf("Version:          %s\n", ws.Version)
+				fmt.Printf("Created:          %s\n", ws.CreatedAt.Format("2006-01-02T15:04:05Z"))
+				fmt.Printf("Created By:       %s\n", ws.CreatedBy)
+				fmt.Printf("Last Updated:     %s\n", ws.LastUpdatedAt.Format("2006-01-02T15:04:05Z"))
+				fmt.Println()
 				fmt.Println("Configuration Settings")
 				fmt.Println("══════════════════════")
 				fmt.Println()
 				fmt.Printf("default_priority  %s\n", ws.Config.DefaultPriority)
 				fmt.Printf("strict_mode       %v\n", ws.Config.StrictMode)
+				fmt.Println()
+				fmt.Println("Project Dependency Rules")
+				fmt.Println("════════════════════════")
+				fmt.Printf("Task:              (configured per-project)\n")
+				fmt.Printf("Feature:           (configured per-project)\n")
+				fmt.Printf("Issue:             (configured per-project)\n")
+				fmt.Println()
+				fmt.Println("Use 'mandor config list' for detailed configuration information.")
 				return nil
 			}
 

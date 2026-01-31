@@ -127,7 +127,7 @@ func NewUpdateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&updatePriority, "priority", "", "New priority (P0-P5)")
 	cmd.Flags().StringVar(&updateStatus, "status", "", "New status (draft, active, done, blocked, cancelled)")
 	cmd.Flags().StringVar(&updateReason, "reason", "", "Cancellation reason (required with --cancel)")
-	cmd.Flags().StringVar(&updateDependsOn, "depends", "", "Comma-separated feature IDs this feature depends on")
+	cmd.Flags().StringVar(&updateDependsOn, "depends", "", "Pipe-separated feature IDs this feature depends on")
 	cmd.Flags().BoolVar(&updateReopen, "reopen", false, "Reopen a cancelled feature")
 	cmd.Flags().BoolVar(&updateCancel, "cancel", false, "Cancel the feature")
 	cmd.Flags().BoolVar(&updateForce, "force", false, "Force operation (e.g., cancel with dependents)")

@@ -24,9 +24,9 @@ type MandorError struct {
 // Error implements the error interface
 func (e *MandorError) Error() string {
 	if e.Cause != nil {
-		return fmt.Sprintf("Error: %s\n%v", e.Message, e.Cause)
+		return fmt.Sprintf("%s\n%v", e.Message, e.Cause)
 	}
-	return fmt.Sprintf("Error: %s", e.Message)
+	return e.Message
 }
 
 // NewSystemError creates a system error

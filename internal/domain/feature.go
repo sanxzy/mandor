@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"mandor/internal/util"
+)
 
 const (
 	FeatureStatusDraft     = "draft"
@@ -8,6 +12,11 @@ const (
 	FeatureStatusDone      = "done"
 	FeatureStatusBlocked   = "blocked"
 	FeatureStatusCancelled = "cancelled"
+)
+
+const (
+	FeatureGoalMinLength            = 300
+	FeatureGoalMinLengthDevelopment = 2
 )
 
 type Feature struct {
@@ -136,4 +145,12 @@ func ValidateFeatureStatus(status string) bool {
 		}
 	}
 	return false
+}
+
+func ValidateFeatureGoalLength(goal string) bool {
+	minLength := FeatureGoalMinLength
+	if util.IsDevelopment() {
+		minLength = FeatureGoalMinLengthDevelopment
+	}
+	return len(goal) >= minLength
 }

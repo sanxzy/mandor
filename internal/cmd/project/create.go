@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"mandor/internal/domain"
 	"mandor/internal/service"
+	"mandor/internal/util"
 )
 
 var (
@@ -46,26 +47,14 @@ func NewCreateCmd() *cobra.Command {
 				Strict:     strict,
 			}
 
-			if !yesFlag {
+			if !yesFlag && name == "" {
 				out := cmd.OutOrStdout()
 				in := bufio.NewReader(os.Stdin)
-				if name == "" {
-					fmt.Fprint(out, "Project name: ")
-					line, _ := in.ReadString('\n')
-					name = line[:len(line)-1]
-					if len(name) == 0 {
-						return domain.NewValidationError("Project name is required.")
-					}
-				}
-				if goal == "" {
-					fmt.Fprintln(out, "Project goal (min 500 chars, press Ctrl+D when done):")
-					fmt.Fprint(out, "> ")
-					var lines string
-					scanner := bufio.NewScanner(os.Stdin)
-					for scanner.Scan() {
-						lines += scanner.Text() + "\n"
-					}
-					goal = lines
+				fmt.Fprint(out, "Project name: ")
+				line, _ := in.ReadString('\n')
+				name = line[:len(line)-1]
+				if len(name) == 0 {
+					return domain.NewValidationError("Project name is required.")
 				}
 			}
 
@@ -77,7 +66,11 @@ func NewCreateCmd() *cobra.Command {
 			}
 
 			if !domain.ValidateGoalLength(goal) {
-				return domain.NewValidationError(fmt.Sprintf("Project goal must be at least %d characters. Current length: %d characters.", domain.GoalMinLength, len(goal)))
+				minLen := domain.GoalMinLength
+				if util.IsDevelopment() {
+					minLen = domain.GoalMinLengthDevelopment
+				}
+				return domain.NewValidationError(fmt.Sprintf("Project goal must be at least %d characters. Current length: %d characters.", minLen, len(goal)))
 			}
 
 			if err := svc.ValidateCreateInput(input); err != nil {
@@ -115,7 +108,7 @@ func NewCreateCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&name, "name", "n", "", "Project display name")
-	cmd.Flags().StringVarP(&goal, "goal", "g", "", "Project goal/objectives (min 500 chars)")
+	cmd.Flags().StringVarP(&goal, "goal", "g", "", "Project goal/objectives (required, min 500 characters)")
 	cmd.Flags().StringVar(&taskDep, "task-dep", "same_project_only", "same_project_only,Task dependency rule ( cross_project_allowed, disabled)")
 	cmd.Flags().StringVar(&featureDep, "feature-dep", "cross_project_allowed", "Feature dependency rule (same_project_only, cross_project_allowed, disabled)")
 	cmd.Flags().StringVar(&issueDep, "issue-dep", "same_project_only", "Issue dependency rule (same_project_only, cross_project_allowed, disabled)")

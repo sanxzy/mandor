@@ -86,12 +86,12 @@ func NewCreateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&projectID, "project", "p", "", "Project ID (required)")
-	cmd.Flags().StringVarP(&goal, "goal", "g", "", "Feature goal (required)")
+	cmd.Flags().StringVarP(&projectID, "project", "p", "", "Project ID (required, use -p or --project)")
+	cmd.Flags().StringVarP(&goal, "goal", "g", "", "Feature goal (required, min 300 chars, include technical user flow and complete requirements)")
 	cmd.Flags().StringVarP(&name, "name", "n", "", "Feature name (alternative to positional)")
 	cmd.Flags().StringVar(&scope, "scope", "", "Feature scope (frontend, backend, fullstack, cli, desktop, android, flutter, react-native, ios, swift)")
 	cmd.Flags().StringVar(&priority, "priority", "P3", "Priority (P0-P5)")
-	cmd.Flags().StringVar(&dependsOn, "depends", "", "Comma-separated feature IDs this feature depends on")
+	cmd.Flags().StringVar(&dependsOn, "depends", "", "Pipe-separated feature IDs this feature depends on")
 
 	return cmd
 }
@@ -101,7 +101,7 @@ func splitDependsOn(s string) []string {
 		return nil
 	}
 	var result []string
-	for _, part := range splitByComma(s) {
+	for _, part := range splitByPipe(s) {
 		trimmed := trimSpace(part)
 		if trimmed != "" {
 			result = append(result, trimmed)
@@ -110,11 +110,11 @@ func splitDependsOn(s string) []string {
 	return result
 }
 
-func splitByComma(s string) []string {
+func splitByPipe(s string) []string {
 	var result []string
 	start := 0
 	for i := 0; i < len(s); i++ {
-		if s[i] == ',' {
+		if s[i] == '|' {
 			result = append(result, s[start:i])
 			start = i + 1
 		}

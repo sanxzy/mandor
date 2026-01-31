@@ -54,6 +54,14 @@ func (s *FeatureService) ValidateCreateInput(input *domain.FeatureCreateInput) e
 		return domain.NewValidationError("Feature goal is required (--goal).")
 	}
 
+	if !domain.ValidateFeatureGoalLength(input.Goal) {
+		minLen := domain.FeatureGoalMinLength
+		if util.IsDevelopment() {
+			minLen = domain.FeatureGoalMinLengthDevelopment
+		}
+		return domain.NewValidationError(fmt.Sprintf("Feature goal must be at least %d characters. Current length: %d characters.", minLen, len(input.Goal)))
+	}
+
 	if input.Scope != "" && !domain.ValidateScope(input.Scope) {
 		return domain.NewValidationError("Invalid scope. Valid options: frontend, backend, fullstack, cli, desktop, android, flutter, react-native, ios, swift")
 	}

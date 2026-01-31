@@ -3,6 +3,8 @@ package domain
 import (
 	"strings"
 	"time"
+
+	"mandor/internal/util"
 )
 
 const (
@@ -24,7 +26,8 @@ const (
 )
 
 const (
-	GoalMinLength = 500
+	GoalMinLength            = 500
+	GoalMinLengthDevelopment = 2
 )
 
 type Project struct {
@@ -40,7 +43,11 @@ type Project struct {
 }
 
 func ValidateGoalLength(goal string) bool {
-	return len(goal) > GoalMinLength
+	minLength := GoalMinLength
+	if util.IsDevelopment() {
+		minLength = GoalMinLengthDevelopment
+	}
+	return len(goal) >= minLength
 }
 
 type ProjectEvent struct {

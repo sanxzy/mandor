@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"mandor/internal/domain"
 	"mandor/internal/fs"
@@ -38,6 +39,28 @@ func TestIssueService_ValidateCreateInput(t *testing.T) {
 
 	if err := writer.CreateProjectDir("auth"); err != nil {
 		t.Fatalf("Failed to create project dir: %v", err)
+	}
+
+	// Write project metadata and schema
+	project := &domain.Project{
+		ID:        "auth",
+		Name:      "Auth Project",
+		Goal:      string(make([]byte, 500)),
+		Status:    domain.ProjectStatusInitial,
+		Strict:    false,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		CreatedBy: "testuser",
+		UpdatedBy: "testuser",
+	}
+
+	if err := writer.WriteProjectMetadata("auth", project); err != nil {
+		t.Fatalf("Failed to write project metadata: %v", err)
+	}
+
+	schema := domain.DefaultProjectSchema("same_project_only", "cross_project_allowed", "same_project_only")
+	if err := writer.WriteProjectSchema("auth", &schema); err != nil {
+		t.Fatalf("Failed to write project schema: %v", err)
 	}
 
 	svc := service.NewIssueServiceWithPaths(paths)

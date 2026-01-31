@@ -2,6 +2,7 @@ package task
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"mandor/internal/domain"
@@ -49,17 +50,17 @@ func NewCreateCmd() *cobra.Command {
 				return domain.NewValidationError("Goal must be 500 characters or less.")
 			}
 
-			implSteps := splitByComma(createImplSteps)
+			implSteps := splitByPipe(createImplSteps)
 			if len(implSteps) == 0 || (len(implSteps) == 1 && implSteps[0] == "") {
 				return domain.NewValidationError("Implementation steps are required (--implementation-steps).")
 			}
 
-			testCases := splitByComma(createTestCases)
+			testCases := splitByPipe(createTestCases)
 			if len(testCases) == 0 || (len(testCases) == 1 && testCases[0] == "") {
 				return domain.NewValidationError("Test cases are required (--test-cases).")
 			}
 
-			derivableFiles := splitByComma(createDerivable)
+			derivableFiles := splitByPipe(createDerivable)
 			if len(derivableFiles) == 0 || (len(derivableFiles) == 1 && derivableFiles[0] == "") {
 				return domain.NewValidationError("Derivable files are required (--derivable-files).")
 			}
@@ -68,11 +69,11 @@ func NewCreateCmd() *cobra.Command {
 				return domain.NewValidationError("Library needs are required (--library-needs).")
 			}
 
-			libraries := splitByComma(createLibraries)
+			libraries := splitByPipe(createLibraries)
 
 			var dependsOnList []string
 			if createDependsOn != "" {
-				dependsOnList = splitByComma(createDependsOn)
+				dependsOnList = splitByPipe(createDependsOn)
 			}
 
 			input := &domain.TaskCreateInput{
@@ -124,12 +125,12 @@ func NewCreateCmd() *cobra.Command {
 
 	cmd.Flags().StringVarP(&createFeatureID, "feature", "f", "", "Feature ID (required)")
 	cmd.Flags().StringVarP(&createGoal, "goal", "g", "", "Task goal (required, max 500 chars)")
-	cmd.Flags().StringVar(&createImplSteps, "implementation-steps", "", "Implementation steps (comma-separated, required)")
-	cmd.Flags().StringVar(&createTestCases, "test-cases", "", "Test cases (comma-separated, required)")
-	cmd.Flags().StringVar(&createDerivable, "derivable-files", "", "Derivable files (comma-separated, required)")
-	cmd.Flags().StringVar(&createLibraries, "library-needs", "", "Required libraries (comma-separated, required). Use \"none\" if no external libraries are needed.")
+	cmd.Flags().StringVar(&createImplSteps, "implementation-steps", "", "Implementation steps (pipe-separated, required)")
+	cmd.Flags().StringVar(&createTestCases, "test-cases", "", "Test cases (pipe-separated, required)")
+	cmd.Flags().StringVar(&createDerivable, "derivable-files", "", "Derivable files (pipe-separated, required)")
+	cmd.Flags().StringVar(&createLibraries, "library-needs", "", "Required libraries (pipe-separated, required). Use \"none\" if no external libraries are needed.")
 	cmd.Flags().StringVar(&createPriority, "priority", "P3", "Priority (P0-P5)")
-	cmd.Flags().StringVar(&createDependsOn, "depends-on", "", "Comma-separated task IDs this task depends on")
+	cmd.Flags().StringVar(&createDependsOn, "depends-on", "", "Pipe-separated task IDs this task depends on")
 	cmd.Flags().BoolVarP(&createYes, "yes", "y", false, "Skip confirmation prompts")
 
 	return cmd
@@ -140,4 +141,20 @@ func truncate(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen-3] + "..."
+}
+
+func splitByPipe(s string) []string {
+	if s == "" {
+		return nil
+	}
+	var result []string
+	start := 0
+	for i := 0; i < len(s); i++ {
+		if s[i] == '|' {
+			result = append(result, strings.TrimSpace(s[start:i]))
+			start = i + 1
+		}
+	}
+	result = append(result, strings.TrimSpace(s[start:]))
+	return result
 }

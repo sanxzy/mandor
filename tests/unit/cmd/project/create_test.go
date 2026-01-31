@@ -131,6 +131,11 @@ func TestCreateCmd_GoalTooShort(t *testing.T) {
 
 	os.Chdir(tmpDir)
 
+	// Force production mode for this test so validation fails
+	oldEnv := os.Getenv("MANDOR_ENV")
+	os.Setenv("MANDOR_ENV", "production")
+	defer os.Setenv("MANDOR_ENV", oldEnv)
+
 	cmd := project.NewCreateCmd()
 	cmd.SetArgs([]string{"test", "--name", "Test", "--goal", "short goal"})
 

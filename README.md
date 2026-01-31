@@ -184,8 +184,8 @@ FEATURE_ID=$(mandor feature list --project api --json | jq -r '.[0].id')
 mandor task create "Password Hashing" \
   --feature $FEATURE_ID \
   --goal "Implement bcrypt hashing" \
-  --implementation-steps "Install bcrypt,Create utility,Write tests" \
-  --test-cases "Hash validation,Password comparison" \
+  --implementation-steps "Install bcrypt|Create utility|Write tests" \
+  --test-cases "Hash validation|Password comparison" \
   --derivable-files "src/utils/password.ts" \
   --library-needs "bcrypt"
 
@@ -371,25 +371,25 @@ AUTH_FEATURE_ID=$(mandor feature list --project api --json | jq -r '.[] | select
 mandor task create "Password Hashing" \
   --feature $AUTH_FEATURE_ID \
   --goal "Implement bcrypt hashing" \
-  --implementation-steps "Install bcrypt,Create utility,Write tests" \
-  --test-cases "Hash validation,Password comparison" \
+  --implementation-steps "Install bcrypt|Create utility|Write tests" \
+  --test-cases "Hash validation|Password comparison" \
   --derivable-files "src/utils/password.ts" \
   --library-needs "bcrypt"
 
 mandor task create "JWT Token Management" \
   --feature $AUTH_FEATURE_ID \
   --goal "Implement JWT token generation and validation" \
-  --implementation-steps "Review JWT spec,Implement token generation,Add validation middleware" \
-  --test-cases "Token generation works,Token validation works,Expired tokens rejected" \
-  --derivable-files "src/utils/jwt.ts,src/middleware/auth.ts" \
+  --implementation-steps "Review JWT spec|Implement token generation|Add validation middleware" \
+  --test-cases "Token generation works|Token validation works|Expired tokens rejected" \
+  --derivable-files "src/utils/jwt.ts|src/middleware/auth.ts" \
   --library-needs "jsonwebtoken"
 
 # Task with no new external libraries
 mandor task create "Update Login Endpoint" \
   --feature $AUTH_FEATURE_ID \
   --goal "Refactor existing login endpoint" \
-  --implementation-steps "Review current endpoint,Refactor logic,Update tests" \
-  --test-cases "Endpoint returns correct status,Authentication works,Errors handled" \
+  --implementation-steps "Review current endpoint|Refactor logic|Update tests" \
+  --test-cases "Endpoint returns correct status|Authentication works|Errors handled" \
   --derivable-files "src/handlers/auth.ts" \
   --library-needs "none"
 
@@ -397,7 +397,7 @@ mandor issue create "Fix security vulnerability" --project api \
   --type security --goal "Fix JWT signing vulnerability" \
   --affected-files "src/utils/jwt.ts" \
   --affected-tests "src/utils/jwt.test.ts" \
-  --implementation-steps "Review JWT library,Update to secure version,Verify signature"
+  --implementation-steps "Review JWT library|Update to secure version|Verify signature"
 
 mandor status
 ```

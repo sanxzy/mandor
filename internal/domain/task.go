@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"mandor/internal/util"
+)
 
 const (
 	TaskStatusPending    = "pending"
@@ -12,7 +16,8 @@ const (
 )
 
 const (
-	TaskGoalMinLength = 500
+	TaskGoalMinLength            = 500
+	TaskGoalMinLengthDevelopment = 2
 )
 
 type Task struct {
@@ -155,4 +160,12 @@ func ValidateTaskStatus(status string) bool {
 		}
 	}
 	return false
+}
+
+func ValidateTaskGoalLength(goal string) bool {
+	minLength := TaskGoalMinLength
+	if util.IsDevelopment() {
+		minLength = TaskGoalMinLengthDevelopment
+	}
+	return len(goal) >= minLength
 }
