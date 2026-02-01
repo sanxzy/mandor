@@ -7,7 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.2] - 2026-02-01
+## [0.3.4] - 2026-02-01
+
+### Added
+
+- Feature plans for undo operations (undo/redo/history commands)
+- Feature plans for tagging system (add/remove/set/clear/list/rename/delete)
+- Event contract v2 schema for undo/redo support
+- Event type reference documentation updated for v2 events
+
+### Changed
+
+- Updated .gitignore to track master_docs directory
+- Package version updated to 0.3.4
+
+## [0.3.3] - 2026-02-01
 
 ### Added
 
