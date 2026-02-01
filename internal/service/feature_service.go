@@ -66,12 +66,19 @@ func (s *FeatureService) ValidateCreateInput(input *domain.FeatureCreateInput) e
 		return domain.NewValidationError("Invalid scope. Valid options: frontend, backend, fullstack, cli, desktop, android, flutter, react-native, ios, swift")
 	}
 
-	if !domain.ValidatePriority(input.Priority) {
-		return domain.NewValidationError("Invalid priority. Valid options: P0, P1, P2, P3, P4, P5")
+	// Apply default priority if not specified
+	if input.Priority == "" {
+		// Use default priority from workspace config
+		ws, err := s.reader.ReadWorkspace()
+		if err == nil && ws.Config.DefaultPriority != "" {
+			input.Priority = ws.Config.DefaultPriority
+		} else {
+			input.Priority = "P3"
+		}
 	}
 
-	if input.Priority == "" {
-		input.Priority = "P3"
+	if !domain.ValidatePriority(input.Priority) {
+		return domain.NewValidationError("Invalid priority. Valid options: P0, P1, P2, P3, P4, P5")
 	}
 
 	if err := s.validateDependencies(input.ProjectID, "", input.DependsOn); err != nil {
@@ -391,6 +398,11 @@ func (s *FeatureService) UpdateFeature(input *domain.FeatureUpdateInput) ([]stri
 		changes = append(changes, "priority")
 	}
 
+	if input.Status != nil && *input.Status != feature.Status {
+		feature.Status = *input.Status
+		changes = append(changes, "status")
+	}
+
 	if input.DependsOn != nil {
 		feature.DependsOn = *input.DependsOn
 		changes = append(changes, "depends_on")
@@ -415,7 +427,89 @@ func (s *FeatureService) UpdateFeature(input *domain.FeatureUpdateInput) ([]stri
 		return nil, err
 	}
 
+	// If feature is marked as done, unblock dependent features
+	if input.Status != nil && *input.Status == domain.FeatureStatusDone {
+		if unblocked, err := s.unblockDependents(input.ProjectID, input.FeatureID); err == nil && unblocked {
+			changes = append(changes, "dependent_unblocked")
+		}
+	}
+
 	return changes, nil
+}
+
+func (s *FeatureService) unblockDependents(projectID, doneFeatureID string) (bool, error) {
+	unblockedAny := false
+	now := time.Now().UTC()
+
+	// Load all features in this project
+	var allFeatures []*domain.Feature
+	err := s.reader.ReadNDJSON(s.paths.ProjectFeaturesPath(projectID), func(raw []byte) error {
+		var feature domain.Feature
+		if err := json.Unmarshal(raw, &feature); err != nil {
+			return err
+		}
+		allFeatures = append(allFeatures, &feature)
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+
+	// Track which features need to be written back
+	featuresToWrite := make(map[string]*domain.Feature)
+	eventsToAppend := []*domain.FeatureEvent{}
+
+	// Process all features to find those that should unblock
+	for _, feature := range allFeatures {
+		if feature.Status != domain.FeatureStatusBlocked {
+			continue
+		}
+
+		hasDone := false
+		allDone := true
+		for _, depID := range feature.DependsOn {
+			if depID == doneFeatureID {
+				hasDone = true
+			}
+			dep, err := s.reader.ReadFeature(projectID, depID)
+			if err != nil {
+				return false, err
+			}
+			if dep.Status != domain.FeatureStatusDone && dep.Status != domain.FeatureStatusCancelled {
+				allDone = false
+			}
+		}
+
+		if hasDone && allDone {
+			feature.Status = domain.FeatureStatusDraft
+			feature.UpdatedAt = now
+			featuresToWrite[feature.ID] = feature
+			unblockedAny = true
+
+			event := &domain.FeatureEvent{
+				Layer: "feature",
+				Type:  "unblocked",
+				ID:    feature.ID,
+				By:    "system",
+				Ts:    now,
+			}
+			eventsToAppend = append(eventsToAppend, event)
+		}
+	}
+
+	// If we have updates, write them
+	if unblockedAny {
+		if err := s.writer.ReplaceFeatures(projectID, allFeatures, featuresToWrite); err != nil {
+			return false, err
+		}
+		for _, event := range eventsToAppend {
+			if err := s.writer.AppendFeatureEvent(projectID, event); err != nil {
+				return false, err
+			}
+		}
+	}
+
+	return unblockedAny, nil
 }
 
 func (s *FeatureService) findDependents(projectID, featureID string) ([]string, error) {

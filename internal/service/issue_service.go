@@ -82,12 +82,19 @@ func (s *IssueService) ValidateCreateInput(input *domain.IssueCreateInput) error
 		return domain.NewValidationError("Implementation steps are required (--implementation-steps).")
 	}
 
-	if !domain.ValidatePriority(input.Priority) {
-		return domain.NewValidationError("Invalid priority. Valid options: P0, P1, P2, P3, P4, P5")
+	// Apply default priority if not specified
+	if input.Priority == "" {
+		// Use default priority from workspace config, fallback to P2 for issues
+		ws, err := s.reader.ReadWorkspace()
+		if err == nil && ws.Config.DefaultPriority != "" {
+			input.Priority = ws.Config.DefaultPriority
+		} else {
+			input.Priority = "P2"
+		}
 	}
 
-	if input.Priority == "" {
-		input.Priority = "P2"
+	if !domain.ValidatePriority(input.Priority) {
+		return domain.NewValidationError("Invalid priority. Valid options: P0, P1, P2, P3, P4, P5")
 	}
 
 	if err := s.validateDependencies(input.ProjectID, "", input.DependsOn); err != nil {
@@ -634,14 +641,28 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 	unblockedAny := false
 	now := time.Now().UTC()
 
+	// Load all issues into memory first
+	var allIssues []*domain.Issue
 	err := s.reader.ReadNDJSON(s.paths.ProjectIssuesPath(projectID), func(raw []byte) error {
 		var issue domain.Issue
 		if err := json.Unmarshal(raw, &issue); err != nil {
 			return err
 		}
+		allIssues = append(allIssues, &issue)
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
 
+	// Track which issues need to be written back
+	issuesToWrite := make(map[string]*domain.Issue)
+	eventsToAppend := []*domain.IssueEvent{}
+
+	// Process all issues to find those that should unblock
+	for _, issue := range allIssues {
 		if issue.Status != domain.IssueStatusBlocked {
-			return nil
+			continue
 		}
 
 		hasResolved := false
@@ -653,11 +674,11 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 			// Parse the dependency ID to get the project it belongs to
 			depProjectID := extractProjectIDFromIssueID(depID)
 			if depProjectID == "" {
-				return domain.NewValidationError("Invalid issue ID format: " + depID)
+				return false, domain.NewValidationError("Invalid issue ID format: " + depID)
 			}
 			dep, err := s.reader.ReadIssue(depProjectID, depID)
 			if err != nil {
-				return err
+				return false, err
 			}
 			if dep.Status != domain.IssueStatusResolved && dep.Status != domain.IssueStatusWontFix {
 				allResolved = false
@@ -667,9 +688,8 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 		if hasResolved && allResolved {
 			issue.Status = domain.IssueStatusReady
 			issue.LastUpdatedAt = now
-			if err := s.writer.ReplaceIssue(projectID, &issue); err != nil {
-				return err
-			}
+			issuesToWrite[issue.ID] = issue
+			unblockedAny = true
 
 			event := &domain.IssueEvent{
 				Layer: "issue",
@@ -678,16 +698,23 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 				By:    "system",
 				Ts:    now,
 			}
-			if err := s.writer.AppendIssueEvent(projectID, event); err != nil {
-				return err
-			}
-			unblockedAny = true
+			eventsToAppend = append(eventsToAppend, event)
 		}
+	}
 
-		return nil
-	})
+	// If we have updates, write them
+	if unblockedAny {
+		if err := s.writer.ReplaceIssues(projectID, allIssues, issuesToWrite); err != nil {
+			return false, err
+		}
+		for _, event := range eventsToAppend {
+			if err := s.writer.AppendIssueEvent(projectID, event); err != nil {
+				return false, err
+			}
+		}
+	}
 
-	return unblockedAny, err
+	return unblockedAny, nil
 }
 
 // extractProjectIDFromIssueID extracts the project ID from an issue ID

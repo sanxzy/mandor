@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-02-01
+
+### Added
+
+- Comprehensive command discovery and documentation in `mandor populate` (830 lines)
+- Development mode support for shorter goal strings via `MANDOR_ENV=development`
+- Quick start guide and command reference documentation
+- 12 major sections in populate output with organized navigation
+
+### Changed
+
+- Updated `mandor populate` with structured command reference covering all commands and flags
+- Enhanced populate output with status transitions, dependency rules, and best practices
+- Improved documentation of input formats and configuration reference
+
+## [0.3.0] - 2026-02-01
+
+### Changed
+
+- Version bump from 0.2.3
+
 ## [0.2.3] - 2026-01-30
 
 ### Fixed

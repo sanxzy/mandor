@@ -131,12 +131,19 @@ func (s *TaskService) ValidateCreateInput(input *domain.TaskCreateInput) error {
 		return domain.NewValidationError("Library needs are required (--library-needs).")
 	}
 
-	if !domain.ValidatePriority(input.Priority) {
-		return domain.NewValidationError("Invalid priority. Valid options: P0, P1, P2, P3, P4, P5")
+	// Apply default priority if not specified
+	if input.Priority == "" {
+		// Use default priority from workspace config
+		ws, err := s.reader.ReadWorkspace()
+		if err == nil && ws.Config.DefaultPriority != "" {
+			input.Priority = ws.Config.DefaultPriority
+		} else {
+			input.Priority = "P3"
+		}
 	}
 
-	if input.Priority == "" {
-		input.Priority = "P3"
+	if !domain.ValidatePriority(input.Priority) {
+		return domain.NewValidationError("Invalid priority. Valid options: P0, P1, P2, P3, P4, P5")
 	}
 
 	if err := s.validateDependencies(projectID, "", input.DependsOn); err != nil {

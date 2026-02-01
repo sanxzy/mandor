@@ -129,7 +129,7 @@ func NewCreateCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&createType, "type", "t", "", "Issue type: bug, improvement, debt, security, performance (required, use -t or --type)")
 	cmd.Flags().StringVar(&createName, "name", "", "Issue name (required for CLI, or use positional argument)")
 	cmd.Flags().StringVarP(&createGoal, "goal", "g", "", "Issue goal (required, min 200 chars, include problem description, impact analysis, and acceptance criteria)")
-	cmd.Flags().StringVar(&createPriority, "priority", "P2", "Priority (P0-P5)")
+	cmd.Flags().StringVar(&createPriority, "priority", "", "Priority (P0-P5, default from config)")
 	cmd.Flags().StringVar(&createDependsOn, "depends-on", "", "Pipe-separated issue IDs this issue depends on")
 	cmd.Flags().StringVar(&createAffectedFiles, "affected-files", "", "Pipe-separated affected files (required)")
 	cmd.Flags().StringVar(&createAffectedTests, "affected-tests", "", "Pipe-separated affected tests (required)")

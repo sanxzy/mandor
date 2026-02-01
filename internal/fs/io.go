@@ -592,6 +592,68 @@ func (w *Writer) ReplaceTasks(projectID string, allTasks []*domain.Task, tasksTo
 	return nil
 }
 
+// ReplaceFeatures updates multiple features atomically. allFeatures is all features from file,
+// featuresToUpdate is a map of feature IDs to updated feature objects.
+func (w *Writer) ReplaceFeatures(projectID string, allFeatures []*domain.Feature, featuresToUpdate map[string]*domain.Feature) error {
+	featuresPath := w.paths.ProjectFeaturesPath(projectID)
+
+	// Build final feature list with updates applied
+	var finalFeatures []*domain.Feature
+	for _, f := range allFeatures {
+		if updated, exists := featuresToUpdate[f.ID]; exists {
+			finalFeatures = append(finalFeatures, updated)
+		} else {
+			finalFeatures = append(finalFeatures, f)
+		}
+	}
+
+	// Write all features atomically
+	file, err := os.OpenFile(featuresPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return domain.NewSystemError("Cannot open features file for writing", err)
+	}
+	defer file.Close()
+
+	for _, f := range finalFeatures {
+		encoder := json.NewEncoder(file)
+		if err := encoder.Encode(f); err != nil {
+			return domain.NewSystemError("Cannot write feature", err)
+		}
+	}
+
+	return nil
+}
+
+func (w *Writer) ReplaceIssues(projectID string, allIssues []*domain.Issue, issuesToUpdate map[string]*domain.Issue) error {
+	issuesPath := w.paths.ProjectIssuesPath(projectID)
+
+	// Build final issues list with updates applied
+	var finalIssues []*domain.Issue
+	for _, i := range allIssues {
+		if updated, exists := issuesToUpdate[i.ID]; exists {
+			finalIssues = append(finalIssues, updated)
+		} else {
+			finalIssues = append(finalIssues, i)
+		}
+	}
+
+	// Write all issues atomically
+	file, err := os.OpenFile(issuesPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return domain.NewSystemError("Cannot open issues file for writing", err)
+	}
+	defer file.Close()
+
+	for _, i := range finalIssues {
+		encoder := json.NewEncoder(file)
+		if err := encoder.Encode(i); err != nil {
+			return domain.NewSystemError("Cannot write issue", err)
+		}
+	}
+
+	return nil
+}
+
 func (r *Reader) ReadIssue(projectID, issueID string) (*domain.Issue, error) {
 	var issue *domain.Issue
 	err := r.ReadNDJSON(r.paths.ProjectIssuesPath(projectID), func(raw []byte) error {

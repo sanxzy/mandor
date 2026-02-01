@@ -76,40 +76,40 @@ func TestPopulateCmdExecution(t *testing.T) {
 		t.Error("Expected non-empty output")
 	}
 
-	if !strings.Contains(output, "MANDOR COMMAND REFERENCE") {
-		t.Error("Expected output to contain 'MANDOR COMMAND REFERENCE'")
+	if !strings.Contains(output, "MANDOR CLI COMMAND REFERENCE") {
+		t.Error("Expected output to contain 'MANDOR CLI COMMAND REFERENCE'")
 	}
 
-	if !strings.Contains(output, "WORKSPACE COMMANDS") {
-		t.Error("Expected output to contain 'WORKSPACE COMMANDS'")
+	if !strings.Contains(output, "WORKSPACE") || !strings.Contains(output, "mandor init") {
+		t.Error("Expected output to contain workspace commands")
 	}
 
-	if !strings.Contains(output, "PROJECT COMMANDS") {
-		t.Error("Expected output to contain 'PROJECT COMMANDS'")
+	if !strings.Contains(output, "PROJECT") || !strings.Contains(output, "mandor project") {
+		t.Error("Expected output to contain project commands")
 	}
 
-	if !strings.Contains(output, "FEATURE COMMANDS") {
-		t.Error("Expected output to contain 'FEATURE COMMANDS'")
+	if !strings.Contains(output, "FEATURE") || !strings.Contains(output, "mandor feature") {
+		t.Error("Expected output to contain feature commands")
 	}
 
-	if !strings.Contains(output, "TASK COMMANDS") {
-		t.Error("Expected output to contain 'TASK COMMANDS'")
+	if !strings.Contains(output, "TASK") || !strings.Contains(output, "mandor task") {
+		t.Error("Expected output to contain task commands")
 	}
 
-	if !strings.Contains(output, "ISSUE COMMANDS") {
-		t.Error("Expected output to contain 'ISSUE COMMANDS'")
+	if !strings.Contains(output, "ISSUE") || !strings.Contains(output, "mandor issue") {
+		t.Error("Expected output to contain issue commands")
 	}
 
-	if !strings.Contains(output, "BEST PRACTICES SUMMARY") {
-		t.Error("Expected output to contain 'BEST PRACTICES SUMMARY'")
+	if !strings.Contains(output, "BEST PRACTICES") {
+		t.Error("Expected output to contain 'BEST PRACTICES'")
 	}
 
-	if !strings.Contains(output, "EXIT CODES") {
-		t.Error("Expected output to contain 'EXIT CODES'")
+	if !strings.Contains(output, "Exit Codes") {
+		t.Error("Expected output to contain 'Exit Codes'")
 	}
 
-	if !strings.Contains(output, "PRIORITY LEVELS") {
-		t.Error("Expected output to contain 'PRIORITY LEVELS'")
+	if !strings.Contains(output, "Priority") {
+		t.Error("Expected output to contain priority information")
 	}
 }
 
@@ -152,12 +152,12 @@ func TestPopulateCmd_ContainsBestPractices(t *testing.T) {
 	output := buf.String()
 
 	expectedPractices := []string{
-		"START WITH WORKSPACE",
-		"DEFINE PROJECTS FIRST",
-		"BREAK INTO FEATURES",
-		"SPLIT INTO TASKS",
-		"USE STATUS FLOWS",
-		"LEVERAGE DEPENDENCIES",
+		"WORKFLOW DESIGN",
+		"FEATURE CREATION",
+		"TASK CREATION",
+		"ISSUE TRACKING",
+		"DEPENDENCY MANAGEMENT",
+		"STATUS MANAGEMENT",
 	}
 
 	for _, practice := range expectedPractices {
@@ -177,15 +177,15 @@ func TestPopulateCmd_ContainsStatusFlows(t *testing.T) {
 	cmd.Execute()
 	output := buf.String()
 
-	if !strings.Contains(output, "draft → active → done") {
+	if !strings.Contains(output, "draft ─→ active ─→ done") {
 		t.Error("Expected output to contain feature status flow")
 	}
 
-	if !strings.Contains(output, "pending → ready → in_progress → done") {
+	if !strings.Contains(output, "pending ─→ ready ─→ in_progress ─→ done") {
 		t.Error("Expected output to contain task status flow")
 	}
 
-	if !strings.Contains(output, "open → ready → in_progress → resolved") {
+	if !strings.Contains(output, "open ─→ ready ─→ in_progress ─→ resolved") {
 		t.Error("Expected output to contain issue status flow")
 	}
 }

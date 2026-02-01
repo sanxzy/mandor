@@ -129,7 +129,7 @@ func NewCreateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&createTestCases, "test-cases", "", "Test cases (pipe-separated, required)")
 	cmd.Flags().StringVar(&createDerivable, "derivable-files", "", "Derivable files (pipe-separated, required)")
 	cmd.Flags().StringVar(&createLibraries, "library-needs", "", "Required libraries (pipe-separated, required). Use \"none\" if no external libraries are needed.")
-	cmd.Flags().StringVar(&createPriority, "priority", "P3", "Priority (P0-P5)")
+	cmd.Flags().StringVar(&createPriority, "priority", "", "Priority (P0-P5, default from config)")
 	cmd.Flags().StringVar(&createDependsOn, "depends-on", "", "Pipe-separated task IDs this task depends on")
 	cmd.Flags().BoolVarP(&createYes, "yes", "y", false, "Skip confirmation prompts")
 

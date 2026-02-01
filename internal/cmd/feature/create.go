@@ -90,7 +90,7 @@ func NewCreateCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&goal, "goal", "g", "", "Feature goal (required, min 300 chars, include technical user flow and complete requirements)")
 	cmd.Flags().StringVarP(&name, "name", "n", "", "Feature name (alternative to positional)")
 	cmd.Flags().StringVar(&scope, "scope", "", "Feature scope (frontend, backend, fullstack, cli, desktop, android, flutter, react-native, ios, swift)")
-	cmd.Flags().StringVar(&priority, "priority", "P3", "Priority (P0-P5)")
+	cmd.Flags().StringVar(&priority, "priority", "", "Priority (P0-P5, default from config)")
 	cmd.Flags().StringVar(&dependsOn, "depends", "", "Pipe-separated feature IDs this feature depends on")
 
 	return cmd
