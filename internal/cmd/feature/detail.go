@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	detailProjectID string
-	detailJSON      bool
+	detailProjectID      string
+	detailJSON           bool
+	detailIncludeDeleted bool
 )
 
 func NewDetailCmd() *cobra.Command {
@@ -41,7 +42,7 @@ func NewDetailCmd() *cobra.Command {
 				ProjectID:      projectID,
 				FeatureID:      featureID,
 				JSON:           detailJSON,
-				IncludeDeleted: false,
+				IncludeDeleted: detailIncludeDeleted,
 			}
 
 			output, err := svc.GetFeatureDetail(input)
@@ -78,6 +79,7 @@ func NewDetailCmd() *cobra.Command {
 
 	cmd.Flags().StringVarP(&detailProjectID, "project", "p", "", "Project ID (required)")
 	cmd.Flags().BoolVar(&detailJSON, "json", false, "Output as JSON")
+	cmd.Flags().BoolVar(&detailIncludeDeleted, "include-deleted", false, "Include cancelled features")
 
 	return cmd
 }

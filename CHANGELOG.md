@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-02-01
+
+### Added
+
+- Comprehensive developer guide in README.md covering all commands, configuration, and workflows
+- Complete test suite with 53 scenarios covering all CLI features
+
+### Fixed
+
+- Issue auto-unblocking when dependencies resolved (--status resolved now triggers unblockDependents)
+- Task/issue reopen status now returns `ready` instead of `pending`/`open`
+- Duplicate name validation for features, tasks, and issues
+- Feature status transition validation (prevents draft→done without active)
+- Added `--include-deleted` flag to task/issue/feature detail commands
+- Added `--scope` flag to `mandor feature list` command
+
+### Changed
+
+- Updated README with complete command reference and examples
+- Improved error messages for validation failures
+
 ## [0.3.1] - 2026-02-01
 
 ### Added

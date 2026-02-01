@@ -50,6 +50,10 @@ func (s *IssueService) ValidateCreateInput(input *domain.IssueCreateInput) error
 		return domain.NewValidationError("Issue name is required (--name).")
 	}
 
+	if err := s.validateNoDuplicateName(input.ProjectID, input.Name); err != nil {
+		return err
+	}
+
 	if strings.TrimSpace(input.Goal) == "" {
 		return domain.NewValidationError("Issue goal is required (--goal).")
 	}
@@ -181,6 +185,27 @@ func (s *IssueService) validateNoCycle(projectID, selfID string, dependsOn []str
 		}
 	}
 
+	return nil
+}
+
+func (s *IssueService) validateNoDuplicateName(projectID, name string) error {
+	var issues []domain.Issue
+	err := s.reader.ReadNDJSON(s.paths.ProjectIssuesPath(projectID), func(raw []byte) error {
+		var i domain.Issue
+		if err := json.Unmarshal(raw, &i); err != nil {
+			return err
+		}
+		issues = append(issues, i)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	for _, i := range issues {
+		if i.Name == name && i.Status != domain.IssueStatusCancelled {
+			return domain.NewValidationError("An issue with this name already exists in the project: " + name)
+		}
+	}
 	return nil
 }
 
@@ -439,7 +464,7 @@ func (s *IssueService) UpdateIssue(input *domain.IssueUpdateInput) ([]string, er
 		if !domain.IsIssueTerminalStatus(issue.Status) {
 			return nil, domain.NewValidationError("Issue is not in terminal state. Only resolved, wontfix, or cancelled issues can be reopened.")
 		}
-		issue.Status = domain.IssueStatusOpen
+		issue.Status = domain.IssueStatusReady
 		issue.Reason = ""
 		changes = append(changes, "status", "reason")
 	}
@@ -546,7 +571,10 @@ func (s *IssueService) UpdateIssue(input *domain.IssueUpdateInput) ([]string, er
 		return nil, err
 	}
 
-	if input.Resolve || input.WontFix {
+	isResolved := (input.Resolve || input.WontFix) ||
+		(input.Status != nil && (*input.Status == domain.IssueStatusResolved || *input.Status == domain.IssueStatusWontFix))
+
+	if isResolved {
 		unblocked, err := s.unblockDependents(input.ProjectID, issue.ID)
 		if err != nil {
 			return nil, err

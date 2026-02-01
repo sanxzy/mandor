@@ -10,10 +10,11 @@ import (
 )
 
 var (
-	detailJSON         bool
-	detailEvents       bool
-	detailDependencies bool
-	detailTimestamps   bool
+	detailJSON           bool
+	detailEvents         bool
+	detailDependencies   bool
+	detailTimestamps     bool
+	detailIncludeDeleted bool
 )
 
 func NewDetailCmd() *cobra.Command {
@@ -37,7 +38,7 @@ func NewDetailCmd() *cobra.Command {
 			input := &domain.TaskDetailInput{
 				TaskID:         taskID,
 				JSON:           detailJSON,
-				IncludeDeleted: false,
+				IncludeDeleted: detailIncludeDeleted,
 				Events:         detailEvents,
 				Dependencies:   detailDependencies,
 				Timestamps:     detailTimestamps,
@@ -99,6 +100,7 @@ func NewDetailCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&detailEvents, "events", false, "Include event history")
 	cmd.Flags().BoolVar(&detailDependencies, "dependencies", false, "Include dependency information")
 	cmd.Flags().BoolVar(&detailTimestamps, "timestamps", false, "Show formatted timestamps")
+	cmd.Flags().BoolVar(&detailIncludeDeleted, "include-deleted", false, "Include cancelled/deleted entities")
 
 	return cmd
 }

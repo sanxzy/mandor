@@ -12,6 +12,7 @@ import (
 
 var (
 	listProjectID string
+	listScope     string
 	listJSON      bool
 )
 
@@ -37,6 +38,7 @@ func NewListCmd() *cobra.Command {
 
 			input := &domain.FeatureListInput{
 				ProjectID:      projectID,
+				Scope:          listScope,
 				IncludeDeleted: false,
 				JSON:           listJSON,
 			}
@@ -73,6 +75,7 @@ func NewListCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&listProjectID, "project", "p", "", "Project ID (required)")
+	cmd.Flags().StringVar(&listScope, "scope", "", "Filter by scope (frontend, backend, fullstack, cli, desktop, android, flutter, react-native, ios, swift)")
 	cmd.Flags().BoolVar(&listJSON, "json", false, "Output as JSON")
 
 	return cmd

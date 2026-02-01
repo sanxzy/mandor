@@ -55,6 +55,7 @@ type FeatureCreateInput struct {
 
 type FeatureListInput struct {
 	ProjectID      string
+	Scope          string
 	IncludeDeleted bool
 	JSON           bool
 }

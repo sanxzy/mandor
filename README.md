@@ -1,16 +1,13 @@
 # Mandor - Event-Based Task Manager CLI for AI Agent Workflows
 
 <p align="center">
-<img src="logo.png" alt="Mandor CLI">
-</p>
-
-<p align="center">
   <strong>Deterministic JSONL output | Streaming-native architecture | Schema-driven task management</strong>
 </p>
 
 <p align="center">
   <a href="#installation">Installation</a> •
   <a href="#quick-start">Quick Start</a> •
+  <a href="#core-concepts">Core Concepts</a> •
   <a href="#commands">Commands</a> •
   <a href="#examples">Examples</a>
 </p>
@@ -28,401 +25,728 @@ Mandor is a CLI tool for managing tasks, features, and issues in AI agent workfl
 
 ---
 
-## Background: Why Mandor Was Built
+## Core Concepts
 
-Research on **Context Rot** reveals a critical challenge for AI agents: LLM performance degrades significantly as input token count increases.
+### Entity Hierarchy
 
-### The Problem
-
-AI agents working on long tasks accumulate conversation history, task notes, and context. Research shows:
-
-| Factor | Impact |
-|--------|--------|
-| Input Length | Performance drops 10-40% as tokens increase |
-| Irrelevant Content | Causes 15-30% error rate |
-| Task Complexity | Reasoning degrades faster than retrieval |
-
-Even simple retrieval tasks show degradation at scale. Benchmarks like "Needle in a Haystack" (NIAH) show near-perfect scores, but they test simple keyword matching - not real-world reasoning.
-
-### Why Structured Task Management Helps
-
-Instead of stuffing everything into the context window:
-
-```bash
-# Instead of: "Remember the 15 tasks from our conversation..."
-
-# Use Mandor to externalize state:
-mandor task list --project api --status pending
-# Returns compact JSON for parsing
-
-mandor task detail auth-feature-abc-task-xyz789
-# Exact state, no ambiguity
+```
+Workspace
+  └── Projects
+        └── Features
+              └── Tasks
+        └── Issues
 ```
 
-Mandor provides:
-- **Compact Context**: Replace verbose descriptions with structured JSON
-- **Deterministic Output**: JSONL format is reliable to parse
-- **Complete Audit Trail**: Event log shows what changed and when
-- **Dependency Enforcement**: Auto-blocking prevents invalid states
+### Entity Types
+
+| Type | Purpose | Status Values |
+|------|---------|---------------|
+| **Task** | Work items within a feature | ready, in_progress, done, blocked, cancelled |
+| **Feature** | Logical grouping of related tasks | draft, active, done, blocked, cancelled |
+| **Issue** | Problems, bugs, or improvement requests | ready, in_progress, resolved, wontfix, blocked |
+
+### Dependency Types
+
+- **Task Dependencies**: One task can depend on multiple tasks
+- **Feature Dependencies**: Features can depend on other features
+- **Issue Dependencies**: Issues can depend on other issues
+
+### Status Transitions
+
+**Tasks:**
+```
+ready → in_progress → done
+ready → blocked (dependency not done)
+blocked → ready (dependencies resolved)
+ready → cancelled
+cancelled → ready (reopen)
+```
+
+**Features:**
+```
+draft → active → done
+draft → blocked (dependency not done)
+draft → cancelled
+cancelled → draft (reopen)
+```
+
+**Issues:**
+```
+ready → in_progress → resolved
+ready → in_progress → wontfix
+ready → blocked (dependency not done)
+blocked → ready (dependencies resolved)
+resolved → ready (reopen)
+wontfix → ready (reopen)
+```
 
 ---
 
 ## Installation
 
-Mandor can be installed via curl or npm.
-
-### Option 1: curl (Recommended for macOS/Linux)
-
-The fastest way to install Mandor on macOS or Linux:
+### Build from Source
 
 ```bash
-# Install latest stable version (to ~/.local/bin)
-curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh
-
-# Install to custom directory
-curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh -s -- --prefix /usr/local/bin
-
-# Install latest prerelease (beta versions)
-curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh -s -- --prerelease
-
-# Install specific version
-curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh -s -- --version v0.0.16
+git clone https://github.com/budisantoso/mandor.git
+cd mandor
+go build -o ./binaries/mandor ./cmd/mandor
 ```
 
-**Default install location:** `$HOME/.local/bin/mandor`
-
-**Add to PATH:**
-```bash
-# For bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
-
-# For zsh
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
-```
-
-**Verify installation:**
-```bash
-mandor --help
-```
-
-### Option 2: NPM (Cross-platform)
-
-Install via npm for macOS, Linux, or Windows:
+### Use from Binaries
 
 ```bash
-# Install globally
-npm install -g @mandor/cli
-
-# Verify installation
-mandor --help
-```
-
-**Or use npx to run without installing:**
-```bash
-npx @mandor/cli init "My Project"
-```
-
-**Programmatic usage:**
-```javascript
-const mandor = require('@mandor/cli');
-
-const cli = new mandor.Mandor({ json: true, cwd: '/project/path' });
-await cli.init('My Project');
-await cli.projectCreate('api', { name: 'API Service' });
-const tasks = await cli.taskList({ project: 'api', status: 'pending' });
-```
-
-### Platform Support
-
-| Method | macOS | Linux | Windows |
-|--------|-------|-------|---------|
-| curl | ✅ arm64, x64 | ✅ arm64, x64 | ❌ |
-| npm | ✅ arm64, x64 | ✅ arm64, x64 | ✅ arm64, x64 |
-
-### Troubleshooting
-
-**curl: command not found**
-Install curl: `brew install curl` (macOS) or `sudo apt install curl` (Linux)
-
-**mandor: command not found**
-Ensure the install directory is in your PATH (see above)
-
-**Permission denied**
-```bash
-# Fix permissions for ~/.local/bin
-chmod +x ~/.local/bin/mandor
-```
-
-**NPM permission errors**
-```bash
-# Use npx (no install)
-npx @mandor/cli init "My Project"
-
-# Or fix npm global permissions
-mkdir -p ~/.npm-global
-npm config set prefix '~/.npm-global'
-echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
-source ~/.bashrc
+./binaries/mandor --help
 ```
 
 ---
 
 ## Quick Start
 
+### 1. Initialize Workspace
+
 ```bash
-# 1. Initialize workspace
-mandor init "My Project"
+export MANDOR_ENV=development
+./binaries/mandor init --workspace-name "My Project"
+```
 
-# 2. Create project
-mandor project create api --name "API Service" --goal "Implement REST API"
+### 2. Create a Project
 
-# 3. Create feature
-mandor feature create "User Auth" --project api --goal "Implement login/logout"
+```bash
+./binaries/mandor project create api --name "API Development" \
+  --goal "Build REST API endpoints"
+```
 
-# 4. Get feature ID and create task
-FEATURE_ID=$(mandor feature list --project api --json | jq -r '.[0].id')
-mandor task create "Password Hashing" \
-  --feature $FEATURE_ID \
-  --goal "Implement bcrypt hashing" \
-  --implementation-steps "Install bcrypt|Create utility|Write tests" \
-  --test-cases "Hash validation|Password comparison" \
-  --derivable-files "src/utils/password.ts" \
-  --library-needs "bcrypt"
+### 3. Create a Feature
 
-# 5. Check status
+```bash
+./binaries/mandor feature create "Auth Feature" --project api \
+  --goal "Implement authentication system" \
+  --scope backend
+```
+
+### 4. Create Tasks
+
+```bash
+./binaries/mandor task create "JWT Parser" \
+  --feature api-feature-xxx \
+  --goal "Parse and validate JWT tokens" \
+  --implementation-steps "none" \
+  --test-cases "none" \
+  --derivable-files "none" \
+  --library-needs "none"
+```
+
+---
+
+## Commands Reference
+
+### Workspace Commands
+
+```bash
+# Initialize a new workspace
+mandor init --workspace-name "Name"
+
+# View workspace status
 mandor status
+
+# Manage configuration
+mandor config get <key>
+mandor config set <key> <value>
+mandor config reset <key>
 ```
 
----
-
-## Commands
-
-### Workspace
-
-| Command | Description |
-|---------|-------------|
-| `mandor init <name>` | Initialize workspace |
-| `mandor status` | Show workspace status |
-| `mandor config get/set/list` | Manage configuration |
-
-### Project
-
-| Command | Description |
-|---------|-------------|
-| `mandor project create <id> --name --goal` | Create project |
-| `mandor project list` | List projects |
-| `mandor project detail <id>` | Show project details |
-| `mandor project update <id>` | Update metadata |
-| `mandor project delete <id>` | Delete project |
-
-### Feature
-
-| Command | Description |
-|---------|-------------|
-| `mandor feature create <name> --project --goal` | Create feature |
-| `mandor feature list [--project <id>]` | List features |
-| `mandor feature detail <id>` | Show feature details |
-| `mandor feature update <id>` | Update/cancel/reopen |
-
-**Status flow:** `draft` → `active` → `done` (or `blocked` → `cancelled`)
-
-### Task
-
-| Command | Description |
-|---------|-------------|
-| `mandor task create <name> --feature --goal --implementation-steps --test-cases --derivable-files --library-needs` | Create task |
-| `mandor task list [--feature <id>] [--project <id>] [--status <status>]` | List tasks |
-| `mandor task detail <id>` | Show task details |
-| `mandor task update <id>` | Update task |
-| `mandor task ready [--project <id>] [--priority <P0-P5>]` | List ready tasks |
-| `mandor task blocked [--project <id>]` | List blocked tasks |
-
-**Status flow:** `pending` → `ready` → `in_progress` → `done` (or `blocked` → `cancelled`)
-
-**Note on `--library-needs`:** This flag is required. Provide comma-separated library names (e.g., `"bcrypt,lodash"`), or use `"none"` if the task requires no new external libraries.
-
-### Issue
-
-| Command | Description |
-|---------|-------------|
-| `mandor issue create <name> --project --type --goal --affected-files --affected-tests --implementation-steps` | Create issue |
-| `mandor issue list [--project <id>] [--type <type>] [--status <status>]` | List issues |
-| `mandor issue detail <id>` | Show issue details |
-| `mandor issue update <id>` | Update/resolve/wontfix/cancel |
-| `mandor issue ready [--project <id>]` | List ready issues |
-| `mandor issue blocked [--project <id>]` | List blocked issues |
-
-**Issue types:** `bug`, `improvement`, `debt`, `security`, `performance`
-**Status flow:** `open` → `ready` → `in_progress` → `resolved` (or `wontfix`/`blocked` → `cancelled`)
-
-### Utility
-
-| Command | Description |
-|---------|-------------|
-| `mandor populate [--markdown\|--json]` | Full CLI reference |
-| `mandor completion [bash\|zsh\|fish]` | Shell completion |
-
-### AI Documentation
-
-| Command | Description |
-|---------|-------------|
-| `mandor ai claude` | Generate CLAUDE.md for the project |
-| `mandor ai agents` | Generate AGENTS.md for multi-agent coordination |
-
-Generate AI assistant documentation files:
+### Project Commands
 
 ```bash
-# Generate CLAUDE.md for Claude Code
-mandor ai claude
+# Create a project
+mandor project create <id> --name "Name" --goal "Description"
 
-# Generate AGENTS.md for multi-agent coordination
-mandor ai agents
+# List projects
+mandor project list
+
+# Show project details
+mandor project detail <project-id>
+
+# Delete a project
+mandor project delete <project-id>
+```
+
+### Feature Commands
+
+```bash
+# Create a feature
+mandor feature create "Name" --project <id> --goal "Description" [--scope <value>]
+
+# List features
+mandor feature list --project <id> [--scope <value>]
+
+# Show feature details
+mandor feature detail <feature-id> --project <id> [--include-deleted]
+
+# Update feature
+mandor feature update <id> --project <id> [--status <value>] [--cancel --reason] [--reopen]
+
+# Delete feature (soft delete)
+mandor feature update <id> --project <id> --cancel --reason "Reason"
+```
+
+### Task Commands
+
+```bash
+# Create a task
+mandor task create "Name" --feature <id> -g "Goal" \
+  --implementation-steps "step1|step2" \
+  --test-cases "test1|test2" \
+  --derivable-files "file1|file2" \
+  --library-needs "lib1|lib2" \
+  [--priority <P0-P5>] \
+  [--depends-on <task-id>]
+
+# List tasks
+mandor task list --feature <id> [--status <value>] [--priority <value>]
+
+# Show task details
+mandor task detail <task-id> [--include-deleted] [--events] [--dependencies]
+
+# Update task
+mandor task update <id> [--status <value>] \
+  [--cancel --reason] [--reopen] \
+  [--depends <ids>] [--depends-add <ids>] [--depends-remove <ids>]
+
+# Complete a task (in_progress → done)
+mandor task update <id> --status in_progress
+mandor task update <id> --status done
+```
+
+### Issue Commands
+
+```bash
+# Create an issue
+mandor issue create "Name" --project <id> -t <type> -g "Goal" \
+  --affected-files "file1" \
+  --affected-tests "test1" \
+  --implementation-steps "step1" \
+  [--priority <P0-P5>] \
+  [--depends-on <issue-id>]
+
+# List issues
+mandor issue list --project <id> [--status <value>] [--type <value>]
+
+# Show issue details
+mandor issue detail <issue-id> [--include-deleted]
+
+# Update issue
+mandor issue update <id> [--status <value>] [--start] [--resolve] \
+  [--wontfix --reason] [--reopen] \
+  [--depends-on <ids>]
 ```
 
 ---
 
-## Entity Types
+## Configuration
 
-| Entity | File | Description |
-|--------|------|-------------|
-| Workspace | `.mandor/workspace.json` | Root container |
-| Project | `.mandor/projects/<id>/project.jsonl` | Feature/task/issue grouping |
-| Feature | `.mandor/projects/<id>/features.jsonl` | High-level functionality |
-| Task | `.mandor/projects/<id>/tasks.jsonl` | Work item implementing feature |
-| Issue | `.mandor/projects/<id>/issues.jsonl` | Bug/improvement/debt |
-| Events | `.mandor/projects/<id>/events.jsonl` | Append-only audit trail |
+### Available Config Keys
 
-### ID Format
+```bash
+# Default priority for new entities
+mandor config set default_priority P3
 
-| Entity | Format | Example |
-|--------|--------|---------|
-| Project | `<id>` | `api` |
-| Feature | `<project>-feature-<nanoid>` | `api-feature-abc123` |
-| Task | `<feature_id>-task-<nanoid>` | `api-feature-abc-task-xyz789` |
-| Issue | `<project>-issue-<nanoid>` | `api-issue-abc123` |
+# Strict mode for dependency rules
+mandor config set strict_mode true
+
+# View current config
+mandor config get default_priority
+mandor config get strict_mode
+
+# Reset to defaults
+mandor config reset default_priority
+```
+
+### Priority Values
+
+| Priority | Use Case |
+|----------|----------|
+| P0 | Critical / Security |
+| P1 | High / Blocker |
+| P2 | Medium-High |
+| P3 | Medium (default) |
+| P4 | Medium-Low |
+| P5 | Low / Nice to have |
+
+### Scope Values
+
+Valid scope values for features: `frontend`, `backend`, `fullstack`, `cli`, `desktop`, `android`, `flutter`, `react-native`, `ios`, `swift`
+
+### Issue Types
+
+Valid issue types: `bug`, `improvement`, `debt`, `security`, `performance`
+
+---
+
+## Dependency Management
+
+### Creating Dependencies
+
+```bash
+# Task depends on another task
+mandor task create "Task B" --feature f1 \
+  --depends-on task-a-id
+
+# Issue depends on another issue
+mandor issue create "Issue B" --project p1 \
+  --depends-on issue-a-id
+
+# Feature depends on another feature
+mandor feature create "Feature B" --project p1 \
+  --depends-on feature-a-id
+```
+
+### Managing Dependencies
+
+```bash
+# Add dependencies
+mandor task update <task-id> --depends-add "id1|id2"
+
+# Replace all dependencies
+mandor task update <task-id> --depends "id1|id2"
+
+# Remove dependencies
+mandor task update <task-id> --depends-remove "id1"
+```
+
+### Dependency Behaviors
+
+- **Auto-blocking**: Entities start `blocked` if dependencies aren't `done`
+- **Auto-unblocking**: When a dependency becomes `done`, dependents automatically transition to `ready`
+- **Cross-project**: Dependencies can span projects if enabled in project config
+
+### Cross-Project Dependencies
+
+Projects can be configured to allow or disallow cross-project dependencies:
+
+```bash
+# Allow cross-project task dependencies
+mandor project create p1 --task-dep cross_project_allowed
+
+# Restrict to same-project only (default)
+mandor project create p2 --task-dep same_project_only
+```
+
+### Circular Dependency Prevention
+
+Mandor automatically prevents:
+- Self-dependencies (A → A)
+- Two-node cycles (A → B → A)
+- N-node cycles (A → B → C → A)
+- Cross-project cycles
+
+---
+
+## Status Management
+
+### Checking Status
+
+```bash
+# List blocked tasks
+mandor task list --feature <id> --status blocked
+
+# List ready tasks
+mandor task list --feature <id> --status ready
+
+# List all tasks
+mandor task list --feature <id>
+```
+
+### Transitioning Status
+
+```bash
+# Task workflow
+mandor task update <id> --status in_progress
+mandor task update <id> --status done
+
+# Feature workflow
+mandor feature update <id> --project <pid> --status active
+mandor feature update <id> --project <pid> --status done
+
+# Issue workflow
+mandor issue update <id> --start
+mandor issue update <id> --resolve
+# or
+mandor issue update <id> --wontfix --reason "Reason"
+```
+
+### Cancel and Reopen
+
+```bash
+# Cancel (soft delete)
+mandor task update <id> --cancel --reason "Why cancelled"
+mandor feature update <id> --project <pid> --cancel --reason "Why cancelled"
+mandor issue update <id> --wontfix --reason "Why wontfix"
+
+# Reopen
+mandor task update <id> --reopen
+mandor feature update <id> --project <pid> --reopen
+mandor issue update <id> --reopen
+```
+
+**Note**: Cancelled entities can be viewed with `--include-deleted` flag.
+
+---
+
+## Filtering and Querying
+
+### Filter by Status
+
+```bash
+mandor task list --feature <id> --status ready
+mandor task list --feature <id> --status blocked
+mandor task list --feature <id> --status done
+```
+
+### Filter by Priority
+
+```bash
+mandor task list --feature <id> --priority P0
+mandor task list --feature <id> --priority P2
+```
+
+### Filter by Scope (Features)
+
+```bash
+mandor feature list --project <id> --scope backend
+mandor feature list --project <id> --scope frontend
+```
+
+### Filter by Type (Issues)
+
+```bash
+mandor issue list --project <id> --type bug
+mandor issue list --project <id> --type security
+```
+
+---
+
+## Event System
+
+### Event Log Location
+
+All events are stored in `.mandor/events.jsonl` in your workspace.
+
+### Event Types
+
+| Event | Description |
+|-------|-------------|
+| entity_created | New entity created |
+| status_changed | Status transitioned |
+| dependency_added | Dependency added |
+| dependency_removed | Dependency removed |
+| dependent_unblocked | Dependent entity became ready |
+| entity_reopened | Cancelled entity reopened |
+| entity_cancelled | Entity cancelled |
+
+### Viewing Events
+
+```bash
+# View events for a specific entity
+mandor task detail <id> --events
+
+# Events are also shown in default detail view
+mandor task detail <id>
+```
+
+---
+
+## JSONL Format
+
+Mandor uses JSONL (JSON Lines) for event storage:
+
+```json
+{"timestamp":"2026-02-01T10:00:00Z","type":"entity_created","entity":"task","id":"task-abc","name":"JWT Parser"}
+{"timestamp":"2026-02-01T10:01:00Z","type":"status_changed","entity":"task","id":"task-abc","from":"ready","to":"in_progress"}
+{"timestamp":"2026-02-01T10:02:00Z","type":"status_changed","entity":"task","id":"task-abc","from":"in_progress","to":"done"}
+{"timestamp":"2026-02-01T10:02:00Z","type":"dependent_unblocked","entity":"task","id":"task-xyz","dependency":"task-abc"}
+```
+
+### Parsing Events
+
+```bash
+# View all events
+cat .mandor/events.jsonl
+
+# Filter for specific entity
+grep "task-abc" .mandor/events.jsonl
+
+# Count events by type
+grep '"type":"status_changed"' .mandor/events.jsonl | wc -l
+```
+
+---
+
+## Examples
+
+### Complete Feature Workflow
+
+```bash
+# Setup
+mandor init --workspace-name "API Project"
+mandor project create api --name "API" --goal "Build REST API"
+mandor feature create "Auth" --project api --goal "Authentication" --scope backend
+
+# Create tasks with dependencies
+mandor task create "JWT Parser" --feature auth-xxx \
+  -g "Parse JWT tokens" --implementation-steps "none" \
+  --test-cases "none" --derivable-files "none" --library-needs "none"
+
+mandor task create "JWT Validator" --feature auth-xxx \
+  -g "Validate JWT tokens" --implementation-steps "none" \
+  --test-cases "none" --derivable-files "none" --library-needs "none" \
+  --depends-on jwt-parser-task-id
+
+# Execute workflow
+mandor task update jwt-parser-id --status in_progress
+mandor task update jwt-parser-id --status done
+
+# Validator automatically becomes ready
+mandor task update jwt-validator-id --status in_progress
+mandor task update jwt-validator-id --status done
+
+# Mark feature done
+mandor feature update auth-xxx --project api --status active
+mandor feature update auth-xxx --project api --status done
+```
+
+### Multi-Project Dependencies
+
+```bash
+# Create projects with cross-project enabled
+mandor project create core --name "Core" --goal "Core library"
+mandor project create api --name "API" --goal "API layer" --task-dep cross_project_allowed
+
+# Create task in core
+mandor feature create lib --project core --goal "Core library"
+mandor task create "DB Connection" --feature lib-xxx \
+  -g "Database connection" --implementation-steps "none" \
+  --test-cases "none" --derivable-files "none" --library-needs "none"
+
+# Create task in api depending on core task
+mandor feature create endpoints --project api --goal "API endpoints"
+mandor task create "User Endpoint" --feature endpoints-xxx \
+  -g "User API endpoint" --implementation-steps "none" \
+  --test-cases "none" --derivable-files "none" --library-needs "none" \
+  --depends-on db-connection-task-id
+
+# Complete core task, api task becomes ready
+mandor task update db-connection-id --status in_progress
+mandor task update db-connection-id --status done
+```
+
+### Issue Tracking with Dependencies
+
+```bash
+# Create blocking issues
+mandor issue create "Data Validation Bug" --project api -t bug \
+  -g "Fix data validation" --affected-files "validate.js" \
+  --affected-tests "validate_test.js" --implementation-steps "step1"
+
+mandor issue create "Cache Issue" --project api -t bug \
+  -g "Fix cache issue" --affected-files "cache.js" \
+  --affected-tests "cache_test.js" --implementation-steps "step1"
+
+# Create dependent issue
+mandor issue create "Database Crash" --project api -t bug \
+  -g "Fix crash" --affected-files "db.js" \
+  --affected-tests "db_test.js" --implementation-steps "step1" \
+  --depends-on data-validation-id|cache-issue-id
+
+# Resolve blocking issues
+mandor issue update data-validation-id --resolve
+mandor issue update cache-issue-id --resolve
+
+# Dependent issue automatically becomes ready
+mandor issue update database-crash-id --start
+mandor issue update database-crash-id --resolve
+```
+
+### Cancel and Reopen Workflow
+
+```bash
+# Create feature and tasks
+mandor feature create "Experiment" --project api --goal "Try something"
+mandor task create "Try X" --feature experiment-xxx -g "Test X" \
+  --implementation-steps "none" --test-cases "none" \
+  --derivable-files "none" --library-needs "none"
+
+# Cancel the feature
+mandor feature update experiment-xxx --project api --cancel --reason "Not needed"
+
+# Cannot create new tasks in cancelled feature
+mandor task create "Try Y" --feature experiment-xxx -g "Test Y" \
+  --implementation-steps "none" --test-cases "none" \
+  --derivable-files "none" --library-needs "none"
+# Error: "Cannot create task for cancelled feature"
+
+# Reopen the feature
+mandor feature update experiment-xxx --project api --reopen
+
+# Can create tasks again
+mandor task create "Try Y" --feature experiment-xxx -g "Test Y" \
+  --implementation-steps "none" --test-cases "none" \
+  --derivable-files "none" --library-needs "none"
+```
+
+---
+
+## Best Practices
+
+### 1. Use Meaningful IDs
+
+Project and feature IDs should be:
+- Short but descriptive
+- Lowercase with hyphens
+- Consistent naming convention
+
+```bash
+# Good
+mandor project create user-auth
+mandor feature create jwt-tokens
+
+# Avoid
+mandor project create p1
+mandor feature create f123
+```
+
+### 2. Set Default Priority
+
+Configure default priority in workspace:
+
+```bash
+mandor config set default_priority P3
+```
+
+### 3. Use Scopes for Features
+
+Assign scopes to help filter and organize:
+
+```bash
+mandor feature create "Login UI" --project api --scope frontend
+mandor feature create "Login API" --project api --scope backend
+```
+
+### 4. Keep Dependencies Shallow
+
+Deep dependency chains (>5 levels) can be hard to manage. Consider breaking into smaller features.
+
+### 5. Use Issues for Bugs, Tasks for Work
+
+- **Tasks**: Work to be done (implementations, refactoring)
+- **Issues**: Problems to be fixed or improvements to be made
+
+### 6. Document Cancellation Reasons
+
+Always provide clear reasons when cancelling:
+
+```bash
+mandor task update <id> --cancel --reason "Superseded by feature X"
+```
+
+### 7. Review Blocked Tasks Regularly
+
+```bash
+mandor task list --feature <id> --status blocked
+```
+
+### 8. Use Configuration for Consistency
+
+Set up workspace configuration early:
+
+```bash
+mandor config set default_priority P2
+mandor config set strict_mode true
+```
+
+---
+
+## Troubleshooting
+
+### "Command not found"
+
+Ensure mandor is in your PATH:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### "Project not found"
+
+Check the project ID and ensure you're in the correct workspace.
+
+```bash
+mandor project list
+```
+
+### "Entity not found"
+
+Verify the entity ID exists:
+
+```bash
+mandor task list --feature <feature-id>
+```
+
+### "Cross-project dependency detected"
+
+The project doesn't allow cross-project dependencies:
+
+```bash
+# Check project config
+mandor project detail <project-id>
+
+# Create new project with cross-project enabled
+mandor project create <id> --task-dep cross_project_allowed
+```
+
+### "Invalid status transition"
+
+The transition isn't allowed by the state machine:
+
+```bash
+# Tasks: ready -> in_progress -> done
+# Features: draft -> active -> done
+```
+
+### "Cannot create task for cancelled feature"
+
+Reopen the feature first:
+
+```bash
+mandor feature update <id> --project <pid> --reopen
+```
 
 ---
 
 ## File Structure
 
 ```
-.mandor/
-├── workspace.json          # Workspace metadata
-└── projects/
-    └── <project_id>/
-        ├── project.jsonl      # Project metadata
-        ├── schema.json        # Project rules
-        ├── features.jsonl     # Feature state
-        ├── tasks.jsonl        # Task state
-        ├── issues.jsonl       # Issue state
-        └── events.jsonl       # Append-only audit trail
+mandor/
+├── cmd/
+│   └── mandor/           # CLI entry point
+├── internal/
+│   ├── cmd/              # Command implementations
+│   ├── domain/           # Domain models
+│   ├── service/          # Business logic
+│   ├── repository/       # Data access
+│   └── events/           # Event handling
+├── .mandor/              # Workspace (created by init)
+│   ├── workspace.json    # Workspace config
+│   └── projects/         # Projects directory
+│       └── <project>/
+│           ├── project.json
+│           ├── features/
+│           ├── tasks/
+│           ├── issues/
+│           └── events.jsonl
+└── binaries/
+    └── mandor            # Built binary
 ```
-
----
-
-## Dependency Management
-
-### Status Based on Dependencies
-
-- **Feature**: No deps → `draft`, all done → `active`, otherwise blocked
-- **Task**: No deps → `ready`, all done → `ready`, otherwise pending
-- **Issue**: No deps → `ready`, all resolved → `ready`, otherwise open
-
-### Blocking
-
-Cannot cancel entities that other entities depend on. Use `--force` to override.
-
----
-
-## Configuration
-
-### Priority Levels
-
-| Priority | Description |
-|----------|-------------|
-| P0 | Critical - Must do |
-| P1 | High - Important |
-| P2 | Medium - Should do |
-| P3 | Normal - Default |
-| P4 | Low - Nice to have |
-| P5 | Minimal - Can defer |
-
-### Scope Options (Features)
-
-`frontend`, `backend`, `fullstack`, `cli`, `desktop`, `mobile`
-
----
-
-## Examples
-
-### Complete Workflow
-
-```bash
-mandor init "My Project"
-mandor project create api --name "API Service" --goal "Implement API"
-
-# Create features
-mandor feature create "User Auth" --project api --goal "Login/logout/registration"
-
-# Get feature ID for creating tasks
-AUTH_FEATURE_ID=$(mandor feature list --project api --json | jq -r '.[] | select(.name == "User Auth") | .id')
-
-# Create tasks under the User Auth feature
-mandor task create "Password Hashing" \
-  --feature $AUTH_FEATURE_ID \
-  --goal "Implement bcrypt hashing" \
-  --implementation-steps "Install bcrypt|Create utility|Write tests" \
-  --test-cases "Hash validation|Password comparison" \
-  --derivable-files "src/utils/password.ts" \
-  --library-needs "bcrypt"
-
-mandor task create "JWT Token Management" \
-  --feature $AUTH_FEATURE_ID \
-  --goal "Implement JWT token generation and validation" \
-  --implementation-steps "Review JWT spec|Implement token generation|Add validation middleware" \
-  --test-cases "Token generation works|Token validation works|Expired tokens rejected" \
-  --derivable-files "src/utils/jwt.ts|src/middleware/auth.ts" \
-  --library-needs "jsonwebtoken"
-
-# Task with no new external libraries
-mandor task create "Update Login Endpoint" \
-  --feature $AUTH_FEATURE_ID \
-  --goal "Refactor existing login endpoint" \
-  --implementation-steps "Review current endpoint|Refactor logic|Update tests" \
-  --test-cases "Endpoint returns correct status|Authentication works|Errors handled" \
-  --derivable-files "src/handlers/auth.ts" \
-  --library-needs "none"
-
-mandor issue create "Fix security vulnerability" --project api \
-  --type security --goal "Fix JWT signing vulnerability" \
-  --affected-files "src/utils/jwt.ts" \
-  --affected-tests "src/utils/jwt.test.ts" \
-  --implementation-steps "Review JWT library|Update to secure version|Verify signature"
-
-mandor status
-```
-
-### Issue Lifecycle
-
-```bash
-mandor issue create "Security Fix" --project api \
-  --type security --goal "Fix vulnerability"
-
-mandor issue update api-issue-xxx --status in_progress
-mandor issue update api-issue-xxx --resolve  # or --wontfix
-mandor issue update api-issue-xxx --reopen   # if needed
-```
-
----
-
-## Exit Codes
-
-| Code | Meaning |
-|------|---------|
-| 0 | Success |
-| 1 | System error (I/O, internal) |
-| 2 | Validation error (not found, invalid input) |
-| 3 | Permission error |
 
 ---
 

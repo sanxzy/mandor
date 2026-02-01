@@ -103,6 +103,10 @@ func (s *TaskService) ValidateCreateInput(input *domain.TaskCreateInput) error {
 		return domain.NewValidationError("Task name is required.")
 	}
 
+	if err := s.validateNoDuplicateName(projectID, input.FeatureID, input.Name); err != nil {
+		return err
+	}
+
 	if strings.TrimSpace(input.Goal) == "" {
 		return domain.NewValidationError("Task goal is required (--goal).")
 	}
@@ -234,6 +238,27 @@ func (s *TaskService) validateNoCycle(projectID, selfID string, dependsOn []stri
 		}
 	}
 
+	return nil
+}
+
+func (s *TaskService) validateNoDuplicateName(projectID, featureID, name string) error {
+	var tasks []domain.Task
+	err := s.reader.ReadNDJSON(s.paths.ProjectTasksPath(projectID), func(raw []byte) error {
+		var t domain.Task
+		if err := json.Unmarshal(raw, &t); err != nil {
+			return err
+		}
+		tasks = append(tasks, t)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	for _, t := range tasks {
+		if t.FeatureID == featureID && t.Name == name && t.Status != domain.TaskStatusCancelled {
+			return domain.NewValidationError("A task with this name already exists in the feature: " + name)
+		}
+	}
 	return nil
 }
 
@@ -579,7 +604,7 @@ func (s *TaskService) UpdateTask(input *domain.TaskUpdateInput) ([]string, error
 		if task.Status != domain.TaskStatusCancelled {
 			return nil, domain.NewValidationError("Task is not cancelled. Nothing to reopen.")
 		}
-		task.Status = domain.TaskStatusPending
+		task.Status = domain.TaskStatusReady
 		task.Reason = ""
 		changes = append(changes, "status", "reason")
 	}

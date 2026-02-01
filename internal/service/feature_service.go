@@ -50,6 +50,10 @@ func (s *FeatureService) ValidateCreateInput(input *domain.FeatureCreateInput) e
 		return domain.NewValidationError("Feature name is required.")
 	}
 
+	if err := s.validateNoDuplicateName(input.ProjectID, input.Name); err != nil {
+		return err
+	}
+
 	if strings.TrimSpace(input.Goal) == "" {
 		return domain.NewValidationError("Feature goal is required (--goal).")
 	}
@@ -85,6 +89,27 @@ func (s *FeatureService) ValidateCreateInput(input *domain.FeatureCreateInput) e
 		return err
 	}
 
+	return nil
+}
+
+func (s *FeatureService) validateNoDuplicateName(projectID, name string) error {
+	var features []domain.Feature
+	err := s.reader.ReadNDJSON(s.paths.ProjectFeaturesPath(projectID), func(raw []byte) error {
+		var f domain.Feature
+		if err := json.Unmarshal(raw, &f); err != nil {
+			return err
+		}
+		features = append(features, f)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	for _, f := range features {
+		if f.Name == name && f.Status != domain.FeatureStatusCancelled {
+			return domain.NewValidationError("A feature with this name already exists in the project: " + name)
+		}
+	}
 	return nil
 }
 
@@ -148,6 +173,29 @@ func (s *FeatureService) validateNoCycle(projectID, selfID string, dependsOn []s
 	}
 
 	return nil
+}
+
+func (s *FeatureService) validateStatusTransition(current, next string) error {
+	validTransitions := map[string][]string{
+		domain.FeatureStatusDraft:     {domain.FeatureStatusActive, domain.FeatureStatusBlocked, domain.FeatureStatusCancelled},
+		domain.FeatureStatusActive:    {domain.FeatureStatusDone, domain.FeatureStatusBlocked, domain.FeatureStatusCancelled},
+		domain.FeatureStatusBlocked:   {domain.FeatureStatusDraft, domain.FeatureStatusActive, domain.FeatureStatusDone, domain.FeatureStatusCancelled},
+		domain.FeatureStatusDone:      {domain.FeatureStatusCancelled},
+		domain.FeatureStatusCancelled: {domain.FeatureStatusDraft},
+	}
+
+	allowed, ok := validTransitions[current]
+	if !ok {
+		return domain.NewValidationError(fmt.Sprintf("Cannot transition from %s", current))
+	}
+
+	for _, allowedStatus := range allowed {
+		if next == allowedStatus {
+			return nil
+		}
+	}
+
+	return domain.NewValidationError(fmt.Sprintf("Invalid status transition from %s to %s. Valid transitions: %v", current, next, allowed))
 }
 
 func (s *FeatureService) CreateFeature(input *domain.FeatureCreateInput) (*domain.Feature, error) {
@@ -231,6 +279,10 @@ func (s *FeatureService) ListFeatures(input *domain.FeatureListInput) (*domain.F
 			return err
 		}
 		if !input.IncludeDeleted && f.Status == domain.FeatureStatusCancelled {
+			return nil
+		}
+
+		if input.Scope != "" && f.Scope != input.Scope {
 			return nil
 		}
 
@@ -318,6 +370,12 @@ func (s *FeatureService) ValidateUpdateInput(input *domain.FeatureUpdateInput) e
 
 	if input.Status != nil && !domain.ValidateFeatureStatus(*input.Status) {
 		return domain.NewValidationError("Invalid status. Valid options: draft, active, done, blocked, cancelled")
+	}
+
+	if input.Status != nil && *input.Status != feature.Status {
+		if err := s.validateStatusTransition(feature.Status, *input.Status); err != nil {
+			return err
+		}
 	}
 
 	if input.Scope != nil && !domain.ValidateScope(*input.Scope) {
