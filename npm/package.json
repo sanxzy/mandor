@@ -1,6 +1,6 @@
 {
   "name": "@mandors/cli",
-  "version": "0.0.27",
+  "version": "0.3.5",
   "description": "Mandor CLI - Event-based task management for development workflows",
   "main": "lib/index.js",
   "bin": {
