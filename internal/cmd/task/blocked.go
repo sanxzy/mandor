@@ -19,9 +19,9 @@ var (
 
 func NewBlockedCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "blocked [--project <id>] [--feature <id>] [--priority <priority>] [--json]",
+		Use:   "blocked --feature <id> [--priority <priority>] [--json]",
 		Short: "List blocked tasks",
-		Long:  "List all tasks with status='blocked' that are waiting for dependencies to complete.",
+		Long:  "List tasks with status='blocked' that are waiting for dependencies. Feature ID is required.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewTaskService()
 			if err != nil {
@@ -30,6 +30,10 @@ func NewBlockedCmd() *cobra.Command {
 
 			if !svc.WorkspaceInitialized() {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
+			}
+
+			if blockedFeatureID == "" {
+				return domain.NewValidationError("Feature ID is required (--feature).")
 			}
 
 			if blockedPriority != "" {

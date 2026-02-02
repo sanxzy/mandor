@@ -19,9 +19,9 @@ var (
 
 func NewReadyCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "ready [--project <id>] [--feature <id>] [--priority <priority>] [--json]",
+		Use:   "ready --feature <id> [--priority <priority>] [--json]",
 		Short: "List ready tasks",
-		Long:  "List all tasks with status='ready' that are available to work on (no blocking dependencies).",
+		Long:  "List tasks with status='ready' that are available to work on. Feature ID is required.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewTaskService()
 			if err != nil {
@@ -30,6 +30,10 @@ func NewReadyCmd() *cobra.Command {
 
 			if !svc.WorkspaceInitialized() {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
+			}
+
+			if readyFeatureID == "" {
+				return domain.NewValidationError("Feature ID is required (--feature).")
 			}
 
 			if readyPriority != "" {

@@ -23,9 +23,9 @@ var (
 
 func NewListCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "list [--feature <id>] [--project <id>] [--status <status>] [--priority <priority>] [--json] [--include-deleted]",
+		Use:   "list --feature <id> [--status <status>] [--priority <priority>] [--json] [--include-deleted]",
 		Short: "List tasks",
-		Long:  "List all tasks in the workspace or filter by feature/project.",
+		Long:  "List tasks in a feature. Feature ID is required.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewTaskService()
 			if err != nil {
@@ -34,6 +34,10 @@ func NewListCmd() *cobra.Command {
 
 			if !svc.WorkspaceInitialized() {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
+			}
+
+			if listFeatureID == "" {
+				return domain.NewValidationError("Feature ID is required (--feature).")
 			}
 
 			if listStatus != "" {
