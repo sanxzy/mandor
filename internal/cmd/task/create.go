@@ -46,8 +46,8 @@ func NewCreateCmd() *cobra.Command {
 				return domain.NewValidationError("Task goal is required (--goal).")
 			}
 
-			if len(createGoal) > 500 {
-				return domain.NewValidationError("Goal must be 500 characters or less.")
+			if len(createGoal) < 500 {
+				return domain.NewValidationError("Goal must be at least 500 characters.")
 			}
 
 			implSteps := splitByPipe(createImplSteps)
@@ -124,7 +124,7 @@ func NewCreateCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&createFeatureID, "feature", "f", "", "Feature ID (required)")
-	cmd.Flags().StringVarP(&createGoal, "goal", "g", "", "Task goal (required, max 500 chars)")
+	cmd.Flags().StringVarP(&createGoal, "goal", "g", "", "Task goal (required, min 500 chars)")
 	cmd.Flags().StringVar(&createImplSteps, "implementation-steps", "", "Implementation steps (pipe-separated, required)")
 	cmd.Flags().StringVar(&createTestCases, "test-cases", "", "Test cases (pipe-separated, required)")
 	cmd.Flags().StringVar(&createDerivable, "derivable-files", "", "Derivable files (pipe-separated, required)")

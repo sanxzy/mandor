@@ -37,3 +37,6 @@ Thumbs.db
 # Keep binaries directories (for releases)
 !binaries/
 !npm/binaries/
+
+# Documentation and plans
+!master_docs/
