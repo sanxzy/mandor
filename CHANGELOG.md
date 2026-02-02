@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.9] - 2026-02-02
+
+### Changed
+- Enhanced README with "Why Mandor" section emphasizing markdownless task management
+- Updated comprehensive tutorials with current CLI command signatures
+- Improved examples showing real-world authentication and database workflows
+- Added table comparing Mandor vs. Markdown plan files
+- Enhanced `mandor populate` output with "No Markdown Plans" messaging at the top
+- Added clear value proposition: deterministic state, automatic dependencies, real-time queries
+
+### Added
+- "Stop Writing Markdown Plans" section in `mandor populate` command output
+- New "No More Markdown Plans" best practices section in populate output
+- Complete workflow examples for multi-project dependencies
+- Practical issue tracking examples with blocking dependencies
+- Cancel/reopen workflow examples with real scenarios
+
+## [0.3.8] - 2026-02-02
+
+### Added
+- New `mandor task summary <feature_id>` command: displays tasks grouped by status in markdown table format
+- New `mandor issue summary <project_id>` command: displays issues grouped by status in markdown table format
+- Both summary commands show item counts per status group and sort by creation date within groups
+
+### Changed
+- Task commands refactored to use positional arguments for feature_id: `mandor task list <feature_id>`, `mandor task ready <feature_id>`, `mandor task blocked <feature_id>`
+- Task create command signature changed to: `mandor task create <feature_id> <name> [flags]`
+- All task commands now follow consistent positional argument pattern
+
 ## [0.3.5] - 2026-02-02
 
 ### Changed
