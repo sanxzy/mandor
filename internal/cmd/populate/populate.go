@@ -53,7 +53,7 @@ MANDOR'S SOLUTION
 Single source of truth with deterministic state:
   ✓ Event-sourced: All changes in immutable events.jsonl
   ✓ Automatic dependencies: Mark task done → dependents auto-unblock
-  ✓ Real-time queries: mandor task ready, blocked, summary
+  ✓ Real-time queries: mandor task ready, blocked
   ✓ Audit trail: Full history of every status change
   ✓ Schema-driven: Enforce implementation steps and tests upfront
   ✓ CLI-native: Works in terminals, scripts, and CI/CD
@@ -72,14 +72,19 @@ EXAMPLE: Replace This...
 ...WITH THIS
 ════════════════════════════════════════════════════════════════════
 
-  mandor feature create "Auth System" --project api
-  mandor task create feature-id "JWT Parser" --goal "..." --priority P1
-  mandor task create feature-id "Login" --depends-on jwt-id --priority P1
+  mandor feature create "Auth System" --project api \
+    --goal "Implement JWT and login endpoints"
+  
+  mandor task create "JWT Parser" --feature api-feature-xxx \
+    --goal "..." --implementation-steps "..." --test-cases "..." \
+    --derivable-files "..." --library-needs "..." --priority P1
+  
+  mandor task create "Login" --feature api-feature-xxx \
+    --goal "..." --depends-on jwt-task-id --priority P1
   
   # Real-time progress
-  mandor task ready feature-id          # See what's available NOW
-  mandor task blocked feature-id        # See what's waiting
-  mandor task summary feature-id        # See grouped status
+  mandor task ready --feature api-feature-xxx          # See what's available NOW
+  mandor task blocked --feature api-feature-xxx        # See what's waiting
 
 ═════════════════════════════════════════════════════════════════════════
  TABLE OF CONTENTS
@@ -90,11 +95,11 @@ EXAMPLE: Replace This...
   3. Feature Management
   4. Task Management
   5. Issue Management
-  6. Utility Commands
-  7. Configuration Reference
-  8. Status Transitions
-  9. Dependency Rules
-  10. Input Formats
+  6. AI Commands
+  7. Utility Commands
+  8. Configuration Reference
+  9. Status Transitions
+  10. Dependency Rules
   11. Best Practices
   12. Common Workflows
 
@@ -102,29 +107,32 @@ EXAMPLE: Replace This...
  1. WORKSPACE COMMANDS
 ═════════════════════════════════════════════════════════════════════════
 
-▶ mandor init <workspace_name> [--yes]
-  Initialize a new workspace
+▶ mandor init [--workspace-name <name>] [-y]
+  Initialize a new Mandor workspace in the current directory
+  
+  Creates .mandor/ directory with workspace metadata and project storage.
   
   Flags:
-    --yes, -y         Skip confirmation prompts
+    --workspace-name <text>   Custom workspace name (default: current directory)
+    -y, --yes                 Skip confirmation prompts
+    --strict                  Enforce strict dependency rules (deprecated)
   
   Example:
-    mandor init "AI Agent Project" -y
-
-  Best Practice:
-    - Run once per project to set up .mandor/ directory
-    - Use descriptive workspace names
-    - Set up config defaults after initialization
+    mandor init "My Project" -y
 
 ───────────────────────────────────────────────────────────────────────
 
 ▶ mandor status [--project <id>] [--summary] [--json]
-  Display workspace and project status overview
+  Display the current status of the workspace and all projects
+  
+  Shows comprehensive statistics including entity counts, status breakdown,
+  priority distribution, dependency information, and timeline metrics.
   
   Flags:
-    --project, -p     Filter by specific project ID
-    --summary, -s     Show compact summary view (counts only)
-    --json, -j        Machine-readable JSON output
+    --project, -p <id>    Show status for specific project only
+    --summary, -s         Show summary view (one line per entity type)
+    --json, -j            Output in JSON format (machine-readable)
+    --include-deleted     Include deleted projects in output
   
   Examples:
     mandor status                    # Full workspace overview
@@ -134,59 +142,68 @@ EXAMPLE: Replace This...
 
 ───────────────────────────────────────────────────────────────────────
 
+▶ mandor summary [--project <id>]
+  Display a summary of all features grouped by priority with task counts
+  
+  Shows features with task counts and status overview.
+  
+  Flags:
+    --project, -p <id>   Filter by project ID
+  
+  Examples:
+    mandor summary                  # All features
+    mandor summary --project api    # Project features only
+
+───────────────────────────────────────────────────────────────────────
+
 ▶ mandor config [get|set|list|reset] [<key>] [<value>]
-  Manage workspace configuration
+  View and modify workspace configuration settings
+  
+  Available keys:
+    - default_priority: Default priority for new entities (P0-P5, default: P3)
+    - strict_mode: Enforce strict validation rules (true/false, default: false)
   
   Subcommands:
-    get <key>              Get configuration value
+    get <key>              Display configuration value(s)
     set <key> <value>      Set configuration value
-    list                   List all configuration
-    reset <key>            Reset to default value
-  
-  Configuration Keys:
-    priority.default       Default priority for entities (P0-P5)
-    strictMode             Enable strict dependency checking (true|false)
+    list                   List all configuration keys with descriptions
+    reset <key>            Reset configuration to defaults
   
   Examples:
     mandor config list                      # Show all config
-    mandor config set priority.default P2   # Set default priority
-    mandor config get priority.default      # Get priority default
-    mandor config reset priority.default    # Reset to default
-
-  Best Practice:
-    - Set priority.default early for consistency
-    - Enable strictMode for production workflows
+    mandor config set default_priority P2   # Set default priority
+    mandor config get default_priority      # Get priority default
+    mandor config reset default_priority    # Reset to default
 
 ═════════════════════════════════════════════════════════════════════════
  2. PROJECT COMMANDS
 ═════════════════════════════════════════════════════════════════════════
 
-▶ mandor project create <project_id> --name <name> --goal <goal> [OPTIONS]
-  Create a new project
+▶ mandor project create <id> --name <name> --goal <goal> [OPTIONS]
+  Create a new project in the workspace
   
   Required Arguments:
-    <project_id>                   Unique project identifier (alphanumeric, hyphens)
+    <id>                         Unique project identifier (alphanumeric, hyphens)
   
   Required Flags:
-    --name, -n <text>              Project display name
-    --goal, -g <text>              Project objective/goal (500+ chars, or 2+ in dev mode)
+    --name, -n <text>            Project display name
+    --goal, -g <text>            Project goal/objectives (min 500 characters)
   
   Optional Flags:
-    --task-dep <rule>              Task dependency rule (default: same_project_only)
-                                   Values: same_project_only | cross_project_allowed | disabled
-    --feature-dep <rule>           Feature dependency rule (default: cross_project_allowed)
-                                   Values: same_project_only | cross_project_allowed | disabled
-    --issue-dep <rule>             Issue dependency rule (default: same_project_only)
-                                   Values: same_project_only | cross_project_allowed | disabled
-    --strict                       Enable strict dependency enforcement
-    --yes, -y                      Skip confirmation prompts
+    --task-dep <rule>            Task dependency rule
+                                 Values: same_project_only (default) | cross_project_allowed | disabled
+    --feature-dep <rule>         Feature dependency rule
+                                 Values: cross_project_allowed (default) | same_project_only | disabled
+    --issue-dep <rule>           Issue dependency rule
+                                 Values: same_project_only (default) | cross_project_allowed | disabled
+    --strict                     Enforce strict dependency rules
+    -y, --yes                    Non-interactive mode
   
   Example:
     mandor project create api \
       --name "REST API Service" \
       --goal "Build production REST API with authentication, authorization..." \
-      --task-dep cross_project_allowed \
-      --feature-dep cross_project_allowed
+      --task-dep cross_project_allowed
 
 ───────────────────────────────────────────────────────────────────────
 
@@ -217,10 +234,10 @@ EXAMPLE: Replace This...
 
 ───────────────────────────────────────────────────────────────────────
 
-▶ mandor project update <project_id> [--name <text>] [--goal <text>]
+▶ mandor project update <project_id> --name <name> [--goal <goal>]
   Update project properties
   
-  Optional Flags:
+  Flags:
     --name, -n <text>     Update project name
     --goal, -g <text>     Update project goal
   
@@ -254,276 +271,252 @@ EXAMPLE: Replace This...
 ═════════════════════════════════════════════════════════════════════════
 
 ▶ mandor feature create <name> --project <id> --goal <goal> [OPTIONS]
-  Create a feature (high-level functionality epic)
+  Create a new feature in the specified project
   
   Required Arguments:
-    <name>                         Feature name (positional)
+    <name>                   Feature name (positional or --name flag)
   
   Required Flags:
-    --project, -p <id>             Project ID (required)
-    --goal, -g <text>              Feature goal/description (300+ chars, or 2+ in dev)
+    --project, -p <id>       Project ID
+    --goal, -g <text>        Feature goal (min 300 chars)
   
   Optional Flags:
-    --scope <scope>                Feature scope (frontend|backend|fullstack|cli|desktop|
-                                                  android|flutter|react-native|ios|swift)
-    --priority <P0-P5>             Priority level (default from config)
-    --depends <ids>                Pipe-separated feature IDs for dependencies
-    --yes, -y                      Skip confirmation
+    --scope <scope>          Feature scope
+                             Values: frontend, backend, fullstack, cli, desktop, android, flutter, react-native, ios, swift
+    --priority <P0-P5>       Priority level (default: from config)
+    --depends <ids>          Pipe-separated feature IDs this depends on
   
   Example:
-    mandor feature create "User Authentication" \
-      --project api \
-      --goal "Implement login, logout, registration, password reset flows..." \
+    mandor feature create "Authentication" --project api \
+      --goal "Implement JWT-based authentication with login and refresh flows for secure API access" \
       --scope backend \
-      --priority P1 \
-      --depends api-feature-security
-
-  Initial Status: draft (becomes active when marked complete)
+      --priority P1
 
 ───────────────────────────────────────────────────────────────────────
 
-▶ mandor feature list [--project <id>] [--json]
-  List features
+▶ mandor feature list --project <id> [--json] [--include-deleted]
+  List features in a project
   
   Flags:
-    --project, -p <id>    Filter by project
-    --json, -j            JSON output
+    --project, -p <id>    Project ID (required)
+    --json, -j            Machine-readable JSON output
+    --include-deleted     Include deleted features
   
   Example:
     mandor feature list --project api
+    mandor feature list --project api --json
 
 ───────────────────────────────────────────────────────────────────────
 
 ▶ mandor feature detail <feature_id> --project <id>
-  Show complete feature details
+  Show feature details
   
   Flags:
-    --project, -p <id>    Project ID (required)
+    --project, -p <id>       Project ID (optional, extracted from feature ID)
+    --include-deleted        Include deleted features
   
   Example:
-    mandor feature detail api-feature-abc123 --project api
+    mandor feature detail api-feature-xxx --project api
 
 ───────────────────────────────────────────────────────────────────────
 
 ▶ mandor feature update <feature_id> --project <id> [OPTIONS]
-  Update feature properties or status
+  Update feature properties, change status, cancel, or reopen
   
-  Required Flags:
-    --project, -p <id>    Project ID
+  Flags:
+    --project, -p <id>    Project ID (required)
+    --name <text>         New feature name
+    --goal <text>         New feature goal
+    --scope <scope>       New scope (frontend, backend, fullstack, etc.)
+    --priority <P0-P5>    New priority
+    --status <status>     New status (draft, active, done, blocked, cancelled)
+    --depends <ids>       Set all dependencies (pipe-separated)
+    --cancel              Cancel the feature
+    --reason <text>       Cancellation reason (required with --cancel)
+    --reopen              Reopen a cancelled feature
+    --force               Force operation (skip validation)
+    --dry-run             Show what would be changed
+    -y, --yes             Skip confirmation
   
-  Optional Flags:
-    --name <text>               Update feature name
-    --goal <text>               Update goal description
-    --scope <scope>             Update scope
-    --priority <P0-P5>          Update priority
-    --status <status>           Set status (draft|active|done|blocked|cancelled)
-    --depends <ids>             Update dependencies (pipe-separated IDs)
-    --cancel --reason <text>    Cancel with reason (audit trail)
-    --reopen                    Reopen cancelled feature
-    --force                     Force cancel even with dependents
-    --dry-run                   Preview changes without saving
-  
-  Example:
-    mandor feature update api-feature-abc123 \
-      --project api \
-      --priority P0 \
-      --status active
-
-───────────────────────────────────────────────────────────────────────
+  Examples:
+    mandor feature update api-feature-xxx --project api --name "New Name"
+    mandor feature update api-feature-xxx --project api --status active
+    mandor feature update api-feature-xxx --project api --cancel --reason "Not needed"
+    mandor feature update api-feature-xxx --project api --reopen
 
 ═════════════════════════════════════════════════════════════════════════
  4. TASK COMMANDS
 ═════════════════════════════════════════════════════════════════════════
 
-▶ mandor task create <feature_id> <name> --goal <goal> [REQUIRED] [OPTIONS]
-  Create a task (individual work item)
+▶ mandor task create <name> --feature <id> --goal <goal> --implementation-steps <steps> --test-cases <cases> --derivable-files <files> --library-needs <libs> [OPTIONS]
+  Create a new task in the specified feature
   
   Required Arguments:
-    <feature_id>                   Feature ID (format: project-feature-xxx)
-    <name>                         Task name
+    <name>                                 Task name (positional)
   
   Required Flags:
-    --goal, -g <text>              Task goal (500+ chars in prod, 2+ in dev)
-    --implementation-steps <steps> Pipe-separated implementation steps
-    --test-cases <cases>           Pipe-separated test cases to validate
-    --derivable-files <files>      Pipe-separated output files to be created
-    --library-needs <libs>         Pipe-separated required libraries (use "none" if N/A)
+    --feature, -f <id>                     Feature ID
+    --goal, -g <text>                      Task goal (min 500 chars)
+    --implementation-steps <steps>         Pipe-separated implementation steps
+    --test-cases <cases>                   Pipe-separated test cases
+    --derivable-files <files>              Pipe-separated files to create
+    --library-needs <libs>                 Pipe-separated libraries (use "none" if not needed)
   
   Optional Flags:
-    --priority <P0-P5>             Priority level (default from config)
-    --depends-on <ids>            Pipe-separated task IDs for dependencies
-    --yes, -y                      Skip confirmation
+    --priority <P0-P5>                     Priority (default: from config)
+    --depends-on <ids>                     Pipe-separated task IDs this depends on
+    -y, --yes                              Skip confirmation prompts
   
   Example:
-    mandor task create api-feature-auth "Setup Password Hashing" \
-      --goal "Implement bcrypt password hashing utility" \
-      --implementation-steps "Install bcrypt|Create password utility|Add salt management|Write security tests" \
-      --test-cases "Hash validation|Verify comparison|Salt uniqueness|Performance check" \
-      --derivable-files "src/utils/password.go|src/utils/password_test.go" \
-      --library-needs "bcrypt|golang-jwt"
-  
-  Initial Status: ready (or pending, transitions to ready when dependencies complete)
+    mandor task create "JWT Parser" --feature api-feature-xxx \
+      --goal "Parse and validate JWT tokens in incoming requests..." \
+      --implementation-steps "Setup crypto|Add validation|Handle expiry" \
+      --test-cases "Valid token accepted|Expired rejected|Invalid rejected" \
+      --derivable-files "jwt_validator.go|jwt_test.go" \
+      --library-needs "golang-jwt" \
+      --priority P1
 
 ───────────────────────────────────────────────────────────────────────
 
-▶ mandor task list <feature_id> [--status <status>] [--priority <P0-P5>] [OPTIONS]
-  List tasks in a feature with filtering
+▶ mandor task list --feature <id> [--status <status>] [--priority <priority>] [--json] [--sort <field>] [--order <asc|desc>]
+  List tasks in a feature
   
-  Required Arguments:
-    <feature_id>          Feature ID (format: project-feature-xxx)
+  Required Flags:
+    --feature, -f <id>    Feature ID
   
   Optional Flags:
-    --status <status>     Filter by status (pending|ready|in_progress|done|blocked|cancelled)
+    --status <status>     Filter by status (pending, ready, in_progress, blocked, done, cancelled)
     --priority <P0-P5>    Filter by priority
-    --json, -j            JSON output
-    --include-deleted     Include cancelled tasks
+    --json, -j            Machine-readable JSON output
+    --include-deleted     Include deleted tasks
+    --sort <field>        Sort field (priority, created_at, name) (default: priority)
+    --order <asc|desc>    Sort order (default: desc)
+    --project, -p <id>    Filter by project ID
   
   Examples:
-    mandor task list api-feature-auth
-    mandor task list api-feature-auth --status ready
-    mandor task list api-feature-auth --priority P0
+    mandor task list --feature api-feature-xxx
+    mandor task list --feature api-feature-xxx --status ready
+    mandor task list --feature api-feature-xxx --priority P1 --json
+
+───────────────────────────────────────────────────────────────────────
+
+▶ mandor task ready --feature <id> [--priority <priority>] [--json]
+  List tasks with status='ready' that are available to work on
+  
+  Required Flags:
+    --feature, -f <id>    Feature ID
+  
+  Optional Flags:
+    --priority <P0-P5>    Filter by priority
+    --json, -j            Machine-readable JSON output
+    --project, -p <id>    Filter by project ID
+  
+  Examples:
+    mandor task ready --feature api-feature-xxx
+    mandor task ready --feature api-feature-xxx --priority P0
+
+───────────────────────────────────────────────────────────────────────
+
+▶ mandor task blocked --feature <id> [--priority <priority>] [--json]
+  List tasks with status='blocked' that are waiting for dependencies
+  
+  Required Flags:
+    --feature, -f <id>    Feature ID
+  
+  Optional Flags:
+    --priority <P0-P5>    Filter by priority
+    --json, -j            Machine-readable JSON output
+    --project, -p <id>    Filter by project ID
+  
+  Example:
+    mandor task blocked --feature api-feature-xxx
 
 ───────────────────────────────────────────────────────────────────────
 
 ▶ mandor task detail <task_id>
-  Show task details with implementation plan
-  
-  Displays:
-    - Task metadata (name, goal, priority)
-    - Implementation steps and test cases
-    - Derivable files and library needs
-    - Status and dependencies
-    - Creation/update information
+  Show task details
   
   Example:
-    mandor task detail api-feature-auth-task-abc123
+    mandor task detail api-task-xxx-001
 
 ───────────────────────────────────────────────────────────────────────
 
 ▶ mandor task update <task_id> [OPTIONS]
-  Update task properties or status
+  Update task properties, change status, cancel, or reopen
   
-  Optional Flags:
-    --status <status>               Change status (pending|ready|in_progress|done|blocked|cancelled)
-    --priority <P0-P5>              Update priority
-    --name <text>                   Update task name
-    --goal <text>                   Update task goal
-    --implementation-steps <steps>  Update implementation steps (pipe-separated)
-    --test-cases <cases>            Update test cases (pipe-separated)
-    --derivable-files <files>       Update output files (pipe-separated)
-    --library-needs <libs>          Update library requirements
-    --depends-on <ids>              Set dependencies (replace all)
-    --depends-add <ids>             Add dependencies (additive)
-    --depends-remove <ids>          Remove dependencies
-    --cancel --reason <text>        Cancel with reason
-    --reopen                        Reopen cancelled task
-    --dry-run                       Preview without saving
+  Flags:
+    --name <text>                      New task name
+    --goal <text>                      New task goal
+    --priority <P0-P5>                 New priority
+    --implementation-steps <steps>     Update implementation steps (pipe-separated)
+    --test-cases <cases>               Update test cases (pipe-separated)
+    --derivable-files <files>          Update derivable files (pipe-separated)
+    --library-needs <libs>             Update library needs (pipe-separated)
+    --status <status>                  New status (ready, in_progress, done, blocked, cancelled)
+    --depends <ids>                    Set all dependencies (pipe-separated)
+    --depends-add <ids>                Add dependencies (pipe-separated)
+    --depends-remove <ids>             Remove dependencies (pipe-separated)
+    --cancel                           Cancel the task
+    --reason <text>                    Cancellation reason (required with --cancel)
+    --reopen                           Reopen a cancelled task
+    --force                            Force operation (skip validation)
+    --dry-run                          Show what would be changed
+    -y, --yes                          Skip confirmation
   
-  Example:
-    mandor task update api-feature-auth-task-abc123 \
-      --status in_progress \
-      --priority P0
-
-───────────────────────────────────────────────────────────────────────
-
-▶ mandor task summary <feature_id>
-  Display task summary for a feature (NEW in v0.3.7)
-  
-  Groups tasks by status in markdown table format with:
-    - Task counts per status
-    - Task ID, Name, Priority, Status columns
-    - Sorted by creation date within each status group
-  
-  Required Arguments:
-    <feature_id>          Feature ID (format: project-feature-xxx)
-  
-  Example:
-    mandor task summary api-feature-auth
-  
-  Output shows:
-    - Ready (N tasks)
-    - In Progress (N tasks)
-    - Done (N tasks)
-    - Blocked (N tasks)
-    - Cancelled (N tasks)
-
-───────────────────────────────────────────────────────────────────────
-
-▶ mandor task ready <feature_id> [--priority <P0-P5>] [OPTIONS]
-  List tasks with status='ready' (available to work on)
-  
-  Required Arguments:
-    <feature_id>          Feature ID (format: project-feature-xxx)
-  
-  Optional Flags:
-    --priority <P0-P5>    Filter by priority
-    --json, -j            JSON output
-  
-  Example:
-    mandor task ready api-feature-auth --priority P0
-
-───────────────────────────────────────────────────────────────────────
-
-▶ mandor task blocked <feature_id> [--priority <P0-P5>] [OPTIONS]
-  List tasks with status='blocked' (waiting on dependencies)
-  
-  Required Arguments:
-    <feature_id>          Feature ID (format: project-feature-xxx)
-  
-  Optional Flags:
-    --priority <P0-P5>    Filter by priority
-    --json, -j            JSON output
-  
-  Example:
-    mandor task blocked api-feature-auth
+  Examples:
+    mandor task update api-task-xxx-001 --status in_progress
+    mandor task update api-task-xxx-001 --status done
+    mandor task update api-task-xxx-001 --priority P0
+    mandor task update api-task-xxx-001 --cancel --reason "Superseded by task X"
 
 ═════════════════════════════════════════════════════════════════════════
  5. ISSUE COMMANDS
 ═════════════════════════════════════════════════════════════════════════
 
-▶ mandor issue create <name> --project <id> --type <type> --goal <goal> [REQUIRED] [OPTIONS]
+▶ mandor issue create <name> --project <id> --type <type> --goal <goal> --affected-files <files> --affected-tests <tests> --implementation-steps <steps> [OPTIONS]
   Create an issue (bug, improvement, debt, security, performance)
   
   Required Arguments:
-    <name>                         Issue name (positional)
+    <name>                             Issue name (positional)
   
   Required Flags:
-    --project, -p <id>             Project ID
-    --type, -t <type>              Issue type (bug|improvement|debt|security|performance)
-    --goal, -g <text>              Issue goal (200+ chars, or 2+ in dev)
-    --affected-files <files>       Pipe-separated affected file paths
-    --affected-tests <tests>       Pipe-separated affected test files
-    --implementation-steps <steps> Pipe-separated implementation steps
+    --project, -p <id>                 Project ID
+    --type, -t <type>                  Issue type (bug, improvement, debt, security, performance)
+    --goal, -g <text>                  Issue goal (min 200 chars)
+    --affected-files <files>           Pipe-separated affected file paths
+    --affected-tests <tests>           Pipe-separated affected test files
+    --implementation-steps <steps>     Pipe-separated implementation steps
   
   Optional Flags:
-    --priority <P0-P5>             Priority level (default: P2)
-    --depends-on <ids>             Pipe-separated issue IDs for dependencies
-    --library-needs <libs>         Pipe-separated required libraries
-    --yes, -y                      Skip confirmation
+    --priority <P0-P5>                 Priority (default: from config)
+    --depends-on <ids>                 Pipe-separated issue IDs for dependencies
+    --library-needs <libs>             Pipe-separated required libraries
+    -y, --yes                          Skip confirmation
   
   Example:
     mandor issue create "Fix memory leak in auth handler" \
       --project api \
       --type bug \
       --priority P0 \
-      --goal "Goroutine not properly cleaned up in token refresh handler causing memory accumulation" \
+      --goal "Goroutine not properly cleaned up in token refresh handler causing memory accumulation..." \
       --affected-files "src/handlers/auth.go|src/middleware/auth.go" \
       --affected-tests "src/handlers/auth_test.go" \
-      --implementation-steps "Identify leak source|Add defer cleanup|Add tests|Verify with pprof"
-  
-  Initial Status: open (transitions based on dependencies)
+      --implementation-steps "Identify leak|Add cleanup|Add tests|Verify"
 
 ───────────────────────────────────────────────────────────────────────
 
-▶ mandor issue list [--project <id>] [--type <type>] [--status <status>] [OPTIONS]
-  List issues with filtering
+▶ mandor issue list [--project <id>] [--type <type>] [--status <status>] [--priority <priority>] [--json] [--sort <field>] [--order <asc|desc>]
+  List issues in the specified project with optional filters
   
   Flags:
-    --project, -p <id>    Filter by project
-    --type, -t <type>     Filter by type (bug|improvement|debt|security|performance)
-    --status <status>     Filter by status (open|ready|in_progress|resolved|wontfix|cancelled)
+    --project, -p <id>    Project ID filter
+    --type, -t <type>     Filter by type (bug, improvement, debt, security, performance)
+    --status <status>     Filter by status (open, ready, in_progress, resolved, wontfix, blocked, cancelled)
     --priority <P0-P5>    Filter by priority
-    --json, -j            JSON output
+    --json, -j            Machine-readable JSON output
+    --sort <field>        Sort field (created_at, last_updated_at, priority, name) (default: last_updated_at)
+    --order <asc|desc>    Sort order (default: desc)
+    --verbose             Show issue names in table output
   
   Examples:
     mandor issue list --project api
@@ -532,11 +525,39 @@ EXAMPLE: Replace This...
 
 ───────────────────────────────────────────────────────────────────────
 
+▶ mandor issue ready [--project <id>] [--type <type>] [--priority <priority>] [--json]
+  List all issues with status='ready' that are available to work on
+  
+  Flags:
+    --project, -p <id>    Project ID filter
+    --type, -t <type>     Filter by type (bug, improvement, debt, security, performance)
+    --priority <P0-P5>    Filter by priority
+    --json, -j            Machine-readable JSON output
+  
+  Example:
+    mandor issue ready --project api --type bug --priority P0
+
+───────────────────────────────────────────────────────────────────────
+
+▶ mandor issue blocked [--project <id>] [--type <type>] [--priority <priority>] [--json]
+  List all issues with status='blocked' that are waiting for dependencies
+  
+  Flags:
+    --project, -p <id>    Project ID filter
+    --type, -t <type>     Filter by type
+    --priority <P0-P5>    Filter by priority
+    --json, -j            Machine-readable JSON output
+  
+  Example:
+    mandor issue blocked --project api --type security
+
+───────────────────────────────────────────────────────────────────────
+
 ▶ mandor issue detail <issue_id> [--project <id>]
   Show issue details
   
-  Optional Flags:
-    --project, -p <id>    Project ID (auto-extracted if omitted)
+  Flags:
+    --project, -p <id>    Project ID (optional, auto-extracted)
   
   Example:
     mandor issue detail api-issue-abc123 --project api
@@ -544,15 +565,15 @@ EXAMPLE: Replace This...
 ───────────────────────────────────────────────────────────────────────
 
 ▶ mandor issue update <issue_id> [--project <id>] [OPTIONS]
-  Update issue properties or status
+  Update an issue's metadata, status, or dependencies
   
-  Optional Flags:
-    --project, -p <id>              Project ID (auto-extracted if omitted)
+  Flags:
+    --project, -p <id>              Project ID (optional, extracted from issue ID)
     --name <text>                   Update issue name
     --goal <text>                   Update goal
     --type <type>                   Change issue type
     --priority <P0-P5>              Update priority
-    --status <status>               Set status (open|ready|in_progress|resolved|wontfix|cancelled)
+    --status <status>               Set status (open, ready, in_progress, resolved, wontfix, blocked, cancelled)
     --reason <text>                 Reason for status change
     --depends-on <ids>              Set dependencies (replace)
     --depends-add <ids>             Add dependencies
@@ -563,75 +584,42 @@ EXAMPLE: Replace This...
     --library-needs <libs>          Update library needs
     --start                         Transition to in_progress
     --resolve                       Mark as resolved
-    --wontfix --reason <text>       Mark as wontfix with reason
-    --reopen                        Reopen issue
-    --cancel --reason <text>        Cancel issue
-    --dry-run                       Preview without saving
+    --wontfix                       Mark as wontfix (requires --reason)
+    --reopen                        Reopen resolved/wontfix issue
+    --cancel                        Cancel issue
+    --force                         Force operation (skip validation)
+    --dry-run                       Show what would change
   
   Examples:
     mandor issue update api-issue-abc123 --resolve
     mandor issue update api-issue-abc123 --start
     mandor issue update api-issue-abc123 --wontfix --reason "Working as intended"
-
-───────────────────────────────────────────────────────────────────────
-
-▶ mandor issue summary <project_id>
-  Display issue summary for a project (NEW in v0.3.7)
-  
-  Groups issues by status in markdown table format with:
-    - Issue counts per status
-    - Issue ID, Name, Type, Priority, Status columns
-    - Sorted by creation date within each status group
-  
-  Required Arguments:
-    <project_id>          Project ID
-  
-  Example:
-    mandor issue summary api
-  
-  Output shows:
-    - Open (N issues)
-    - Ready (N issues)
-    - In Progress (N issues)
-    - Resolved (N issues)
-    - Won't Fix (N issues)
-    - Blocked (N issues)
-    - Cancelled (N issues)
-
-───────────────────────────────────────────────────────────────────────
-
-▶ mandor issue ready <project_id> [--type <type>] [--priority <P0-P5>] [OPTIONS]
-  List issues with status='ready' (available to fix)
-  
-  Required Arguments:
-    <project_id>          Project ID
-  
-  Optional Flags:
-    --type, -t <type>     Filter by type
-    --priority <P0-P5>    Filter by priority
-    --json, -j            JSON output
-  
-  Example:
-    mandor issue ready api --type bug --priority P0
-
-───────────────────────────────────────────────────────────────────────
-
-▶ mandor issue blocked <project_id> [--type <type>] [--priority <P0-P5>] [OPTIONS]
-  List issues with status='blocked' (waiting on dependencies)
-  
-  Required Arguments:
-    <project_id>          Project ID
-  
-  Optional Flags:
-    --type, -t <type>     Filter by type
-    --priority <P0-P5>    Filter by priority
-    --json, -j            JSON output
-  
-  Example:
-    mandor issue blocked --project api --type security
+    mandor issue update api-issue-abc123 --cancel --reason "Duplicate of #123"
 
 ═════════════════════════════════════════════════════════════════════════
- 6. UTILITY COMMANDS
+ 6. AI COMMANDS
+═════════════════════════════════════════════════════════════════════════
+
+▶ mandor ai agents
+  Generate AGENTS.md for multi-agent coordination
+  
+  Creates documentation for coordinating multiple AI agents on project tasks.
+  
+  Example:
+    mandor ai agents > AGENTS.md
+
+───────────────────────────────────────────────────────────────────────
+
+▶ mandor ai claude
+  Generate CLAUDE.md for the project
+  
+  Creates Claude-specific project documentation.
+  
+  Example:
+    mandor ai claude > CLAUDE.md
+
+═════════════════════════════════════════════════════════════════════════
+ 7. UTILITY COMMANDS
 ═════════════════════════════════════════════════════════════════════════
 
 ▶ mandor completion [bash|zsh|fish]
@@ -640,13 +628,14 @@ EXAMPLE: Replace This...
   Supported Shells: bash, zsh, fish
   
   Setup:
-    eval "$(mandor completion bash)"           # Bash
-    eval "$(mandor completion zsh)"            # Zsh
-    mandor completion fish | source            # Fish
-  
-  Permanent Setup:
-    mandor completion bash > ~/.bash_completion.d/mandor
-    mandor completion zsh > ~/.zsh/completions/_mandor
+    # Bash
+    mandor completion bash > /usr/local/etc/bash_completion.d/mandor
+    
+    # Zsh
+    mandor completion zsh > "${fpath[1]}/_mandor"
+    
+    # Fish
+    mandor completion fish > ~/.config/fish/completions/mandor.fish
 
 ───────────────────────────────────────────────────────────────────────
 
@@ -663,40 +652,41 @@ EXAMPLE: Replace This...
   Display version information
 
 ═════════════════════════════════════════════════════════════════════════
- 7. CONFIGURATION REFERENCE
+ 8. CONFIGURATION REFERENCE
 ═════════════════════════════════════════════════════════════════════════
 
 Configuration Directory: .mandor/config.json
 
 Available Keys:
-  priority.default      Default priority for new entities
+  default_priority      Default priority for new entities
                         Valid values: P0, P1, P2, P3, P4, P5
                         Default: P3
 
-  strictMode            Enable strict dependency validation
+  strict_mode           Enable strict dependency validation
                         Valid values: true, false
                         Default: false
 
 Set Configuration:
-  $ mandor config set priority.default P2
-  $ mandor config set strictMode true
+  $ mandor config set default_priority P2
+  $ mandor config set strict_mode true
 
 Get Configuration:
-  $ mandor config get priority.default
+  $ mandor config get default_priority
 
 List All:
   $ mandor config list
 
 Reset to Default:
-  $ mandor config reset priority.default
+  $ mandor config reset default_priority
 
 ═════════════════════════════════════════════════════════════════════════
- 8. STATUS TRANSITIONS
+ 9. STATUS TRANSITIONS
 ═════════════════════════════════════════════════════════════════════════
 
 FEATURE STATUS FLOW:
   draft ─→ active ─→ done
     │
+    └─→ blocked (waiting on dependencies)
     └─→ cancelled (with reason)
 
   - draft:     Initial state, can add tasks
@@ -712,7 +702,7 @@ TASK STATUS FLOW:
     │
     └─→ cancelled (with reason)
 
-  - pending:      Waiting on dependencies
+  - pending:      Waiting on dependencies (auto-transitioned)
   - ready:        Available to start (auto-transitioned when deps complete)
   - in_progress:  Currently being worked on
   - done:         Completed (auto-unblocks dependents)
@@ -727,262 +717,264 @@ ISSUE STATUS FLOW:
    └─→ wontfix (with reason)
    └─→ cancelled (with reason)
 
-  - open:         Newly reported
-  - ready:        Available to work on (deps satisfied)
-  - in_progress:  Currently being fixed
-  - resolved:     Fixed and verified
+  - open:         Newly created, waiting on dependencies
+  - ready:        Available to work on (no blocking dependencies)
+  - in_progress:  Being worked on
+  - resolved:     Problem fixed
+  - wontfix:      Decided not to fix (permanent, can reopen)
   - blocked:      Waiting on dependencies
-  - wontfix:      Intentionally not fixing (reason recorded)
-  - cancelled:    Duplicate or no longer relevant
+  - cancelled:    Abandoned or duplicate
 
 ═════════════════════════════════════════════════════════════════════════
- 9. DEPENDENCY RULES
+ 10. DEPENDENCY RULES
 ═════════════════════════════════════════════════════════════════════════
 
-Each project defines rules for each entity type:
+TASK DEPENDENCIES:
+  • Tasks in same feature can depend on other tasks
+  • Dependency rule controlled by project config (--task-dep flag)
+  • When dependency is marked done, dependent tasks auto-transition to ready
+  • Circular dependencies are detected and prevented
+  • Failed dependency creates blocked status
 
-SAME_PROJECT_ONLY:
-  ✓ Feature A → Feature B (same project)
-  ✗ Feature A → Feature B (different projects)
-  Auto-transitioned when all dependencies complete or are cancelled.
+FEATURE DEPENDENCIES:
+  • Features can depend on other features
+  • Dependency rule controlled by project config (--feature-dep flag)
+  • When dependency feature is done, dependent auto-transitions to active (if draft)
+  • Can be cross-project (if configured)
 
-CROSS_PROJECT_ALLOWED:
-  ✓ Feature A → Feature B (same project)
-  ✓ Feature A → Feature B (different projects)
-  Allows cross-project dependency chains.
+ISSUE DEPENDENCIES:
+  • Issues can depend on other issues
+  • Dependency rule controlled by project config (--issue-dep flag)
+  • When dependency issue is resolved, dependent auto-transitions to ready
+  • Blocking detection is automatic
 
-DISABLED:
-  ✗ No dependencies allowed
-  Cannot set depends-on flag.
-
-Default Rules:
-  - Features:  cross_project_allowed
-  - Tasks:     same_project_only
-  - Issues:    same_project_only
-
-═════════════════════════════════════════════════════════════════════════
- 10. INPUT FORMATS
-═════════════════════════════════════════════════════════════════════════
-
-PIPE-SEPARATED LISTS:
-  Used for: implementation-steps, test-cases, derivable-files, library-needs,
-            affected-files, affected-tests, depends-on
-  
-  Format: "item1|item2|item3|..."
-  
-  Example:
-    --implementation-steps "Step 1|Step 2|Step 3"
-    --test-cases "Test A|Test B|Test C"
-    --library-needs "lodash|axios|express"
-  
-  Spaces: Trimmed automatically (leading/trailing)
-  Empty strings: Filtered out
-
-MULTIPLE IDS (for dependencies):
-  Format: "id1|id2|id3|..."
-  
-  Example:
-    --depends "feature-1|feature-2"
-    --depends-on "task-1|task-2|task-3"
-
-GOAL TEXT:
-  Character limits (in production):
-    - Feature: 300+ characters
-    - Task: 500 characters max
-    - Issue: 200+ characters
-    - Project: 500+ characters
-  
-
-
-PRIORITY LEVELS:
-  Values: P0, P1, P2, P3, P4, P5
-  
-  P0 = Critical   (must do immediately)
-  P1 = High       (important, soon)
-  P2 = Medium     (should do)
-  P3 = Normal     (default priority)
-  P4 = Low        (nice to have)
-  P5 = Minimal    (can defer)
+BLOCKING SCENARIOS:
+  • Task depends on incomplete task → Task becomes blocked
+  • Feature depends on incomplete feature → Feature becomes blocked
+  • Issue depends on unresolved issue → Issue becomes blocked
+  • Mark dependency complete → Dependent auto-transitions to ready
 
 ═════════════════════════════════════════════════════════════════════════
  11. BEST PRACTICES
 ═════════════════════════════════════════════════════════════════════════
 
-WORKFLOW DESIGN:
-  1. Create workspace with mandor init
-  2. Configure defaults (priority, strict mode)
-  3. Define projects with clear goals
-  4. Break projects into features
-  5. Decompose features into tasks
-  6. Report and track issues
-  7. Use dependencies to enforce order
-  8. Monitor ready/blocked queues
+1. USE MEANINGFUL IDs
+   
+   Project and feature IDs should be:
+   • Short but descriptive
+   • Lowercase with hyphens
+   • Consistent naming convention
+   
+   ✓ Good:   mandor project create user-auth
+   ✗ Avoid:  mandor project create p1
 
-FEATURE CREATION:
-  ✓ Use clear, descriptive names
-  ✓ Define scope (frontend/backend/etc)
-  ✓ Set appropriate priority (P0 for critical)
-  ✓ Add dependencies for ordering
-  ✓ Write detailed goals (300+ chars)
-  ✗ Create features for everything (use for epics only)
-  ✗ Set priority P5 for critical work
+2. WRITE CLEAR GOALS
+   
+   Goals should include:
+   • What is being built/fixed
+   • Why it matters
+   • Technical requirements
+   • Acceptance criteria
+   
+   ✓ Good:   "Implement JWT-based authentication with login and refresh flows for secure API access"
+   ✗ Avoid:  "Add authentication"
 
-TASK CREATION:
-  ✓ Define implementation steps FIRST
-  ✓ Write test cases BEFORE implementation (TDD)
-  ✓ List all derivable files
-  ✓ Keep completable in one session
-  ✓ Add dependencies for blocking
-  ✗ Skip test cases
-  ✗ Create tasks larger than 1 session
-  ✗ Leave library-needs empty (use "none" if N/A)
+3. USE SCOPES FOR FEATURES
+   
+   Organize by scope:
+   • frontend, backend, fullstack
+   • cli, desktop, android, flutter, react-native, ios, swift
+   
+   Example:
+     mandor feature create "Login UI" --project api --scope frontend
+     mandor feature create "Login API" --project api --scope backend
 
-ISSUE TRACKING:
-  ✓ Categorize by type (bug/improvement/debt/etc)
-  ✓ List affected files for debugging
-  ✓ Include affected tests
-  ✓ Set P0 for critical bugs
-  ✓ Use --wontfix with reason for rejections
-  ✗ Create issues without type
-  ✗ Forget affected-files
-  ✗ Cancel without reason
+4. KEEP DEPENDENCIES SHALLOW
+   
+   • Deep chains (>5 levels) are hard to manage
+   • Consider breaking into smaller features
+   • Use --depends-on sparingly
 
-DEPENDENCY MANAGEMENT:
-  ✓ Use dependencies to enforce order
-  ✓ Create linear chains (A → B → C)
-  ✓ Use fan-in for convergence (M depends on A, B, C)
-  ✓ Use fan-out for one unblocks many
-  ✓ Check for cycles (system prevents them)
-  ✗ Create circular dependencies (prevented by system)
-  ✗ Set self-dependencies (prevented)
+5. USE ISSUES FOR BUGS, TASKS FOR FEATURES
+   
+   • Tasks: Feature work, implementation, refactoring
+   • Issues: Bugs, improvements, technical debt, security, performance
+   
+   Example:
+     mandor task create "Add OAuth2" --feature api-auth
+     mandor issue create "Fix auth timeout" --project api --type bug
 
-STATUS MANAGEMENT:
-  ✓ Use auto-transitions (ready when deps complete)
-  ✓ Mark done/resolved to unblock dependents
-  ✓ Use --cancel --reason for audit trail
-  ✓ Use --reopen for accidental cancellations
-  ✓ Review blocked queue regularly
-  ✗ Skip status transitions
-  ✗ Cancel without reason
-  ✗ Leave entities stuck in blocked
+6. DOCUMENT CANCELLATION REASONS
+   
+   Always provide clear reasons when cancelling:
+   
+     mandor task update <id> --cancel --reason "Superseded by feature X"
+     mandor feature update <id> --project api --cancel --reason "Sticking with JWT"
 
-NAMING CONVENTIONS:
-  Features:   "User Authentication", "Admin Dashboard", "Payment Processing"
-  Tasks:      "Setup bcrypt hashing", "Write auth tests", "Create JWT middleware"
-  Issues:     "Fix memory leak in auth", "Improve error messages", "Refactor database layer"
-  Projects:   "api", "frontend", "infrastructure", "mobile-app"
+7. USE PIPE-SEPARATED LISTS
+   
+   For flags accepting multiple values, use pipes:
+   
+     --implementation-steps "Step 1|Step 2|Step 3"
+     --test-cases "Case 1|Case 2|Case 3"
+     --depends-on task-1|task-2|task-3
+
+8. USE --dry-run FOR PREVIEW
+   
+   Before making significant updates, preview with --dry-run:
+   
+     mandor task update task-id --status done --dry-run
+     mandor feature update feature-id --project api --cancel --reason "..." --dry-run
+
+9. SET CONFIGURATION EARLY
+   
+   Configure workspace defaults at the start:
+   
+     mandor init "Project Name"
+     mandor config set default_priority P2
+     mandor config set strict_mode true
+
+10. REVIEW STATUS REGULARLY
+    
+    Keep team synchronized:
+    
+      mandor status                                # Workspace overview
+      mandor status --project api                  # Project summary
+      mandor summary --project api                 # Feature priorities
+      mandor task ready --feature feature-id       # See available work
+      mandor issue ready --project api             # See ready issues
+      mandor task blocked --feature feature-id     # See blockers
+      mandor issue blocked --project api           # See blocked issues
 
 ═════════════════════════════════════════════════════════════════════════
  12. COMMON WORKFLOWS
 ═════════════════════════════════════════════════════════════════════════
 
-WORKFLOW 1: Start a New Project
-  1. mandor init "My Project" -y
-  2. mandor config set priority.default P3
-  3. mandor project create api --name "REST API" --goal "..."
-  4. mandor feature create "Auth" --project api --goal "..."
-  5. mandor task create api-feature-xxx "Setup" --goal "..."
+SETUP NEW PROJECT
+═══════════════════════════════════════════════════════════════════════
 
-WORKFLOW 2: Find and Start Work
-  1. mandor task ready api-feature-xxx              # Find ready tasks
-  2. mandor task detail <task-id>                   # Review details
-  3. mandor task update <task-id> --status in_progress   # Mark started
-  4. (do work)
-  5. mandor task update <task-id> --status done     # Mark complete
+1. Initialize workspace:
+   mandor init "Project Name" -y
 
-WORKFLOW 3: Fix a Bug
-  1. mandor issue create "Bug name" --project api --type bug --goal "..."
-  2. mandor issue detail <issue-id>                 # Review
-  3. mandor issue update <issue-id> --start         # Start fixing
-  4. (fix code, run tests)
-  5. mandor issue update <issue-id> --resolve       # Mark resolved
+2. Configure defaults:
+   mandor config set default_priority P2
+   mandor config set strict_mode true
 
-WORKFLOW 4: Handle Blocked Task
-  1. mandor task blocked api-feature-xxx            # Find blocked
-  2. mandor task detail <blocked-task>              # See what's blocking
-  3. (complete blocking task first)
-  4. System auto-transitions blocked task to ready
-  5. mandor task ready api-feature-xxx              # Verify transition
+3. Create project:
+   mandor project create api \
+     --name "API Service" \
+     --goal "Build REST API with authentication and data endpoints"
 
-WORKFLOW 5: View Task/Issue Summary
-  1. mandor task summary api-feature-xxx            # View task summary by status
-  2. mandor issue summary api                       # View issue summary by status
-  3. Review grouped output to prioritize work
+4. Create feature:
+   mandor feature create "Authentication" --project api \
+     --goal "Implement JWT with login and refresh flows"
 
-WORKFLOW 6: Cancel and Reopen
-  1. mandor feature update <id> --project api --cancel --reason "Postponed for now"
-  2. (later...)
-  3. mandor feature update <id> --project api --reopen
-  4. Feature returns to draft status
+TRACK FEATURE WORK
+═══════════════════════════════════════════════════════════════════════
 
-WORKFLOW 7: Track Dependencies
-  1. Create independent tasks (no dependencies) - start as ready
-  2. Create tasks with dependencies - start as blocked
-  3. Complete independent task: dependent tasks auto-transition to ready
-  4. Use mandor task blocked api-feature-xxx to monitor unblock progress
+1. Create tasks:
+   mandor task create "JWT Parser" --feature api-feature-xxx \
+     --goal "..." --implementation-steps "..." --test-cases "..." \
+     --derivable-files "..." --library-needs "..." --priority P1
 
-═════════════════════════════════════════════════════════════════════════
- NO MORE MARKDOWN PLANS
-═════════════════════════════════════════════════════════════════════════
+2. Add dependent task:
+   mandor task create "Login Endpoint" --feature api-feature-xxx \
+     --goal "..." --depends-on jwt-task-id --priority P1
 
-Stop maintaining PLAN.md, TODO.md, or TASKS.md files. They go stale.
+3. Check what's available:
+   mandor task ready --feature api-feature-xxx
 
-Instead, use Mandor:
+4. Start working:
+   mandor task update task-id --status in_progress
 
-  ✓ Create feature: Single source of truth
-  ✓ Create tasks: Explicit dependencies
-  ✓ mandor task ready <feature>: See what's available NOW
-  ✓ mandor task blocked <feature>: See what's waiting
-  ✓ mandor task summary <feature>: Real-time progress
-  ✓ Mark done: Dependents auto-unblock
-  ✓ mandor status: Full workspace visibility
+5. Complete task:
+   mandor task update task-id --status done
+   # Dependents auto-transition to ready
 
-Result: No markdown files. No manual status updates. Deterministic state.
+6. Check progress:
+   mandor task ready --feature api-feature-xxx
 
-═════════════════════════════════════════════════════════════════════════
- QUICK REFERENCE
-═════════════════════════════════════════════════════════════════════════
+ISSUE TRACKING
+═══════════════════════════════════════════════════════════════════════
 
-Start Here:
-   mandor init "My Project"
-   mandor config set priority.default P3
+1. Create bug issue:
+   mandor issue create "Fix timeout in auth" \
+     --project api --type bug --priority P1 \
+     --goal "..." --affected-files "..." --affected-tests "..." \
+     --implementation-steps "..."
 
-Create Work (NO MARKDOWN FILES NEEDED):
-   mandor project create <id> --name X --goal "..."
-   mandor feature create <name> --project <id> --goal "..."
-   mandor task create <feature-id> <name> --goal "..." --implementation-steps "..." --test-cases "..." --derivable-files "..." --library-needs "..."
-   mandor task update <id> --status in_progress
-   mandor task update <id> --status done
+2. List open issues:
+   mandor issue list --project api --status open
 
-Real-Time Progress (Query System, Not Files):
+3. See what's ready:
+   mandor issue ready --project api --type bug
+
+4. Start work:
+   mandor issue update issue-id --start
+
+5. Mark resolved:
+   mandor issue update issue-id --resolve
+
+DEPENDENCY MANAGEMENT
+═══════════════════════════════════════════════════════════════════════
+
+1. View all projects:
    mandor status
-   mandor task summary <feature-id>          # Summary by status
-   mandor issue summary <project-id>         # Summary by status
-   mandor task ready <feature-id>            # What's available
-   mandor task blocked <feature-id>          # What's waiting
-   mandor issue ready <project-id> --type bug
 
-Exit Codes:
-   0 = Success
-   1 = System error
-   2 = Validation error
-   3 = Permission error
+2. Check blockers:
+   mandor task blocked --feature feature-id
+   mandor issue blocked --project api
+
+3. Add dependency:
+   mandor task update task-id --depends-add dependent-task-id
+
+4. Remove dependency:
+   mandor task update task-id --depends-remove dependent-task-id
+
+5. View feature dependencies:
+   mandor feature list --project api
+
+CANCEL AND REOPEN
+═══════════════════════════════════════════════════════════════════════
+
+1. Cancel with reason:
+   mandor task update task-id --cancel --reason "Out of scope"
+   mandor feature update feature-id --project api --cancel --reason "Not needed"
+
+2. Reopen:
+   mandor task update task-id --reopen
+   mandor feature update feature-id --project api --reopen
+
+CROSS-PROJECT DEPENDENCIES
+═══════════════════════════════════════════════════════════════════════
+
+1. Create projects:
+   mandor project create frontend --name "Frontend" --goal "..." \
+     --task-dep cross_project_allowed
+   mandor project create backend --name "Backend" --goal "..." \
+     --task-dep cross_project_allowed
+
+2. Create task in backend:
+   mandor feature create "API" --project backend --goal "..."
+   mandor task create "Auth Endpoint" --feature backend-feature-xxx \
+     --goal "..." --priority P1
+
+3. Create dependent task in frontend:
+   mandor feature create "Login" --project frontend --goal "..."
+   mandor task create "Login Form" --feature frontend-feature-yyy \
+     --goal "..." --depends-on backend-task-xxx --priority P1
+
+4. Backend task completion auto-unblocks frontend:
+   mandor task update backend-task-xxx --status done
+   mandor task list --feature frontend-feature-yyy
+   # "Login Form" now shows as ready
 
 ═════════════════════════════════════════════════════════════════════════
 
-For detailed help on any command, use:
-   mandor <command> --help
-   mandor <command> <subcommand> --help
+For more information, visit: https://github.com/sanxzy/mandor
 
-Example:
-   mandor task --help
-   mandor task create --help
-
-═════════════════════════════════════════════════════════════════════════
-REMEMBER: Mandor eliminates markdown planning files.
-All state is in events.jsonl. All queries are CLI commands.
-No stale docs. No manual sync. Deterministic.
-═════════════════════════════════════════════════════════════════════════
+Built for AI Agent Workflows
 `)
+
 	return nil
 }
