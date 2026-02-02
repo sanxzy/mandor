@@ -289,15 +289,15 @@ func outputPopulate(cmd *cobra.Command) error {
  4. TASK COMMANDS
 ═════════════════════════════════════════════════════════════════════════
 
-▶ mandor task create <name> --feature <id> --goal <goal> [REQUIRED] [OPTIONS]
+▶ mandor task create <feature_id> <name> --goal <goal> [REQUIRED] [OPTIONS]
   Create a task (individual work item)
   
   Required Arguments:
-    <name>                         Task name (positional)
+    <feature_id>                   Feature ID (format: project-feature-xxx)
+    <name>                         Task name
   
   Required Flags:
-    --feature, -f <id>             Feature ID (format: project-feature-xxx)
-    --goal, -g <text>              Task goal (max 500 chars in prod, 2+ in dev)
+    --goal, -g <text>              Task goal (500+ chars in prod, 2+ in dev)
     --implementation-steps <steps> Pipe-separated implementation steps
     --test-cases <cases>           Pipe-separated test cases to validate
     --derivable-files <files>      Pipe-separated output files to be created
@@ -305,36 +305,37 @@ func outputPopulate(cmd *cobra.Command) error {
   
   Optional Flags:
     --priority <P0-P5>             Priority level (default from config)
-    --depends-on <ids>             Pipe-separated task IDs for dependencies
+    --depends-on <ids>            Pipe-separated task IDs for dependencies
     --yes, -y                      Skip confirmation
   
   Example:
-    mandor task create "Setup Password Hashing" \
-      --feature api-feature-auth \
+    mandor task create api-feature-auth "Setup Password Hashing" \
       --goal "Implement bcrypt password hashing utility" \
       --implementation-steps "Install bcrypt|Create password utility|Add salt management|Write security tests" \
       --test-cases "Hash validation|Verify comparison|Salt uniqueness|Performance check" \
       --derivable-files "src/utils/password.go|src/utils/password_test.go" \
       --library-needs "bcrypt|golang-jwt"
   
-  Initial Status: pending (transitions to ready when dependencies complete)
+  Initial Status: ready (or pending, transitions to ready when dependencies complete)
 
 ───────────────────────────────────────────────────────────────────────
 
-▶ mandor task list [--feature <id>] [--project <id>] [--status <status>] [OPTIONS]
-  List tasks with filtering
+▶ mandor task list <feature_id> [--status <status>] [--priority <P0-P5>] [OPTIONS]
+  List tasks in a feature with filtering
   
-  Flags:
-    --feature, -f <id>    Filter by feature
-    --project, -p <id>    Filter by project
+  Required Arguments:
+    <feature_id>          Feature ID (format: project-feature-xxx)
+  
+  Optional Flags:
     --status <status>     Filter by status (pending|ready|in_progress|done|blocked|cancelled)
     --priority <P0-P5>    Filter by priority
     --json, -j            JSON output
+    --include-deleted     Include cancelled tasks
   
   Examples:
-    mandor task list --project api
-    mandor task list --feature api-feature-auth --status ready
-    mandor task list --project api --priority P0
+    mandor task list api-feature-auth
+    mandor task list api-feature-auth --status ready
+    mandor task list api-feature-auth --priority P0
 
 ───────────────────────────────────────────────────────────────────────
 
@@ -379,31 +380,56 @@ func outputPopulate(cmd *cobra.Command) error {
 
 ───────────────────────────────────────────────────────────────────────
 
-▶ mandor task ready [--project <id>] [--feature <id>] [--priority <P0-P5>] [OPTIONS]
-  List tasks with status='ready' (available to work on)
+▶ mandor task summary <feature_id>
+  Display task summary for a feature (NEW in v0.3.7)
   
-  Flags:
-    --project, -p <id>    Filter by project
-    --feature, -f <id>    Filter by feature
-    --priority <P0-P5>    Filter by priority
-    --json, -j            JSON output
+  Groups tasks by status in markdown table format with:
+    - Task counts per status
+    - Task ID, Name, Priority, Status columns
+    - Sorted by creation date within each status group
+  
+  Required Arguments:
+    <feature_id>          Feature ID (format: project-feature-xxx)
   
   Example:
-    mandor task ready --project api --priority P0
+    mandor task summary api-feature-auth
+  
+  Output shows:
+    - Ready (N tasks)
+    - In Progress (N tasks)
+    - Done (N tasks)
+    - Blocked (N tasks)
+    - Cancelled (N tasks)
 
 ───────────────────────────────────────────────────────────────────────
 
-▶ mandor task blocked [--project <id>] [--feature <id>] [--priority <P0-P5>] [OPTIONS]
-  List tasks with status='blocked' (waiting on dependencies)
+▶ mandor task ready <feature_id> [--priority <P0-P5>] [OPTIONS]
+  List tasks with status='ready' (available to work on)
   
-  Flags:
-    --project, -p <id>    Filter by project
-    --feature, -f <id>    Filter by feature
+  Required Arguments:
+    <feature_id>          Feature ID (format: project-feature-xxx)
+  
+  Optional Flags:
     --priority <P0-P5>    Filter by priority
     --json, -j            JSON output
   
   Example:
-    mandor task blocked --project api
+    mandor task ready api-feature-auth --priority P0
+
+───────────────────────────────────────────────────────────────────────
+
+▶ mandor task blocked <feature_id> [--priority <P0-P5>] [OPTIONS]
+  List tasks with status='blocked' (waiting on dependencies)
+  
+  Required Arguments:
+    <feature_id>          Feature ID (format: project-feature-xxx)
+  
+  Optional Flags:
+    --priority <P0-P5>    Filter by priority
+    --json, -j            JSON output
+  
+  Example:
+    mandor task blocked api-feature-auth
 
 ═════════════════════════════════════════════════════════════════════════
  5. ISSUE COMMANDS
@@ -503,25 +529,54 @@ func outputPopulate(cmd *cobra.Command) error {
 
 ───────────────────────────────────────────────────────────────────────
 
-▶ mandor issue ready [--project <id>] [--type <type>] [--priority <P0-P5>] [OPTIONS]
+▶ mandor issue summary <project_id>
+  Display issue summary for a project (NEW in v0.3.7)
+  
+  Groups issues by status in markdown table format with:
+    - Issue counts per status
+    - Issue ID, Name, Type, Priority, Status columns
+    - Sorted by creation date within each status group
+  
+  Required Arguments:
+    <project_id>          Project ID
+  
+  Example:
+    mandor issue summary api
+  
+  Output shows:
+    - Open (N issues)
+    - Ready (N issues)
+    - In Progress (N issues)
+    - Resolved (N issues)
+    - Won't Fix (N issues)
+    - Blocked (N issues)
+    - Cancelled (N issues)
+
+───────────────────────────────────────────────────────────────────────
+
+▶ mandor issue ready <project_id> [--type <type>] [--priority <P0-P5>] [OPTIONS]
   List issues with status='ready' (available to fix)
   
-  Flags:
-    --project, -p <id>    Filter by project
+  Required Arguments:
+    <project_id>          Project ID
+  
+  Optional Flags:
     --type, -t <type>     Filter by type
     --priority <P0-P5>    Filter by priority
     --json, -j            JSON output
   
   Example:
-    mandor issue ready --project api --type bug --priority P0
+    mandor issue ready api --type bug --priority P0
 
 ───────────────────────────────────────────────────────────────────────
 
-▶ mandor issue blocked [--project <id>] [--type <type>] [--priority <P0-P5>] [OPTIONS]
+▶ mandor issue blocked <project_id> [--type <type>] [--priority <P0-P5>] [OPTIONS]
   List issues with status='blocked' (waiting on dependencies)
   
-  Flags:
-    --project, -p <id>    Filter by project
+  Required Arguments:
+    <project_id>          Project ID
+  
+  Optional Flags:
     --type, -t <type>     Filter by type
     --priority <P0-P5>    Filter by priority
     --json, -j            JSON output
@@ -786,10 +841,10 @@ WORKFLOW 1: Start a New Project
   2. mandor config set priority.default P3
   3. mandor project create api --name "REST API" --goal "..."
   4. mandor feature create "Auth" --project api --goal "..."
-  5. mandor task create "Setup" --feature api-feature-xxx --goal "..."
+  5. mandor task create api-feature-xxx "Setup" --goal "..."
 
 WORKFLOW 2: Find and Start Work
-  1. mandor task ready --project api                # Find ready tasks
+  1. mandor task ready api-feature-xxx              # Find ready tasks
   2. mandor task detail <task-id>                   # Review details
   3. mandor task update <task-id> --status in_progress   # Mark started
   4. (do work)
@@ -803,23 +858,28 @@ WORKFLOW 3: Fix a Bug
   5. mandor issue update <issue-id> --resolve       # Mark resolved
 
 WORKFLOW 4: Handle Blocked Task
-  1. mandor task blocked --project api              # Find blocked
+  1. mandor task blocked api-feature-xxx            # Find blocked
   2. mandor task detail <blocked-task>              # See what's blocking
   3. (complete blocking task first)
   4. System auto-transitions blocked task to ready
-  5. mandor task ready --project api                # Verify transition
+  5. mandor task ready api-feature-xxx              # Verify transition
 
-WORKFLOW 5: Cancel and Reopen
+WORKFLOW 5: View Task/Issue Summary
+  1. mandor task summary api-feature-xxx            # View task summary by status
+  2. mandor issue summary api                       # View issue summary by status
+  3. Review grouped output to prioritize work
+
+WORKFLOW 6: Cancel and Reopen
   1. mandor feature update <id> --project api --cancel --reason "Postponed for now"
   2. (later...)
   3. mandor feature update <id> --project api --reopen
   4. Feature returns to draft status
 
-WORKFLOW 6: Track Dependencies
+WORKFLOW 7: Track Dependencies
   1. Create independent tasks (no dependencies) - start as ready
   2. Create tasks with dependencies - start as blocked
   3. Complete independent task: dependent tasks auto-transition to ready
-  4. Use mandor task blocked to monitor unblock progress
+  4. Use mandor task blocked api-feature-xxx to monitor unblock progress
 
 ═════════════════════════════════════════════════════════════════════════
  QUICK REFERENCE
@@ -832,15 +892,17 @@ Start Here:
 Basic Work:
   mandor project create <id> --name X --goal "..."
   mandor feature create <name> --project <id> --goal "..."
-  mandor task create <name> --feature <id> --goal "..." --implementation-steps "..." --test-cases "..." --derivable-files "..." --library-needs "..."
+  mandor task create <feature-id> <name> --goal "..." --implementation-steps "..." --test-cases "..." --derivable-files "..." --library-needs "..."
   mandor task update <id> --status in_progress
   mandor task update <id> --status done
 
 Monitor Progress:
   mandor status
-  mandor task ready --project <id>
-  mandor task blocked --project <id>
-  mandor issue ready --project <id> --type bug
+  mandor task summary <feature-id>          # Summary by status
+  mandor issue summary <project-id>         # Summary by status
+  mandor task ready <feature-id>
+  mandor task blocked <feature-id>
+  mandor issue ready <project-id> --type bug
 
 Exit Codes:
   0 = Success

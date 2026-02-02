@@ -19,9 +19,10 @@ var (
 
 func NewBlockedCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "blocked --feature <id> [--priority <priority>] [--json]",
+		Use:   "blocked <feature_id> [--priority <priority>] [--json]",
 		Short: "List blocked tasks",
-		Long:  "List tasks with status='blocked' that are waiting for dependencies. Feature ID is required.",
+		Long:  "List tasks with status='blocked' that are waiting for dependencies.",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewTaskService()
 			if err != nil {
@@ -32,9 +33,7 @@ func NewBlockedCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			if blockedFeatureID == "" {
-				return domain.NewValidationError("Feature ID is required (--feature).")
-			}
+			blockedFeatureID = args[0]
 
 			if blockedPriority != "" {
 				if !domain.ValidatePriority(blockedPriority) {
@@ -112,8 +111,6 @@ func NewBlockedCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&blockedProjectID, "project", "p", "", "Filter by project ID")
-	cmd.Flags().StringVarP(&blockedFeatureID, "feature", "f", "", "Filter by feature ID")
 	cmd.Flags().StringVar(&blockedPriority, "priority", "", "Filter by priority (P0-P5)")
 	cmd.Flags().BoolVar(&blockedJSON, "json", false, "Output as JSON")
 

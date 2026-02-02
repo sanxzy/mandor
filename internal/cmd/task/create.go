@@ -24,10 +24,10 @@ var (
 
 func NewCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create <name> --feature <id> --goal <text> --implementation-steps <steps> --test-cases <cases> --derivable-files <files> --library-needs <libs> [--priority <P0-P5>] [--depends-on <ids>] [-y]",
+		Use:   "create <feature_id> <name> --goal <text> --implementation-steps <steps> --test-cases <cases> --derivable-files <files> --library-needs <libs> [--priority <P0-P5>] [--depends-on <ids>] [-y]",
 		Short: "Create a new task",
 		Long:  "Create a new task in the specified feature with the given details.",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewTaskService()
 			if err != nil {
@@ -38,9 +38,8 @@ func NewCreateCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			if createFeatureID == "" {
-				return domain.NewValidationError("Feature ID is required (--feature).")
-			}
+			createFeatureID = args[0]
+			taskName := args[1]
 
 			if createGoal == "" {
 				return domain.NewValidationError("Task goal is required (--goal).")
@@ -78,7 +77,7 @@ func NewCreateCmd() *cobra.Command {
 
 			input := &domain.TaskCreateInput{
 				FeatureID:           createFeatureID,
-				Name:                args[0],
+				Name:                taskName,
 				Goal:                createGoal,
 				ImplementationSteps: implSteps,
 				TestCases:           testCases,
@@ -123,7 +122,6 @@ func NewCreateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&createFeatureID, "feature", "f", "", "Feature ID (required)")
 	cmd.Flags().StringVarP(&createGoal, "goal", "g", "", "Task goal (required, min 500 chars)")
 	cmd.Flags().StringVar(&createImplSteps, "implementation-steps", "", "Implementation steps (pipe-separated, required)")
 	cmd.Flags().StringVar(&createTestCases, "test-cases", "", "Test cases (pipe-separated, required)")

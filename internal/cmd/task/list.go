@@ -23,9 +23,10 @@ var (
 
 func NewListCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "list --feature <id> [--status <status>] [--priority <priority>] [--json] [--include-deleted]",
+		Use:   "list <feature_id> [--status <status>] [--priority <priority>] [--json] [--include-deleted]",
 		Short: "List tasks",
-		Long:  "List tasks in a feature. Feature ID is required.",
+		Long:  "List tasks in a feature.",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewTaskService()
 			if err != nil {
@@ -36,9 +37,7 @@ func NewListCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			if listFeatureID == "" {
-				return domain.NewValidationError("Feature ID is required (--feature).")
-			}
+			listFeatureID = args[0]
 
 			if listStatus != "" {
 				if !domain.ValidateTaskStatus(listStatus) {
@@ -110,8 +109,6 @@ func NewListCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&listFeatureID, "feature", "f", "", "Filter by feature ID")
-	cmd.Flags().StringVarP(&listProjectID, "project", "p", "", "Filter by project ID")
 	cmd.Flags().StringVar(&listStatus, "status", "", "Filter by status (pending, ready, in_progress, blocked, done, cancelled)")
 	cmd.Flags().StringVar(&listPriority, "priority", "", "Filter by priority (P0-P5)")
 	cmd.Flags().BoolVar(&listJSON, "json", false, "Output as JSON")
