@@ -792,13 +792,7 @@ GOAL TEXT:
     - Issue: 200+ characters
     - Project: 500+ characters
   
-  Character limits (in development mode - MANDOR_ENV=development):
-    - Feature: 2+ characters
-    - Task: 500 characters max
-    - Issue: 2+ characters
-    - Project: 2+ characters
-  
-  Development mode enabled via: export MANDOR_ENV=development
+
 
 PRIORITY LEVELS:
   Values: P0, P1, P2, P3, P4, P5

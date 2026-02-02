@@ -124,7 +124,6 @@ go build -o ./binaries/mandor ./cmd/mandor
 ### 1. Initialize Workspace
 
 ```bash
-export MANDOR_ENV=development
 mandor init "My Project"
 ```
 
@@ -591,7 +590,6 @@ grep '"type":"status_changed"' .mandor/events.jsonl | wc -l
 
 ```bash
 # Initialize and create project
-export MANDOR_ENV=development
 mandor init "API Project"
 mandor project create api --name "REST API" --goal "Build production REST API with authentication"
 
