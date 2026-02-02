@@ -1,0 +1,31 @@
+{
+  "name": "@mandors/cli",
+  "version": "0.0.26",
+  "description": "Mandor CLI - Event-based task management for development workflows",
+  "main": "lib/index.js",
+  "bin": {
+    "mandor": "bin/mandor"
+  },
+  "scripts": {
+    "postinstall": "node lib/index.js"
+  },
+  "keywords": [
+    "cli",
+    "task-management",
+    "event-driven",
+    "mandor"
+  ],
+  "author": "Budi Santoso",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sanxzy/mandor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sanxzy/mandor/issues"
+  },
+  "homepage": "https://github.com/sanxzy/mandor#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
