@@ -1,6 +1,10 @@
 # Mandor - Event-Based Task Manager CLI for AI Agent Workflows
 
 <p align="center">
+  <img src="logo.png" alt="Mandor Logo" width="600">
+</p>
+
+<p align="center">
   <strong>Stop writing markdown plans. Start shipping features with deterministic task tracking.</strong>
 </p>
 
