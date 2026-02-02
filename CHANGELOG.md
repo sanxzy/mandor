@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.11] - 2026-02-02
+
+### Changed
+- Comprehensive README.md with all commands, workflows, and best practices
+- Enhanced `mandor populate` output with complete command reference covering all 12 command groups
+- Added detailed status transitions, dependency rules, and common workflows documentation
+
 ## [0.3.10] - 2026-02-02
 
 ### Changed
