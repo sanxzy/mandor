@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.27] - 2026-02-02
+
+### Added
+- Proper npm package.json for @mandors/cli distribution
+
 ## [0.0.26] - 2026-02-02
 
 ### Changed
