@@ -33,7 +33,53 @@ func outputPopulate(cmd *cobra.Command) error {
 ╔════════════════════════════════════════════════════════════════════╗
 ║                   MANDOR CLI COMMAND REFERENCE                     ║
 ║              Event-Based Task Manager for AI Workflows             ║
+║                   Stop Writing Markdown Plans                      ║
 ╚════════════════════════════════════════════════════════════════════╝
+
+THE PROBLEM WITH MARKDOWN PLANS
+════════════════════════════════════════════════════════════════════
+
+Traditional workflows scatter task state across files:
+  • Markdown plan files (PLAN.md, TASKS.md) go stale
+  • Dependencies are manual and error-prone
+  • Status is fiction until code review
+  • No audit trail of changes
+  • Blocking tasks are invisible
+  • Parsing and automation is regex hell
+
+MANDOR'S SOLUTION
+════════════════════════════════════════════════════════════════════
+
+Single source of truth with deterministic state:
+  ✓ Event-sourced: All changes in immutable events.jsonl
+  ✓ Automatic dependencies: Mark task done → dependents auto-unblock
+  ✓ Real-time queries: mandor task ready, blocked, summary
+  ✓ Audit trail: Full history of every status change
+  ✓ Schema-driven: Enforce implementation steps and tests upfront
+  ✓ CLI-native: Works in terminals, scripts, and CI/CD
+
+EXAMPLE: Replace This...
+════════════════════════════════════════════════════════════════════
+
+  # PLAN.md
+  ## Phase 1: Auth System
+  - [ ] JWT Parser (depends on crypto)
+  - [ ] Login Endpoint (depends on JWT Parser)
+  - [ ] Refresh Token (depends on JWT Parser)
+  
+  Status: Last updated 3 days ago (probably stale!)
+
+...WITH THIS
+════════════════════════════════════════════════════════════════════
+
+  mandor feature create "Auth System" --project api
+  mandor task create feature-id "JWT Parser" --goal "..." --priority P1
+  mandor task create feature-id "Login" --depends-on jwt-id --priority P1
+  
+  # Real-time progress
+  mandor task ready feature-id          # See what's available NOW
+  mandor task blocked feature-id        # See what's waiting
+  mandor task summary feature-id        # See grouped status
 
 ═════════════════════════════════════════════════════════════════════════
  TABLE OF CONTENTS
@@ -882,44 +928,66 @@ WORKFLOW 7: Track Dependencies
   4. Use mandor task blocked api-feature-xxx to monitor unblock progress
 
 ═════════════════════════════════════════════════════════════════════════
+ NO MORE MARKDOWN PLANS
+═════════════════════════════════════════════════════════════════════════
+
+Stop maintaining PLAN.md, TODO.md, or TASKS.md files. They go stale.
+
+Instead, use Mandor:
+
+  ✓ Create feature: Single source of truth
+  ✓ Create tasks: Explicit dependencies
+  ✓ mandor task ready <feature>: See what's available NOW
+  ✓ mandor task blocked <feature>: See what's waiting
+  ✓ mandor task summary <feature>: Real-time progress
+  ✓ Mark done: Dependents auto-unblock
+  ✓ mandor status: Full workspace visibility
+
+Result: No markdown files. No manual status updates. Deterministic state.
+
+═════════════════════════════════════════════════════════════════════════
  QUICK REFERENCE
 ═════════════════════════════════════════════════════════════════════════
 
 Start Here:
-  mandor init "My Project"
-  mandor config set priority.default P3
+   mandor init "My Project"
+   mandor config set priority.default P3
 
-Basic Work:
-  mandor project create <id> --name X --goal "..."
-  mandor feature create <name> --project <id> --goal "..."
-  mandor task create <feature-id> <name> --goal "..." --implementation-steps "..." --test-cases "..." --derivable-files "..." --library-needs "..."
-  mandor task update <id> --status in_progress
-  mandor task update <id> --status done
+Create Work (NO MARKDOWN FILES NEEDED):
+   mandor project create <id> --name X --goal "..."
+   mandor feature create <name> --project <id> --goal "..."
+   mandor task create <feature-id> <name> --goal "..." --implementation-steps "..." --test-cases "..." --derivable-files "..." --library-needs "..."
+   mandor task update <id> --status in_progress
+   mandor task update <id> --status done
 
-Monitor Progress:
-  mandor status
-  mandor task summary <feature-id>          # Summary by status
-  mandor issue summary <project-id>         # Summary by status
-  mandor task ready <feature-id>
-  mandor task blocked <feature-id>
-  mandor issue ready <project-id> --type bug
+Real-Time Progress (Query System, Not Files):
+   mandor status
+   mandor task summary <feature-id>          # Summary by status
+   mandor issue summary <project-id>         # Summary by status
+   mandor task ready <feature-id>            # What's available
+   mandor task blocked <feature-id>          # What's waiting
+   mandor issue ready <project-id> --type bug
 
 Exit Codes:
-  0 = Success
-  1 = System error
-  2 = Validation error
-  3 = Permission error
+   0 = Success
+   1 = System error
+   2 = Validation error
+   3 = Permission error
 
 ═════════════════════════════════════════════════════════════════════════
 
 For detailed help on any command, use:
-  mandor <command> --help
-  mandor <command> <subcommand> --help
+   mandor <command> --help
+   mandor <command> <subcommand> --help
 
 Example:
-  mandor task --help
-  mandor task create --help
+   mandor task --help
+   mandor task create --help
 
+═════════════════════════════════════════════════════════════════════════
+REMEMBER: Mandor eliminates markdown planning files.
+All state is in events.jsonl. All queries are CLI commands.
+No stale docs. No manual sync. Deterministic.
 ═════════════════════════════════════════════════════════════════════════
 `)
 	return nil
