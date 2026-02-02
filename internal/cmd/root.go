@@ -55,6 +55,9 @@ For more information, visit: https://github.com/budisantoso/mandor`,
 	// Add version command
 	rootCmd.AddCommand(NewVersionCmd())
 
+	// Add summary command
+	rootCmd.AddCommand(NewSummaryCmd())
+
 	return rootCmd
 }
 
