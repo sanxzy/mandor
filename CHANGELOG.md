@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.10] - 2026-02-02
+
+### Changed
+- Production release with stable v0.3.x feature set
+
 ## [0.3.9] - 2026-02-02
 
 ### Changed
