@@ -102,18 +102,11 @@ cancelled → (terminal, can reopen to any status)
 
 ## Installation
 
-### Build from Source
+### Install with curl
 
 ```bash
-git clone https://github.com/sanxzy/mandor.git
-cd mandor
-go build -o ./mandor ./cmd/mandor
-```
-
-### Use from Binaries
-
-```bash
-./mandor --help
+curl -fsSL https://install.mandor.dev | bash
+mandor --help
 ```
 
 ### Install from npm
