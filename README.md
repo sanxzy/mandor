@@ -105,7 +105,7 @@ cancelled → (terminal, can reopen to any status)
 ### Install with curl
 
 ```bash
-curl -fsSL https://install.mandor.dev | bash
+curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh
 mandor --help
 ```
 
