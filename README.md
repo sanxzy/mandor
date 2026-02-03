@@ -54,8 +54,10 @@ Mandor is a CLI tool for managing tasks, features, and issues in AI agent workfl
 
 | Type | Purpose | Status Values |
 |------|---------|---------------|
-| **Task** | Work items within a feature | pending, ready, in_progress, done, blocked, cancelled |
+| **Workspace** | Top-level container for all projects | (single instance per directory) |
+| **Project** | Container for features and issues | (active/deleted) |
 | **Feature** | Logical grouping of related tasks | draft, active, done, blocked, cancelled |
+| **Task** | Work items within a feature | pending, ready, in_progress, done, blocked, cancelled |
 | **Issue** | Problems, bugs, or improvement requests | open, ready, in_progress, resolved, wontfix, blocked, cancelled |
 
 ### Dependency Types
