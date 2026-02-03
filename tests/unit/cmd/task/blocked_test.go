@@ -27,7 +27,7 @@ func TestBlockedCmd_NoWorkspace(t *testing.T) {
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 
-	err = cmd.RunE(cmd, []string{})
+	err = cmd.RunE(cmd, []string{"test-proj-feature-abc123def456"})
 	if err == nil {
 		t.Error("Expected error for uninitialized workspace, got nil")
 	}
@@ -54,7 +54,7 @@ func TestBlockedCmd_NoBlockedTasks(t *testing.T) {
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 
-	err := cmd.RunE(cmd, []string{})
+	err := cmd.RunE(cmd, []string{featureID})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestBlockedCmd_WithBlockedTasks(t *testing.T) {
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 
-	err = cmd.RunE(cmd, []string{})
+	err = cmd.RunE(cmd, []string{featureID})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -138,11 +138,10 @@ func TestBlockedCmd_WithProjectFilter(t *testing.T) {
 	writeTestFeatureForTaskCmd(t, tmpDir, projectID, featureID, "active")
 
 	cmd := task.NewBlockedCmd()
-	cmd.Flags().Set("project", projectID)
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 
-	err := cmd.RunE(cmd, []string{})
+	err := cmd.RunE(cmd, []string{featureID})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -167,11 +166,10 @@ func TestBlockedCmd_WithFeatureFilter(t *testing.T) {
 	writeTestFeatureForTaskCmd(t, tmpDir, projectID, featureID, "active")
 
 	cmd := task.NewBlockedCmd()
-	cmd.Flags().Set("feature", featureID)
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 
-	err := cmd.RunE(cmd, []string{})
+	err := cmd.RunE(cmd, []string{featureID})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -224,7 +222,7 @@ func TestBlockedCmd_JSONOutput(t *testing.T) {
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 
-	err = cmd.RunE(cmd, []string{})
+	err = cmd.RunE(cmd, []string{featureID})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -253,14 +251,16 @@ func TestBlockedCmd_InvalidPriority(t *testing.T) {
 	os.Chdir(tmpDir)
 
 	projectID := "test-proj"
+	featureID := "test-proj-feature-abc123def456"
 	writeTestProjectForTaskCmd(t, tmpDir, projectID)
+	writeTestFeatureForTaskCmd(t, tmpDir, projectID, featureID, "active")
 
 	cmd := task.NewBlockedCmd()
 	cmd.Flags().Set("priority", "INVALID")
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 
-	err := cmd.RunE(cmd, []string{})
+	err := cmd.RunE(cmd, []string{featureID})
 	if err == nil {
 		t.Error("Expected error for invalid priority, got nil")
 	}

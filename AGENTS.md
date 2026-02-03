@@ -25,7 +25,7 @@
 This is the Mandor CLI project. When making changes:
 
 1. Update the relevant source files in `internal/`
-2. Build and test with `go build -o mandor-cli ./cmd/mandor`
+2. Build and test with `go build -o binaries/mandor ./cmd/mandor`
 3. Run CLI commands to verify fixes work
 4. Document critical bugs in BUG_REPORT.md if needed
 5. Create test scenarios to verify behavior

@@ -11,6 +11,7 @@ import (
 	"mandor/internal/cmd/populate"
 	"mandor/internal/cmd/project"
 	"mandor/internal/cmd/task"
+	"mandor/internal/cmd/track"
 	"mandor/internal/cmd/workspace"
 	"mandor/internal/domain"
 )
@@ -42,6 +43,9 @@ For more information, visit: https://github.com/budisantoso/mandor`,
 
 	// Add issue commands
 	rootCmd.AddCommand(issue.NewIssueCmd())
+
+	// Add track command (unified tracking)
+	rootCmd.AddCommand(track.NewTrackCmd())
 
 	// Add completion command
 	rootCmd.AddCommand(NewCompletionCmd(rootCmd))

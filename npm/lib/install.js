@@ -28,7 +28,7 @@ async function getLatestVersion(prerelease = false) {
   const url = `https://api.github.com/repos/${REPO}/releases`;
 
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'Mandor-CLI' } }, (res) => {
+    https.get(url, { headers: { 'User-Agent': 'binaries/mandor' } }, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
