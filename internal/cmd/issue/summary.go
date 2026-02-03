@@ -11,10 +11,11 @@ import (
 
 func NewSummaryCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "summary <project_id>",
-		Short: "Display issue summary for a project",
-		Long:  "Display a summary of issues in a project grouped by status with priority and type information.",
-		Args:  cobra.ExactArgs(1),
+		Use:        "summary <project_id>",
+		Short:      "Display issue summary for a project",
+		Deprecated: "Use 'mandor track project <id>' instead. Use '--summary' flag for aggregated counts only.",
+		Long:       "Display a summary of issues in a project grouped by status with priority and type information.\n\nDEPRECATED: Use 'mandor track project <id>' instead, optionally with '--summary' flag for count-only output.",
+		Args:       cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectID := args[0]
 

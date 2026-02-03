@@ -11,10 +11,11 @@ import (
 
 func NewSummaryCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "summary <feature_id>",
-		Short: "Display task summary for a feature",
-		Long:  "Display a summary of tasks in a feature grouped by status with priority information.",
-		Args:  cobra.ExactArgs(1),
+		Use:        "summary <feature_id>",
+		Short:      "Display task summary for a feature",
+		Deprecated: "Use 'mandor track feature <id>' instead. Use '--summary' flag for aggregated counts only.",
+		Long:       "Display a summary of tasks in a feature grouped by status with priority information.\n\nDEPRECATED: Use 'mandor track feature <id>' instead, optionally with '--summary' flag for count-only output.",
+		Args:       cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			featureID := args[0]
 

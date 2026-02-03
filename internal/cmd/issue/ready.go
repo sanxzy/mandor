@@ -20,9 +20,10 @@ var (
 
 func NewReadyCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "ready [--project <id>] [--type <type>] [--priority <priority>] [--json]",
-		Short: "List ready issues",
-		Long:  "List all issues with status='ready' that are available to work on (no blocking dependencies).",
+		Use:        "ready [--project <id>] [--type <type>] [--priority <priority>] [--json]",
+		Short:      "List ready issues",
+		Deprecated: "Use 'mandor track project <id>' instead. All issues are shown; use '--group-by status' to filter by status.",
+		Long:       "List all issues with status='ready' that are available to work on (no blocking dependencies).\n\nDEPRECATED: Use 'mandor track project <id>' instead to view all issues, optionally with '--group-by status' to organize by status.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewIssueService()
 			if err != nil {

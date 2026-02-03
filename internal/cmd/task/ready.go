@@ -19,10 +19,11 @@ var (
 
 func NewReadyCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "ready <feature_id> [--priority <priority>] [--json]",
-		Short: "List ready tasks",
-		Long:  "List tasks with status='ready' that are available to work on.",
-		Args:  cobra.ExactArgs(1),
+		Use:        "ready <feature_id> [--priority <priority>] [--json]",
+		Short:      "List ready tasks",
+		Deprecated: "Use 'mandor track feature <id>' instead. All tasks are shown; use '--group-by status' to filter by status.",
+		Long:       "List tasks with status='ready' that are available to work on.\n\nDEPRECATED: Use 'mandor track feature <id>' instead to view all tasks, optionally with '--group-by status' to organize by status.",
+		Args:       cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewTaskService()
 			if err != nil {

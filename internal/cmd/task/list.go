@@ -23,10 +23,11 @@ var (
 
 func NewListCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "list <feature_id> [--status <status>] [--priority <priority>] [--json] [--include-deleted]",
-		Short: "List tasks",
-		Long:  "List tasks in a feature.",
-		Args:  cobra.ExactArgs(1),
+		Use:        "list <feature_id> [--status <status>] [--priority <priority>] [--json] [--include-deleted]",
+		Short:      "List tasks",
+		Deprecated: "Use 'mandor track feature <id>' instead for unified task tracking.",
+		Long:       "List tasks in a feature.\n\nDEPRECATED: Use 'mandor track feature <id>' instead to view all tasks with optional filtering.",
+		Args:       cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewTaskService()
 			if err != nil {

@@ -20,9 +20,10 @@ var (
 
 func NewBlockedCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "blocked [--project <id>] [--type <type>] [--priority <priority>] [--json]",
-		Short: "List blocked issues",
-		Long:  "List all issues with status='blocked' that are waiting for dependencies to complete.",
+		Use:        "blocked [--project <id>] [--type <type>] [--priority <priority>] [--json]",
+		Short:      "List blocked issues",
+		Deprecated: "Use 'mandor track project <id> --tree' or '--graph' to see blocking relationships.",
+		Long:       "List all issues with status='blocked' that are waiting for dependencies to complete.\n\nDEPRECATED: Use 'mandor track project <id>' with '--tree' or '--graph' flag to visualize blocking relationships.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewIssueService()
 			if err != nil {

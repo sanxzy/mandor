@@ -24,9 +24,10 @@ var (
 
 func NewListCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "list [--project <id>] [--type <type>] [--status <status>] [--priority <priority>] [--json] [--sort <field>] [--order <asc|desc>]",
-		Short: "List issues",
-		Long:  "List issues in the specified project with optional filters.",
+		Use:        "list [--project <id>] [--type <type>] [--status <status>] [--priority <priority>] [--json] [--sort <field>] [--order <asc|desc>]",
+		Short:      "List issues",
+		Deprecated: "Use 'mandor track project <id>' instead for unified issue tracking.",
+		Long:       "List issues in the specified project with optional filters.\n\nDEPRECATED: Use 'mandor track project <id>' instead to view all issues with optional filtering.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewIssueService()
 			if err != nil {

@@ -14,9 +14,10 @@ func NewSummaryCmd() *cobra.Command {
 	var projectID string
 
 	cmd := &cobra.Command{
-		Use:   "summary [--project <id>]",
-		Short: "Display workspace summary",
-		Long:  "Display a summary of all features grouped by priority with task counts and status overview.",
+		Use:        "summary [--project <id>]",
+		Short:      "Display workspace summary",
+		Deprecated: "Use 'mandor track' instead for unified workspace/project/feature/task/issue tracking. See 'mandor track --help' for options.",
+		Long:       "Display a summary of all features grouped by priority with task counts and status overview.\n\nDEPRECATED: This command is superseded by 'mandor track'. For equivalent functionality use 'mandor track workspace' or 'mandor track project <id>'.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fsvc, err := service.NewFeatureService()
 			if err != nil {
