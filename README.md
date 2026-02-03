@@ -1,4 +1,4 @@
-# Mandor - Event-Based Task Manager CLI for AI Agent Workflows
+# Mandor - Deterministic Task Manager CLI for AI Agent Workflows
 
 <p align="center">
   <img src="logo.png" alt="Mandor Logo" width="600">
@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Event-sourced | Dependency-aware | CLI-native | Built for AI agents</strong>
+  <strong>Dependency-aware | Structured storage | CLI-native | Built for AI agents</strong>
 </p>
 
 <p align="center">
@@ -78,29 +78,32 @@ Workspace
 
 **Tasks:**
 ```
-pending → ready → in_progress → done
-pending → ready → blocked → ready
-ready → cancelled
-cancelled → ready (reopen)
+pending → {ready, in_progress, cancelled}
+ready → {in_progress, cancelled}
+in_progress → {done, blocked, cancelled}
+blocked → {ready, cancelled}
+done → (terminal)
+cancelled → (terminal)
 ```
 
 **Features:**
 ```
-draft → active → done
-draft → blocked (dependency not done)
-draft → cancelled
-cancelled → draft (reopen)
+draft → {active, blocked, cancelled}
+active → {done, blocked, cancelled}
+blocked → {draft, active, done, cancelled}
+done → {cancelled}
+cancelled → {draft}
 ```
 
 **Issues:**
 ```
-open → ready → in_progress → resolved
-open → ready → in_progress → wontfix
-open → ready → blocked → ready
-resolved → ready (reopen)
-wontfix → ready (reopen)
-open → cancelled
-cancelled → open (reopen)
+open → {ready, in_progress, blocked, resolved, wontfix, cancelled}
+ready → {in_progress, blocked, resolved, wontfix, cancelled}
+in_progress → {blocked, resolved, wontfix, cancelled}
+blocked → {ready, resolved, wontfix, cancelled}
+resolved → (terminal, can reopen to any status)
+wontfix → (terminal, can reopen to any status)
+cancelled → (terminal, can reopen to any status)
 ```
 
 ---
@@ -157,7 +160,7 @@ mandor feature create "Authentication" --project api \
 
 ```bash
 # Create first task (no dependencies)
-mandor task create "JWT Parser" --feature api-feature-xxx \
+mandor task create api-feature-xxx "JWT Parser" \
   --goal "Parse and validate JWT tokens in incoming requests with expiry and signature verification" \
   --implementation-steps "Setup crypto library|Add token validation|Handle expiry|Return errors" \
   --test-cases "Valid token accepted|Expired token rejected|Invalid signature rejected" \
@@ -166,7 +169,7 @@ mandor task create "JWT Parser" --feature api-feature-xxx \
   --priority P1
 
 # Create dependent task (depends on JWT Parser)
-mandor task create "Login Endpoint" --feature api-feature-xxx \
+mandor task create api-feature-xxx "Login Endpoint" \
   --goal "Accept user credentials and return JWT token with refresh token flow" \
   --implementation-steps "Setup endpoint|Validate credentials|Generate JWT|Return tokens" \
   --test-cases "Valid creds return token|Invalid creds rejected|Tokens properly formatted" \
@@ -298,9 +301,9 @@ mandor task update <task-id> [--name <text>] [--goal <goal>] [--priority <priori
 
 ```bash
 # Create an issue
-mandor issue create <name> --project <id> --goal <goal> --type <type> \
+mandor issue create <name> --project <id> --type <type> --goal <goal> \
   --affected-files <files> --affected-tests <tests> \
-  --implementation-steps <steps> [--priority <priority>] [--depends-on <ids>]
+  --implementation-steps <steps> [--priority <priority>] [--depends-on <ids>] [--library-needs <libs>]
 
 # Show issue details
 mandor issue detail <issue-id> --project <id>
@@ -342,7 +345,7 @@ mandor feature create "Authentication" --project api \
   --scope backend
 
 # Create tasks with explicit dependencies
-mandor task create "JWT Parser" --feature auth-feature-id \
+mandor task create auth-feature-id "JWT Parser" \
   --goal "Validate JWT tokens..." \
   --implementation-steps "Step 1|Step 2" \
   --test-cases "Test invalid tokens|Test expired" \
@@ -350,21 +353,21 @@ mandor task create "JWT Parser" --feature auth-feature-id \
   --library-needs "jsonwebtoken" \
   --priority P1
 
-mandor task create "Login Endpoint" --feature auth-feature-id \
+mandor task create auth-feature-id "Login Endpoint" \
   --goal "Accept credentials and return JWT..." \
   --depends-on jwt-parser-task-id \
   --priority P1
 
 # Real-time progress queries
-mandor task ready --feature auth-feature-id           # See what's available now
-mandor task blocked --feature auth-feature-id         # See what's waiting
+mandor track feature auth-feature-id                 # See all tasks and status
+mandor track task jwt-parser-task-id                 # See specific task details
 ```
 
 **Benefits:**
 - No file sync required
 - Dependencies auto-validated
 - Blocking tasks auto-detected
-- Reproducible state (`events.jsonl`)
+- Structured JSONL storage
 - Queryable via CLI or JSON
 - Works in CI/CD pipelines
 
@@ -377,11 +380,11 @@ mandor status
 # Check a specific project
 mandor status --project api
 
-# View feature dependencies
-mandor feature list --project api
+# View feature dependencies and progress
+mandor track project api
 
 # Create tasks with dependencies
-mandor task create "Step 2" --feature feature-id \
+mandor task create feature-id "Step 2" \
   --goal "..." \
   --implementation-steps "..." \
   --test-cases "..." \
@@ -389,14 +392,14 @@ mandor task create "Step 2" --feature feature-id \
   --library-needs "..." \
   --depends-on task-id-1|task-id-2
 
-# See what's blocking progress
-mandor task blocked --feature feature-id
+# See all feature tasks with status
+mandor track feature feature-id
 
 # Mark as done (auto-unblocks dependents)
 mandor task update task-id --status done
 
-# Dependents auto-transition to ready
-mandor task ready --feature feature-id
+# Verify dependents auto-transitioned to ready
+mandor track feature feature-id
 ```
 
 ### Issue Tracking
@@ -412,16 +415,10 @@ mandor issue create "Fix memory leak in auth" \
   --affected-tests "src/handlers/auth_test.go" \
   --implementation-steps "Identify leak|Add cleanup|Test|Verify"
 
-# List open issues
-mandor issue list --project api --status open
+# View issue details
+mandor issue detail issue-id --project api
 
-# Filter by type and priority
-mandor issue list --project api --type bug --priority P0
-
-# See ready issues
-mandor issue ready --project api --type bug
-
-# Start working
+# Start working on an issue
 mandor issue update issue-id --start
 
 # Mark as resolved
@@ -429,6 +426,9 @@ mandor issue update issue-id --resolve
 
 # Mark as won't fix with reason
 mandor issue update issue-id --wontfix --reason "Working as intended"
+
+# See project issues with track
+mandor track project api
 ```
 
 ### Configuration
