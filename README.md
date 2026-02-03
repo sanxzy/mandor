@@ -1,4 +1,4 @@
-# Mandor - Event-Based Task Manager CLI for AI Agent Workflows
+# Mandor - Deterministic Task Manager CLI for AI Agent Workflows
 
 <p align="center">
   <img src="logo.png" alt="Mandor Logo" width="600">
@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Event-sourced | Dependency-aware | CLI-native | Built for AI agents</strong>
+  <strong>Dependency-aware | Structured storage | CLI-native | Built for AI agents</strong>
 </p>
 
 <p align="center">
@@ -31,18 +31,18 @@ Traditional workflows scatter task state across markdown files, spreadsheets, an
 
 Mandor brings **deterministic task management** to AI agent workflows:
 
-- **Single Source of Truth**: All state in `events.jsonl`—queryable, reproducible, auditable
+- **Single Source of Truth**: All state in structured JSONL files—queryable, reproducible, auditable
 - **Automatic Dependency Resolution**: Mark tasks done → dependents auto-transition to ready
 - **Schema-Driven**: Enforce implementation steps, test cases, and library needs upfront
 - **CLI-Native**: Works in terminal, scripts, and CI/CD pipelines
-- **Event-Sourced**: Full audit trail of every status change
+- **Dependency Tracking**: Full support for same-project and cross-project dependencies
 
 ## Overview
 
 Mandor is a CLI tool for managing tasks, features, and issues in AI agent workflows:
 
-- **Event-Based Architecture**: All changes logged in `events.jsonl` with immutable timestamps
-- **JSONL Format**: Deterministic, append-only storage for reproducibility
+- **Structured Storage**: All data in JSONL format with full audit trail
+- **Real-Time Status**: Query tasks/issues by status (ready, blocked, in_progress)
 - **Dependency Tracking**: Automatic status transitions when dependencies complete
 - **Cross-Platform**: Go binary for macOS, Linux, Windows (arm64 & x64)
 
@@ -78,29 +78,32 @@ Workspace
 
 **Tasks:**
 ```
-pending → ready → in_progress → done
-pending → ready → blocked → ready
-ready → cancelled
-cancelled → ready (reopen)
+pending → {ready, in_progress, cancelled}
+ready → {in_progress, cancelled}
+in_progress → {done, blocked, cancelled}
+blocked → {ready, cancelled}
+done → (terminal)
+cancelled → (terminal)
 ```
 
 **Features:**
 ```
-draft → active → done
-draft → blocked (dependency not done)
-draft → cancelled
-cancelled → draft (reopen)
+draft → {active, blocked, cancelled}
+active → {done, blocked, cancelled}
+blocked → {draft, active, done, cancelled}
+done → {cancelled}
+cancelled → {draft}
 ```
 
 **Issues:**
 ```
-open → ready → in_progress → resolved
-open → ready → in_progress → wontfix
-open → ready → blocked → ready
-resolved → ready (reopen)
-wontfix → ready (reopen)
-open → cancelled
-cancelled → open (reopen)
+open → {ready, in_progress, blocked, resolved, wontfix, cancelled}
+ready → {in_progress, blocked, resolved, wontfix, cancelled}
+in_progress → {blocked, resolved, wontfix, cancelled}
+blocked → {ready, resolved, wontfix, cancelled}
+resolved → (terminal, can reopen to any status)
+wontfix → (terminal, can reopen to any status)
+cancelled → (terminal, can reopen to any status)
 ```
 
 ---
@@ -157,7 +160,7 @@ mandor feature create "Authentication" --project api \
 
 ```bash
 # Create first task (no dependencies)
-mandor task create "JWT Parser" --feature api-feature-xxx \
+mandor task create api-feature-xxx "JWT Parser" \
   --goal "Parse and validate JWT tokens in incoming requests with expiry and signature verification" \
   --implementation-steps "Setup crypto library|Add token validation|Handle expiry|Return errors" \
   --test-cases "Valid token accepted|Expired token rejected|Invalid signature rejected" \
@@ -166,7 +169,7 @@ mandor task create "JWT Parser" --feature api-feature-xxx \
   --priority P1
 
 # Create dependent task (depends on JWT Parser)
-mandor task create "Login Endpoint" --feature api-feature-xxx \
+mandor task create api-feature-xxx "Login Endpoint" \
   --goal "Accept user credentials and return JWT token with refresh token flow" \
   --implementation-steps "Setup endpoint|Validate credentials|Generate JWT|Return tokens" \
   --test-cases "Valid creds return token|Invalid creds rejected|Tokens properly formatted" \
@@ -179,25 +182,22 @@ mandor task create "Login Endpoint" --feature api-feature-xxx \
 ### 5. View Task Progress
 
 ```bash
-# See all tasks in feature
-mandor task list --feature api-feature-xxx
+# See all tasks in feature with visualization
+mandor track feature api-feature-xxx
 
-# See tasks ready to work on
-mandor task ready --feature api-feature-xxx
-
-# See blocked/waiting tasks
-mandor task blocked --feature api-feature-xxx
+# Get task details
+mandor task detail <task-id>
 ```
 
 ### 6. Mark Tasks Complete
 
 ```bash
-# Get task ID from list
+# Get task ID from track output
 mandor task update <task-id> --status in_progress
 mandor task update <task-id> --status done
 
 # Dependent tasks auto-transition to "ready"
-mandor task ready --feature api-feature-xxx  # Now shows "Login Endpoint" as ready
+mandor track feature api-feature-xxx  # Now shows "Login Endpoint" as ready
 ```
 
 ---
@@ -211,10 +211,7 @@ mandor task ready --feature api-feature-xxx  # Now shows "Login Endpoint" as rea
 mandor init [--workspace-name <name>] [-y]
 
 # View workspace and project status
-mandor status [--project <id>] [--summary] [--json]
-
-# Display feature summary grouped by priority
-mandor summary [--project <id>]
+mandor status [--project <id>] [--json]
 
 # Manage configuration
 mandor config get <key>
@@ -223,13 +220,35 @@ mandor config list
 mandor config reset <key>
 
 # Display all commands and best practices
-mandor populate [--markdown|--json]
+mandor populate
 
 # Show version
 mandor version
 
 # Generate shell completions
 mandor completion [bash|zsh|fish]
+
+# AI-assisted documentation
+mandor ai --help
+```
+
+### Track Commands
+
+```bash
+# Track workspace status
+mandor track
+
+# Track project status
+mandor track project <project-id>
+
+# Track feature with tasks
+mandor track feature <feature-id> [--verbose]
+
+# Track specific task
+mandor track task <task-id>
+
+# Track issue
+mandor track issue <issue-id>
 ```
 
 ### Project Commands
@@ -238,67 +257,44 @@ mandor completion [bash|zsh|fish]
 # Create a project
 mandor project create <id> --name <name> --goal <goal> [OPTIONS]
 
-# List projects
-mandor project list [--json]
-
 # Show project details
 mandor project detail <project-id>
 
 # Update project
-mandor project update <project-id> --name <name> [--goal <goal>]
-
-# Delete project (soft delete)
-mandor project delete <project-id> [--hard]
-
-# Reopen a soft-deleted project
-mandor project reopen <project-id>
+mandor project update <project-id> [--name <name>] [--goal <goal>] [--status <status>]
 ```
 
 ### Feature Commands
 
 ```bash
 # Create a feature
-mandor feature create <name> --project <id> --goal <goal> [--scope <scope>] [--priority <priority>] [--depends <ids>]
+mandor feature create <name> --project <id> --goal <goal> [--scope <scope>] [--priority <priority>]
 
 # List features
-mandor feature list --project <id> [--json] [--include-deleted]
+mandor feature list --project <id>
 
 # Show feature details
 mandor feature detail <feature-id> --project <id>
 
 # Update feature
 mandor feature update <feature-id> --project <id> [--name <text>] [--goal <goal>] [--scope <scope>] [--priority <priority>] [--status <status>] [--depends <ids>] [--cancel --reason <text>] [--reopen] [--dry-run]
-
-# List features by status filter
-mandor feature list --project <id> [--status <status>]
 ```
 
 ### Task Commands
 
 ```bash
 # Create a task
-mandor task create <name> --feature <id> --goal <goal> \
+mandor task create <feature-id> <name> --goal <goal> \
   --implementation-steps <steps> --test-cases <cases> \
   --derivable-files <files> --library-needs <libs> \
-  [--priority <priority>] [--depends-on <ids>] [-y]
-
-# List tasks in a feature
-mandor task list --feature <id> [--status <status>] [--priority <priority>] [--json] [--include-deleted] [--sort <field>] [--order <asc|desc>]
-
-# Show ready tasks
-mandor task ready --feature <id> [--priority <priority>] [--json]
-
-# Show blocked tasks
-mandor task blocked --feature <id> [--priority <priority>] [--json]
+  [--priority <priority>] [--depends-on <ids>]
 
 # Show task details
 mandor task detail <task-id>
 
 # Update task
 mandor task update <task-id> [--name <text>] [--goal <goal>] [--priority <priority>] \
-  [--implementation-steps <steps>] [--test-cases <cases>] [--derivable-files <files>] \
-  [--library-needs <libs>] [--status <status>] [--depends <ids>] [--depends-add <ids>] \
-  [--depends-remove <ids>] [--cancel --reason <text>] [--reopen] [--dry-run] [--force]
+  [--status <status>] [--depends-add <ids>] [--depends-remove <ids>] [--cancel --reason <text>] [--dry-run]
 ```
 
 ### Issue Commands
@@ -307,36 +303,21 @@ mandor task update <task-id> [--name <text>] [--goal <goal>] [--priority <priori
 # Create an issue
 mandor issue create <name> --project <id> --type <type> --goal <goal> \
   --affected-files <files> --affected-tests <tests> \
-  --implementation-steps <steps> \
-  [--priority <priority>] [--depends-on <ids>] [--library-needs <libs>] [-y]
-
-# List issues in project
-mandor issue list [--project <id>] [--type <type>] [--status <status>] [--priority <priority>] [--json] [--sort <field>] [--order <asc|desc>] [--verbose]
-
-# Show ready issues
-mandor issue ready [--project <id>] [--type <type>] [--priority <priority>] [--json]
-
-# Show blocked issues
-mandor issue blocked [--project <id>] [--type <type>] [--priority <priority>] [--json]
+  --implementation-steps <steps> [--priority <priority>] [--depends-on <ids>] [--library-needs <libs>]
 
 # Show issue details
-mandor issue detail <issue-id> [--project <id>]
+mandor issue detail <issue-id> --project <id>
 
 # Update issue
-mandor issue update <issue-id> [--project <id>] [--name <text>] [--goal <goal>] [--type <type>] [--priority <priority>] \
-  [--status <status>] [--reason <text>] [--depends-on <ids>] [--depends-add <ids>] [--depends-remove <ids>] \
-  [--affected-files <files>] [--affected-tests <tests>] [--implementation-steps <steps>] [--library-needs <libs>] \
-  [--start] [--resolve] [--wontfix] [--reopen] [--cancel] [--force] [--dry-run]
+mandor issue update <issue-id> [--name <text>] [--goal <goal>] [--priority <priority>] \
+  [--type <type>] [--status <status>] [--start] [--resolve] [--wontfix] [--reason <text>] [--cancel --reason <text>] [--dry-run]
 ```
 
 ### AI Commands
 
 ```bash
-# Generate AGENTS.md for multi-agent coordination
-mandor ai agents
-
-# Generate CLAUDE.md for the project
-mandor ai claude
+# AI-assisted documentation generation
+mandor ai --help
 ```
 
 ---
@@ -364,7 +345,7 @@ mandor feature create "Authentication" --project api \
   --scope backend
 
 # Create tasks with explicit dependencies
-mandor task create "JWT Parser" --feature auth-feature-id \
+mandor task create auth-feature-id "JWT Parser" \
   --goal "Validate JWT tokens..." \
   --implementation-steps "Step 1|Step 2" \
   --test-cases "Test invalid tokens|Test expired" \
@@ -372,21 +353,21 @@ mandor task create "JWT Parser" --feature auth-feature-id \
   --library-needs "jsonwebtoken" \
   --priority P1
 
-mandor task create "Login Endpoint" --feature auth-feature-id \
+mandor task create auth-feature-id "Login Endpoint" \
   --goal "Accept credentials and return JWT..." \
   --depends-on jwt-parser-task-id \
   --priority P1
 
 # Real-time progress queries
-mandor task ready --feature auth-feature-id           # See what's available now
-mandor task blocked --feature auth-feature-id         # See what's waiting
+mandor track feature auth-feature-id                 # See all tasks and status
+mandor track task jwt-parser-task-id                 # See specific task details
 ```
 
 **Benefits:**
 - No file sync required
 - Dependencies auto-validated
 - Blocking tasks auto-detected
-- Reproducible state (`events.jsonl`)
+- Structured JSONL storage
 - Queryable via CLI or JSON
 - Works in CI/CD pipelines
 
@@ -399,11 +380,11 @@ mandor status
 # Check a specific project
 mandor status --project api
 
-# View feature dependencies
-mandor feature list --project api
+# View feature dependencies and progress
+mandor track project api
 
 # Create tasks with dependencies
-mandor task create "Step 2" --feature feature-id \
+mandor task create feature-id "Step 2" \
   --goal "..." \
   --implementation-steps "..." \
   --test-cases "..." \
@@ -411,14 +392,14 @@ mandor task create "Step 2" --feature feature-id \
   --library-needs "..." \
   --depends-on task-id-1|task-id-2
 
-# See what's blocking progress
-mandor task blocked --feature feature-id
+# See all feature tasks with status
+mandor track feature feature-id
 
 # Mark as done (auto-unblocks dependents)
 mandor task update task-id --status done
 
-# Dependents auto-transition to ready
-mandor task ready --feature feature-id
+# Verify dependents auto-transitioned to ready
+mandor track feature feature-id
 ```
 
 ### Issue Tracking
@@ -434,16 +415,10 @@ mandor issue create "Fix memory leak in auth" \
   --affected-tests "src/handlers/auth_test.go" \
   --implementation-steps "Identify leak|Add cleanup|Test|Verify"
 
-# List open issues
-mandor issue list --project api --status open
+# View issue details
+mandor issue detail issue-id --project api
 
-# Filter by type and priority
-mandor issue list --project api --type bug --priority P0
-
-# See ready issues
-mandor issue ready --project api --type bug
-
-# Start working
+# Start working on an issue
 mandor issue update issue-id --start
 
 # Mark as resolved
@@ -451,6 +426,9 @@ mandor issue update issue-id --resolve
 
 # Mark as won't fix with reason
 mandor issue update issue-id --wontfix --reason "Working as intended"
+
+# See project issues with track
+mandor track project api
 ```
 
 ### Configuration
@@ -596,16 +574,14 @@ mandor status
 # Project summary
 mandor status --project api
 
-# Feature priorities
-mandor summary --project api
+# See feature progress
+mandor track project api
 
-# See ready work
-mandor task ready --feature feature-id
-mandor issue ready --project api
+# See feature tasks
+mandor track feature feature-id
 
-# See blockers
-mandor task blocked --feature feature-id
-mandor issue blocked --project api
+# See task details
+mandor track task task-id
 ```
 
 ---
@@ -625,7 +601,7 @@ export PATH="$HOME/.local/bin:$PATH"
 Check the project ID and ensure you're in the correct workspace:
 
 ```bash
-mandor project list
+mandor status
 ```
 
 ### "Entity not found"
@@ -633,8 +609,8 @@ mandor project list
 Verify the entity ID exists:
 
 ```bash
-mandor task list --feature <feature-id>
-mandor issue list --project <project-id>
+mandor track feature <feature-id>
+mandor track project <project-id>
 ```
 
 ### "Cross-project dependency detected"
@@ -687,10 +663,9 @@ mandor feature update <id> --project <pid> --reopen
 └── projects/
     └── <project-id>/
         ├── project.json    # Project metadata
-        ├── features.jsonl  # Feature event log
-        ├── tasks.jsonl     # Task event log
-        ├── issues.jsonl    # Issue event log
-        └── events.jsonl    # All events
+        ├── features.jsonl  # Feature records
+        ├── tasks.jsonl     # Task records
+        └── issues.jsonl    # Issue records
 ```
 
 ---
