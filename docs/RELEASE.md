@@ -1,392 +1,211 @@
 # Release Process
 
-This document outlines the complete release process for Mandor, including building cross-platform binaries, creating GitHub releases, and publishing to npm.
+Complete release workflow for Mandor v0.4.2+, from version bump through npm publishing.
 
 ## Prerequisites
 
-### Required Tools
+- Go 1.21+: `go version`
+- Node.js 16+: `node --version`
+- GitHub CLI: `gh --version` (must be authenticated)
+- npm access to `@mandors/cli` package
+- Git push access to `sanxzy/mandor` repository
 
-```bash
-# Go (for building binaries)
-go version  # Must be 1.21+
+## Release Workflow
 
-# Node.js & npm (for npm package)
-node --version  # Must be 16+
-npm --version
+### 1. Update Version
 
-# Git
-git --version
+Edit `Mandor/package.json` and increment version:
+
+```json
+{
+  "name": "@mandors/cli",
+  "version": "0.4.2"
+}
 ```
 
-### NPM Access
+### 2. Build Binaries for Production
 
-Ensure you have publish access to `@mandor/cli` on npmjs.com:
-
-```bash
-npm whoami  # Should show your username
-npm access ls-collaborators @mandor/cli  # Verify publish access
-```
-
-### GitHub Access
-
-Ensure you have push access to the repository and permissions to create releases.
-
-## Version Management
-
-Mandor uses semantic versioning: `MAJOR.MINOR.PATCH`
-
-| Version Type | Description | Example |
-|-------------|-------------|---------|
-| PATCH | Bug fixes | 0.0.1 → 0.0.2 |
-| MINOR | New features (backward compatible) | 0.0.2 → 0.1.0 |
-| MAJOR | Breaking changes | 0.1.0 → 1.0.0 |
-| PRERELEASE | Beta releases | 0.1.0 → 0.1.1-beta.0 |
-
-### Version Bump Commands
-
-```bash
-# Patch release (bug fixes)
-npm run version:patch
-
-# Minor release (new features)
-npm run version:minor
-
-# Major release (breaking changes)
-npm run version:major
-
-# Prerelease (beta)
-npm run version:beta
-```
-
-Each command will:
-1. Bump version in `package.json`
-2. Create a git commit
-3. Create a git tag
-4. Push to origin with tags
-
-## Building Binaries
-
-### Local Build (Current Platform Only)
+From `Mandor/` folder:
 
 ```bash
 npm run build
 ```
 
-This builds for your current platform only:
-- **macOS ARM64**: `binaries/darwin-arm64/`
-- **macOS x64**: Requires macOS x64 machine or CI
-- **Linux ARM64**: `binaries/linux-arm64/`
-- **Linux x64**: Requires Linux machine or CI
-- **Windows**: Requires Windows machine or CI
+This builds cross-platform binaries:
+- `binaries/darwin-arm64.tar.gz` (macOS ARM64)
+- `binaries/linux-arm64.tar.gz` (Linux ARM64)
+- Other platform binaries (if your system supports them)
 
-### Cross-Platform CI Build
-
-For complete cross-platform binaries, use GitHub Actions:
-
-1. Push your changes to `feature/npm` branch
-2. GitHub Actions will build all platforms automatically
-3. Download artifacts from the Actions tab
-
-Alternatively, build manually on each platform:
-
-```bash
-# macOS ARM64 (native)
-npm run build:darwin:arm64
-
-# macOS x64 (if on macOS x64 machine)
-npm run build:darwin:x64
-
-# Linux (via Docker or Linux machine)
-docker run --rm -v $PWD:/app -w /app golang:1.21 sh -c "npm run build:linux:x64 && npm run build:linux:arm64"
-
-# Windows (via PowerShell or Windows machine)
-npm run build:win32:x64
-npm run build:win32:arm64
+**Output structure:**
+```
+binaries/
+├── darwin-arm64/
+│   └── mandor           # Binary
+├── darwin-arm64.tar.gz  # Archive
+├── linux-arm64/
+│   └── mandor           # Binary
+└── linux-arm64.tar.gz   # Archive
 ```
 
-### Verify Builds
+### 3. Create GitHub Release
 
-Check that all binaries were created:
-
-```bash
-ls -la npm/binaries/
-# Expected output:
-# darwin-arm64.tar.gz
-# darwin-arm64/mandor
-# linux-arm64.tar.gz
-# linux-arm64/mandor
-# ... (other platforms if built)
-```
-
-## GitHub Release Process
-
-### Step 1: Prepare Release Notes
-
-Draft release notes in `CHANGELOG.md` or GitHub's release notes editor.
-
-Include:
-- Summary of changes since last release
-- New features
-- Bug fixes
-- Known issues
-- Upgrade instructions (if breaking changes)
-
-### Step 2: Create GitHub Release
-
-**Option A: Via GitHub Web UI**
-
-1. Navigate to: https://github.com/sanxzy/mandor/releases
-2. Click "Draft a new release"
-3. Select the tag version (created by `npm version` command)
-4. Set target branch: `feature/npm`
-5. Fill in release title and description
-6. Upload binary artifacts:
-   - `npm/binaries/darwin-arm64.tar.gz`
-   - `npm/binaries/linux-arm64.tar.gz`
-   - (other platforms if built)
-7. Check "Set as the latest release" (unless prerelease)
-8. Click "Publish release"
-
-**Option B: Via GitHub CLI**
+From `Mandor/` folder:
 
 ```bash
-# Create release
-gh release create v0.0.14 \
-  --title "Mandor v0.0.14" \
-  --notes "Release notes here" \
-  npm/binaries/darwin-arm64.tar.gz \
-  npm/binaries/linux-arm64.tar.gz
-
-# Or from file
-gh release create v0.0.14 \
-  --notes-file RELEASE_NOTES.md \
-  npm/binaries/*.tar.gz
+gh release create v0.4.2 \
+  --title "v0.4.2" \
+  --notes "Release notes from CHANGELOG.md" \
+  --repo sanxzy/mandor
 ```
 
-### Step 3: Verify Release
+**Notes format from CHANGELOG.md:**
+```
+Stable release with comprehensive documentation
 
-After publishing, verify:
-1. Release page is accessible
-2. Downloads work correctly
-3. Binary checksums match local files
+## [0.4.2] - 2026-02-03
 
-## NPM Package Publishing
+### Changed
+- Updated feature X
+- Fixed bug Y
 
-### Step 1: Build Binaries
+### Fixed
+- Issue resolved
+```
+
+### 4. Upload Binaries to Release
 
 ```bash
-npm run build
+gh release upload v0.4.2 \
+  binaries/darwin-arm64.tar.gz \
+  binaries/linux-arm64.tar.gz \
+  --repo sanxzy/mandor
 ```
 
-This runs `preversion` and `prepublishOnly` hooks which build binaries.
-
-### Step 2: Publish to Beta (Testing)
+### 5. Commit Version Change
 
 ```bash
-npm run publish:beta
+git add package.json
+git commit -m "v0.4.2: Release description here"
 ```
 
-This publishes to npm with the `beta` tag.
+Pre-commit hooks will validate formatting and tests.
 
-**Test the beta release:**
-
-```bash
-cd /tmp
-npm install @mandors/cli@beta
-./node_modules/.bin/mandor --help
-```
-
-### Step 3: Publish to Latest (Production)
-
-After testing the beta release:
-
-```bash
-npm run publish:latest
-```
-
-Or manually:
+### 6. Publish to NPM
 
 ```bash
 npm publish --access public
 ```
 
-### Verify NPM Package
+Publishes `@mandors/cli@0.4.2` to npm registry.
+
+**Output:**
+```
+npm notice Publishing to https://registry.npmjs.org/ with tag latest
++ @mandors/cli@0.4.2
+```
+
+### 7. Push to Remote
 
 ```bash
-# Check package info
-npm view @mandors/cli
-
-# Install and test
-npm install @mandor/cli
-npx mandor init test-project
+git push origin main
 ```
+
+Verify: `git status` shows "up to date with origin/main"
 
 ## Complete Release Checklist
 
-### Before Release
-
-- [ ] All tests pass: `go test ./...`
-- [ ] Code formatted: `go fmt ./...`
-- [ ] Build succeeds: `npm run build`
+**Before Release**
+- [ ] Code changes committed
+- [ ] CHANGELOG.md updated with release notes
 - [ ] No uncommitted changes: `git status`
-- [ ] Release notes drafted
+- [ ] Binaries build successfully: `npm run build`
 
-### During Release
+**During Release**
+- [ ] Version updated in `package.json`
+- [ ] `npm run build` completes without errors
+- [ ] GitHub release created: `gh release create v0.4.X`
+- [ ] Binaries uploaded: `gh release upload v0.4.X binaries/*.tar.gz`
+- [ ] Changes committed: `git commit -m "v0.4.X: ..."`
+- [ ] NPM published: `npm publish --access public`
+- [ ] Pushed to main: `git push origin main`
 
-- [ ] Version bumped: `npm run version:patch|minor|major|beta`
-- [ ] Git tag pushed: Verify with `git tag -l`
-- [ ] GitHub release created with binary assets
-- [ ] NPM beta published: `npm run publish:beta`
-- [ ] Beta tested: `npm install @mandor/cli@beta`
+**After Release**
+- [ ] Verify on npm: `npm view @mandors/cli`
+- [ ] Test install: `npm install @mandors/cli@0.4.2`
+- [ ] GitHub release accessible: https://github.com/sanxzy/mandor/releases/tag/v0.4.2
 
-### After Release
+## Verifying Release
 
-- [ ] NPM latest published: `npm run publish:latest`
-- [ ] Installation verified: `npm install @mandor/cli`
-- [ ] CLI functional: `npx mandor --help`
-- [ ] Version shown correctly: `npx mandor config get version`
-- [ ] Release announced (if applicable)
+### Check GitHub Release
+
+```bash
+gh release view v0.4.2 --repo sanxzy/mandor
+```
+
+### Check NPM Package
+
+```bash
+npm view @mandors/cli@0.4.2
+npm view @mandors/cli  # Latest version
+```
+
+### Test Installation
+
+```bash
+cd /tmp
+npm install @mandors/cli@0.4.2
+npx mandor populate
+```
 
 ## Troubleshooting
 
-### Build Fails on Some Platforms
-
-Cross-platform builds require different environments:
+### Build Fails
 
 ```bash
-# Linux binaries from Linux/Docker
-docker run --rm -v $PWD:/app -w /app golang:1.21 sh -c "npm run build:linux:x64 && npm run build:linux:arm64"
-
-# macOS binaries require macOS
-# Windows binaries require Windows
+# Clean and rebuild
+rm -rf binaries/
+npm run build
 ```
-
-### NPM Publish Fails with 403
-
-- Verify npm access: `npm access ls-collaborators @mandor/cli`
-- Check package.json name matches registry
-- Ensure 2FA is disabled or configured correctly
 
 ### GitHub Release Upload Fails
 
-- Files must be under 2GB each
-- Use GitHub CLI or web UI for uploads
-- Check file permissions
+- Files must exist: `ls -la binaries/*.tar.gz`
+- GitHub CLI authenticated: `gh auth status`
+- Repository access: `gh repo view sanxzy/mandor`
 
-### Binary Fails to Execute After Install
-
-```bash
-# Check cache location
-ls -la ~/.mandor/bin/
-
-# Verify binary
-file ~/.mandor/bin/latest-darwin-arm64/mandor
-
-# Should output: Mach-O 64-bit executable
-```
-
-## Environment Variables
-
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `NPM_TOKEN` | NPM registry authentication | Required for CI publishing |
-| `GITHUB_TOKEN` | GitHub API authentication | Required for GitHub Actions |
-
-## CI/CD Setup
-
-For automated releases, create GitHub Actions workflows:
-
-### Build Workflow (on push to feature/npm)
-
-```yaml
-name: Build
-on:
-  push:
-    branches: [feature/npm]
-
-jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: macos-latest
-            platform: darwin
-            arch: x64
-          - os: macos-latest
-            platform: darwin
-            arch: arm64
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
-          - os: ubuntu-latest
-            platform: linux
-            arch: arm64
-          - os: windows-latest
-            platform: win32
-            arch: x64
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.21'
-      - name: Build
-        run: npm run build:${{ matrix.platform }}:${{ matrix.arch }}
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.platform }}-${{ matrix.arch }}
-          path: binaries/${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
-```
-
-### Release Workflow (on tag push)
-
-```yaml
-name: Release
-on:
-  push:
-    tags:
-      - 'v*'
-
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: binaries
-      - name: Create Release
-        run: |
-          gh release create ${{ github.ref_name }} \
-            --title "Mandor ${{ github.ref_name }}" \
-            binaries/**/*.tar.gz
-```
-
-## Rollback Procedure
-
-If a release has critical issues:
-
-### NPM Rollback
+### NPM Publish Fails
 
 ```bash
-# Deprecate the bad version
-npm deprecate @mandor/cli@0.0.14 "Bug in v0.0.14, use v0.0.15"
+# Verify authentication
+npm whoami
 
-# Unpublish (within 72 hours, only if necessary)
-npm unpublish @mandor/cli@0.0.14
+# Check package name matches registry
+npm view @mandors/cli
+
+# If 403 error: verify publish access
+npm access ls-collaborators @mandors/cli
 ```
 
-### GitHub Rollback
+### Binary Doesn't Run After Install
 
-1. Edit the release description to mark as broken
-2. Create a new release with the fix
-3. Update any links pointing to the broken release
+```bash
+# Extract and test binary
+tar -xzf binaries/darwin-arm64.tar.gz
+./binaries/darwin-arm64/mandor --version
+```
 
-## Security Considerations
+## Version Strategy
 
-- Never commit NPM tokens to git
-- Use GitHub Secrets for CI/CD
-- Verify checksums before publishing
-- Review permissions before granting access
+Mandor uses semantic versioning:
+
+- **PATCH** (0.4.1 → 0.4.2): Bug fixes, minor improvements
+- **MINOR** (0.4.0 → 0.5.0): New features, backward compatible
+- **MAJOR** (0.x.x → 1.0.0): Breaking changes, major refactors
+
+## Release History
+
+Releases are tracked in:
+- `Mandor/CHANGELOG.md` - Development changelog
+- `Mandor/package.json` - NPM package version
+- GitHub Releases - https://github.com/sanxzy/mandor/releases
+- NPM Registry - https://npmjs.com/package/@mandors/cli
