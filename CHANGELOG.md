@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-02-03
+
+### Changed
+- Event removal complete: Phases 1-4 tested and verified
+- Updated README: removed deprecated commands (task list/ready/blocked, issue list/ready/blocked, summary)
+- Replaced event-sourcing terminology with "structured storage"
+- All status transitions accurately documented from service layer
+- Installation now uses GitHub curl script instead of manual build
+- Entity Types table now includes Workspace and Project
+
+### Added
+- `mandor track` command: unified workspace/project/feature/task/issue tracking
+- Full support for same-project and cross-project dependencies
+
+### Removed
+- Deprecated commands: task list, task ready, task blocked, issue list, issue ready, issue blocked, summary
+- Event infrastructure (events.jsonl, event append methods, event structs)
+- Build from source instructions (replaced with curl installation)
+
 ## [0.3.11] - 2026-02-02
 
 ### Changed
