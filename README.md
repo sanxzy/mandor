@@ -50,16 +50,6 @@ Mandor is a CLI tool for managing tasks, features, and issues in AI agent workfl
 
 ## Core Concepts
 
-### Entity Hierarchy
-
-```
-Workspace
-  └── Projects
-        └── Features
-              └── Tasks
-        └── Issues
-```
-
 ### Entity Types
 
 | Type | Purpose | Status Values |
