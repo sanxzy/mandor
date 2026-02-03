@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2026-02-03
+
+### Changed
+- Rewritten `mandor populate` command with comprehensive, accurate reference
+- Updated help output to reflect current commands (replaced deprecated references)
+- Removed event-sourcing language, replaced with "structured storage"
+- Added track command documentation with all output formats
+- Improved status transition diagrams
+- Added quick workflows section
+
+### Fixed
+- Populate command no longer references deprecated task ready/blocked/list commands
+- Populate command no longer references deprecated issue ready/blocked/list commands
+- Populate command no longer references deprecated summary command
+- Removed event-sourcing terminology from populate output
+
 ## [0.4.0] - 2026-02-03
 
 ### Changed
