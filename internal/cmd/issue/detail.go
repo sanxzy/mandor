@@ -135,16 +135,6 @@ func NewDetailCmd() *cobra.Command {
 				fmt.Fprintf(out, "\n  Cancellation Reason: %s\n", output.Reason)
 			}
 
-			if detailEvents {
-				fmt.Fprintf(out, "\n  Events:      %d\n", output.Events)
-				events, _ := svc.GetIssueEvents(projectID, issueID)
-				for _, event := range events {
-					fmt.Fprintf(out, "    %s [%s] by %s\n", event.Ts.Format("2006-01-02 15:04:05"), event.Type, event.By)
-				}
-			} else {
-				fmt.Fprintf(out, "\n  Events:      %d\n", output.Events)
-			}
-
 			return nil
 		},
 	}

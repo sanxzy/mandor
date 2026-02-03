@@ -83,16 +83,17 @@ func (s *ProjectService) CreateProject(input *domain.ProjectCreateInput) error {
 		return err
 	}
 
-	event := &domain.ProjectEvent{
-		Layer: "project",
-		Type:  "created",
-		ID:    input.ID,
-		By:    creator,
-		Ts:    now,
-	}
-	if err := s.writer.AppendProjectEvent(input.ID, event); err != nil {
-		return err
-	}
+	// TODO: Event system being removed - Phase 1 commented out
+	// event := &domain.ProjectEvent{
+	// 	Layer: "project",
+	// 	Type:  "created",
+	// 	ID:    input.ID,
+	// 	By:    creator,
+	// 	Ts:    now,
+	// }
+	// if err := s.writer.AppendProjectEvent(input.ID, event); err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
@@ -164,12 +165,6 @@ func (s *ProjectService) GetProjectDetail(projectID string) (*domain.ProjectDeta
 	features, _ := s.reader.CountEntityLines(s.paths.ProjectFeaturesPath(projectID))
 	tasks, _ := s.reader.CountEntityLines(s.paths.ProjectTasksPath(projectID))
 	issues, _ := s.reader.CountEntityLines(s.paths.ProjectIssuesPath(projectID))
-	events, _ := s.reader.CountEventLines(projectID)
-
-	lastActivity := ""
-	if events > 0 {
-		lastActivity = project.UpdatedAt.Format(time.RFC3339)
-	}
 
 	return &domain.ProjectDetailOutput{
 		ID:     projectID,
@@ -184,8 +179,8 @@ func (s *ProjectService) GetProjectDetail(projectID string) (*domain.ProjectDeta
 			Issues:   domain.EntityStats{Total: issues},
 		},
 		Activity: domain.ActivityInfo{
-			TotalEvents:  events,
-			LastActivity: lastActivity,
+			TotalEvents:  0,
+			LastActivity: "",
 		},
 		CreatedAt: project.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: project.UpdatedAt.Format(time.RFC3339),
@@ -293,17 +288,18 @@ func (s *ProjectService) UpdateProject(input *domain.ProjectUpdateInput) ([]stri
 		}
 	}
 
-	event := &domain.ProjectEvent{
-		Layer:   "project",
-		Type:    "updated",
-		ID:      input.ID,
-		By:      updater,
-		Ts:      now,
-		Changes: changes,
-	}
-	if err := s.writer.AppendProjectEvent(input.ID, event); err != nil {
-		return nil, err
-	}
+	// TODO: Event system being removed - Phase 1 commented out
+	// event := &domain.ProjectEvent{
+	// 	Layer:   "project",
+	// 	Type:    "updated",
+	// 	ID:      input.ID,
+	// 	By:      updater,
+	// 	Ts:      now,
+	// 	Changes: changes,
+	// }
+	// if err := s.writer.AppendProjectEvent(input.ID, event); err != nil {
+	// 	return nil, err
+	// }
 
 	return changes, nil
 }
@@ -356,16 +352,17 @@ func (s *ProjectService) DeleteProject(input *domain.ProjectDeleteInput) (string
 	updater := util.GetGitUsername()
 	now := time.Now().UTC()
 
-	event := &domain.ProjectEvent{
-		Layer: "project",
-		Type:  "deleted",
-		ID:    input.ID,
-		By:    updater,
-		Ts:    now,
-	}
-	if err := s.writer.AppendProjectEvent(input.ID, event); err != nil {
-		return "", err
-	}
+	// TODO: Event system being removed - Phase 1 commented out
+	// event := &domain.ProjectEvent{
+	// 	Layer: "project",
+	// 	Type:  "deleted",
+	// 	ID:    input.ID,
+	// 	By:    updater,
+	// 	Ts:    now,
+	// }
+	// if err := s.writer.AppendProjectEvent(input.ID, event); err != nil {
+	// 	return "", err
+	// }
 
 	project.Status = domain.ProjectStatusDeleted
 	project.UpdatedAt = now
@@ -404,16 +401,17 @@ func (s *ProjectService) ReopenProject(input *domain.ProjectReopenInput) (string
 	updater := util.GetGitUsername()
 	now := time.Now().UTC()
 
-	event := &domain.ProjectEvent{
-		Layer: "project",
-		Type:  "reopened",
-		ID:    input.ID,
-		By:    updater,
-		Ts:    now,
-	}
-	if err := s.writer.AppendProjectEvent(input.ID, event); err != nil {
-		return "", err
-	}
+	// TODO: Event system being removed - Phase 1 commented out
+	// event := &domain.ProjectEvent{
+	// 	Layer: "project",
+	// 	Type:  "reopened",
+	// 	ID:    input.ID,
+	// 	By:    updater,
+	// 	Ts:    now,
+	// }
+	// if err := s.writer.AppendProjectEvent(input.ID, event); err != nil {
+	// 	return "", err
+	// }
 
 	project.Status = domain.ProjectStatusInitial
 	project.UpdatedAt = now

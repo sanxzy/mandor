@@ -35,15 +35,6 @@ type Feature struct {
 	UpdatedBy string    `json:"updated_by"`
 }
 
-type FeatureEvent struct {
-	Layer   string    `json:"layer"`
-	Type    string    `json:"type"`
-	ID      string    `json:"id"`
-	By      string    `json:"by"`
-	Ts      time.Time `json:"ts"`
-	Changes []string  `json:"changes,omitempty"`
-}
-
 type FeatureCreateInput struct {
 	ProjectID string
 	Name      string

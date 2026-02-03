@@ -77,14 +77,6 @@ func NewDetailCmd() *cobra.Command {
 			fmt.Fprintf(out, "Features:    %d total\n", detail.Stats.Features.Total)
 			fmt.Fprintf(out, "Tasks:       %d total\n", detail.Stats.Tasks.Total)
 			fmt.Fprintf(out, "Issues:      %d total\n", detail.Stats.Issues.Total)
-			fmt.Fprintln(out)
-			fmt.Fprintln(out, "ACTIVITY")
-			fmt.Fprintln(out, "══════")
-			fmt.Fprintf(out, "Total events: %d\n", detail.Activity.TotalEvents)
-			if detail.Activity.LastActivity != "" {
-				fmt.Fprintf(out, "Last activity: %s\n", detail.Activity.LastActivity)
-			}
-
 			return nil
 		},
 	}

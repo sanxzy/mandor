@@ -50,15 +50,6 @@ func ValidateGoalLength(goal string) bool {
 	return len(goal) >= minLength
 }
 
-type ProjectEvent struct {
-	Layer   string    `json:"layer"`
-	Type    string    `json:"type"`
-	ID      string    `json:"id"`
-	By      string    `json:"by"`
-	Ts      time.Time `json:"ts"`
-	Changes []string  `json:"changes,omitempty"`
-}
-
 type ProjectSchema struct {
 	Version string       `json:"version"`
 	Schema  string       `json:"$schema"`

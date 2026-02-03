@@ -238,16 +238,17 @@ func (s *FeatureService) CreateFeature(input *domain.FeatureCreateInput) (*domai
 		return nil, err
 	}
 
-	event := &domain.FeatureEvent{
-		Layer: "feature",
-		Type:  "created",
-		ID:    featureID,
-		By:    creator,
-		Ts:    now,
-	}
-	if err := s.writer.AppendFeatureEvent(input.ProjectID, event); err != nil {
-		return nil, err
-	}
+	// TODO: Event system being removed - Phase 1 commented out
+	// event := &domain.FeatureEvent{
+	// 	Layer: "feature",
+	// 	Type:  "created",
+	// 	ID:    featureID,
+	// 	By:    creator,
+	// 	Ts:    now,
+	// }
+	// if err := s.writer.AppendFeatureEvent(input.ProjectID, event); err != nil {
+	// 	return nil, err
+	// }
 
 	return feature, nil
 }
@@ -326,8 +327,6 @@ func (s *FeatureService) GetFeatureDetail(input *domain.FeatureDetailInput) (*do
 		return nil, domain.NewValidationError("Feature not found: " + input.FeatureID)
 	}
 
-	events, _ := s.reader.CountEventLines(input.ProjectID)
-
 	return &domain.FeatureDetailOutput{
 		ID:        feature.ID,
 		ProjectID: feature.ProjectID,
@@ -338,7 +337,7 @@ func (s *FeatureService) GetFeatureDetail(input *domain.FeatureDetailInput) (*do
 		Status:    feature.Status,
 		DependsOn: feature.DependsOn,
 		Reason:    feature.Reason,
-		Events:    events,
+		Events:    0,
 		CreatedAt: feature.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: feature.UpdatedAt.Format(time.RFC3339),
 		CreatedBy: feature.CreatedBy,
@@ -473,17 +472,18 @@ func (s *FeatureService) UpdateFeature(input *domain.FeatureUpdateInput) ([]stri
 		return nil, err
 	}
 
-	event := &domain.FeatureEvent{
-		Layer:   "feature",
-		Type:    "updated",
-		ID:      input.FeatureID,
-		By:      updater,
-		Ts:      now,
-		Changes: changes,
-	}
-	if err := s.writer.AppendFeatureEvent(input.ProjectID, event); err != nil {
-		return nil, err
-	}
+	// TODO: Event system being removed - Phase 1 commented out
+	// event := &domain.FeatureEvent{
+	// 	Layer:   "feature",
+	// 	Type:    "updated",
+	// 	ID:      input.FeatureID,
+	// 	By:      updater,
+	// 	Ts:      now,
+	// 	Changes: changes,
+	// }
+	// if err := s.writer.AppendFeatureEvent(input.ProjectID, event); err != nil {
+	// 	return nil, err
+	// }
 
 	// If feature is marked as done, unblock dependent features
 	if input.Status != nil && *input.Status == domain.FeatureStatusDone {
@@ -515,7 +515,6 @@ func (s *FeatureService) unblockDependents(projectID, doneFeatureID string) (boo
 
 	// Track which features need to be written back
 	featuresToWrite := make(map[string]*domain.Feature)
-	eventsToAppend := []*domain.FeatureEvent{}
 
 	// Process all features to find those that should unblock
 	for _, feature := range allFeatures {
@@ -543,15 +542,6 @@ func (s *FeatureService) unblockDependents(projectID, doneFeatureID string) (boo
 			feature.UpdatedAt = now
 			featuresToWrite[feature.ID] = feature
 			unblockedAny = true
-
-			event := &domain.FeatureEvent{
-				Layer: "feature",
-				Type:  "unblocked",
-				ID:    feature.ID,
-				By:    "system",
-				Ts:    now,
-			}
-			eventsToAppend = append(eventsToAppend, event)
 		}
 	}
 
@@ -560,11 +550,12 @@ func (s *FeatureService) unblockDependents(projectID, doneFeatureID string) (boo
 		if err := s.writer.ReplaceFeatures(projectID, allFeatures, featuresToWrite); err != nil {
 			return false, err
 		}
-		for _, event := range eventsToAppend {
-			if err := s.writer.AppendFeatureEvent(projectID, event); err != nil {
-				return false, err
-			}
-		}
+		// TODO: Event system being removed - Phase 1 commented out
+		// for _, event := range eventsToAppend {
+		// 	if err := s.writer.AppendFeatureEvent(projectID, event); err != nil {
+		// 		return false, err
+		// 	}
+		// }
 	}
 
 	return unblockedAny, nil

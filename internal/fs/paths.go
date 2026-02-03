@@ -60,11 +60,6 @@ func (p *Paths) ProjectSchemaPath(projectID string) string {
 	return filepath.Join(p.ProjectDirPath(projectID), "schema.json")
 }
 
-// ProjectEventsPath returns the path to events.jsonl (append-only audit trail)
-func (p *Paths) ProjectEventsPath(projectID string) string {
-	return filepath.Join(p.ProjectDirPath(projectID), "events.jsonl")
-}
-
 // ProjectFeaturesPath returns the path to features.jsonl
 func (p *Paths) ProjectFeaturesPath(projectID string) string {
 	return filepath.Join(p.ProjectDirPath(projectID), "features.jsonl")

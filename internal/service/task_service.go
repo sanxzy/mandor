@@ -313,42 +313,43 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 		return nil, err
 	}
 
-	event := &domain.TaskEvent{
-		Layer: "task",
-		Type:  "created",
-		ID:    taskID,
-		By:    creator,
-		Ts:    now,
-	}
-	if err := s.writer.AppendTaskEvent(projectID, event); err != nil {
-		return nil, err
-	}
+	// TODO: Event system being removed - Phase 1 commented out
+	// event := &domain.TaskEvent{
+	// 	Layer: "task",
+	// 	Type:  "created",
+	// 	ID:    taskID,
+	// 	By:    creator,
+	// 	Ts:    now,
+	// }
+	// if err := s.writer.AppendTaskEvent(projectID, event); err != nil {
+	// 	return nil, err
+	// }
 
-	if task.Status == domain.TaskStatusReady && len(input.DependsOn) == 0 {
-		readyEvent := &domain.TaskEvent{
-			Layer: "task",
-			Type:  "ready",
-			ID:    taskID,
-			By:    "system",
-			Ts:    now,
-		}
-		if err := s.writer.AppendTaskEvent(projectID, readyEvent); err != nil {
-			return nil, err
-		}
-	}
+	// if task.Status == domain.TaskStatusReady && len(input.DependsOn) == 0 {
+	// 	readyEvent := &domain.TaskEvent{
+	// 		Layer: "task",
+	// 		Type:  "ready",
+	// 		ID:    taskID,
+	// 		By:    "system",
+	// 		Ts:    now,
+	// 	}
+	// 	if err := s.writer.AppendTaskEvent(projectID, readyEvent); err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 
-	if task.Status == domain.TaskStatusBlocked {
-		blockedEvent := &domain.TaskEvent{
-			Layer: "task",
-			Type:  "blocked",
-			ID:    taskID,
-			By:    "system",
-			Ts:    now,
-		}
-		if err := s.writer.AppendTaskEvent(projectID, blockedEvent); err != nil {
-			return nil, err
-		}
-	}
+	// if task.Status == domain.TaskStatusBlocked {
+	// 	blockedEvent := &domain.TaskEvent{
+	// 		Layer: "task",
+	// 		Type:  "blocked",
+	// 		ID:    taskID,
+	// 		By:    "system",
+	// 		Ts:    now,
+	// 	}
+	// 	if err := s.writer.AppendTaskEvent(projectID, blockedEvent); err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 
 	return task, nil
 }
@@ -493,8 +494,6 @@ func (s *TaskService) GetTaskDetail(input *domain.TaskDetailInput) (*domain.Task
 		return nil, domain.NewValidationError("Task not found: " + input.TaskID)
 	}
 
-	events, _ := s.reader.CountEventLines(projectID)
-
 	return &domain.TaskDetailOutput{
 		ID:                  task.ID,
 		FeatureID:           task.FeatureID,
@@ -509,7 +508,7 @@ func (s *TaskService) GetTaskDetail(input *domain.TaskDetailInput) (*domain.Task
 		TestCases:           task.TestCases,
 		DerivableFiles:      task.DerivableFiles,
 		LibraryNeeds:        task.LibraryNeeds,
-		Events:              events,
+		Events:              0,
 		CreatedAt:           task.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:           task.UpdatedAt.Format(time.RFC3339),
 		CreatedBy:           task.CreatedBy,
@@ -717,17 +716,18 @@ func (s *TaskService) UpdateTask(input *domain.TaskUpdateInput) ([]string, error
 		}
 	}
 
-	event := &domain.TaskEvent{
-		Layer:   "task",
-		Type:    "updated",
-		ID:      input.TaskID,
-		By:      updater,
-		Ts:      now,
-		Changes: changes,
-	}
-	if err := s.writer.AppendTaskEvent(projectID, event); err != nil {
-		return nil, err
-	}
+	// TODO: Event system being removed - Phase 1 commented out
+	// event := &domain.TaskEvent{
+	// 	Layer:   "task",
+	// 	Type:    "updated",
+	// 	ID:      input.TaskID,
+	// 	By:      updater,
+	// 	Ts:      now,
+	// 	Changes: changes,
+	// }
+	// if err := s.writer.AppendTaskEvent(projectID, event); err != nil {
+	// 	return nil, err
+	// }
 
 	return changes, nil
 }
@@ -791,7 +791,8 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 
 	// Track which tasks need to be written back
 	tasksToWrite := make(map[string]*domain.Task)
-	eventsToAppend := []*domain.TaskEvent{}
+	// TODO: Event system being removed - eventsToAppend no longer needed
+	// eventsToAppend := []*domain.TaskEvent{}
 
 	// Process all tasks to find those that should unblock
 	for _, task := range allTasks {
@@ -825,14 +826,15 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 			tasksToWrite[task.ID] = task
 			unblockedAny = true
 
-			event := &domain.TaskEvent{
-				Layer: "task",
-				Type:  "ready",
-				ID:    task.ID,
-				By:    "system",
-				Ts:    now,
-			}
-			eventsToAppend = append(eventsToAppend, event)
+			// TODO: Event system being removed - Phase 1 commented out
+			// event := &domain.TaskEvent{
+			// 	Layer: "task",
+			// 	Type:  "ready",
+			// 	ID:    task.ID,
+			// 	By:    "system",
+			// 	Ts:    now,
+			// }
+			// eventsToAppend = append(eventsToAppend, event)
 		}
 	}
 
@@ -841,11 +843,12 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 		if err := s.writer.ReplaceTasks(projectID, allTasks, tasksToWrite); err != nil {
 			return false, err
 		}
-		for _, event := range eventsToAppend {
-			if err := s.writer.AppendTaskEvent(projectID, event); err != nil {
-				return false, err
-			}
-		}
+		// TODO: Event system being removed - Phase 1 commented out
+		// for _, event := range eventsToAppend {
+		// 	if err := s.writer.AppendTaskEvent(projectID, event); err != nil {
+		// 		return false, err
+		// 	}
+		// }
 	}
 
 	// Now handle cross-project dependencies: find all projects and check for tasks that depend on doneTaskID
@@ -873,7 +876,8 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 		}
 
 		otherTasksToWrite := make(map[string]*domain.Task)
-		otherEventsToAppend := []*domain.TaskEvent{}
+		// TODO: Event system being removed - otherEventsToAppend no longer needed
+		// otherEventsToAppend := []*domain.TaskEvent{}
 
 		// Process all tasks in other project
 		for _, task := range otherProjectTasks {
@@ -907,14 +911,15 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 				otherTasksToWrite[task.ID] = task
 				unblockedAny = true
 
-				event := &domain.TaskEvent{
-					Layer: "task",
-					Type:  "ready",
-					ID:    task.ID,
-					By:    "system",
-					Ts:    now,
-				}
-				otherEventsToAppend = append(otherEventsToAppend, event)
+				// TODO: Event system being removed - Phase 1 commented out
+				// event := &domain.TaskEvent{
+				// 	Layer: "task",
+				// 	Type:  "ready",
+				// 	ID:    task.ID,
+				// 	By:    "system",
+				// 	Ts:    now,
+				// }
+				// otherEventsToAppend = append(otherEventsToAppend, event)
 			}
 		}
 
@@ -923,11 +928,12 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 			if err := s.writer.ReplaceTasks(otherProjectID, otherProjectTasks, otherTasksToWrite); err != nil {
 				continue // Skip error for other project
 			}
-			for _, event := range otherEventsToAppend {
-				if err := s.writer.AppendTaskEvent(otherProjectID, event); err != nil {
-					continue
-				}
-			}
+			// TODO: Event system being removed - Phase 1 commented out
+			// for _, event := range otherEventsToAppend {
+			// 	if err := s.writer.AppendTaskEvent(otherProjectID, event); err != nil {
+			// 		continue
+			// 	}
+			// }
 		}
 	}
 

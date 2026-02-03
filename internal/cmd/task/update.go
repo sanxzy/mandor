@@ -194,7 +194,6 @@ func NewUpdateCmd() *cobra.Command {
 					fmt.Fprintf(out, "  Updated:   %s\n", detailOutput.UpdatedAt)
 					fmt.Fprintf(out, "  CreatedBy: %s\n", detailOutput.CreatedBy)
 					fmt.Fprintf(out, "  UpdatedBy: %s\n", detailOutput.UpdatedBy)
-					fmt.Fprintf(out, "  Events:    %d\n", detailOutput.Events)
 				}
 			}
 

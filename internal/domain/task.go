@@ -40,15 +40,6 @@ type Task struct {
 	UpdatedBy           string    `json:"updated_by"`
 }
 
-type TaskEvent struct {
-	Layer   string    `json:"layer"`
-	Type    string    `json:"type"`
-	ID      string    `json:"id"`
-	By      string    `json:"by"`
-	Ts      time.Time `json:"ts"`
-	Changes []string  `json:"changes,omitempty"`
-}
-
 type TaskCreateInput struct {
 	FeatureID           string
 	Name                string

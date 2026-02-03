@@ -67,7 +67,6 @@ func NewDetailCmd() *cobra.Command {
 			fmt.Fprintf(out, "  Status:    %s\n", output.Status)
 			fmt.Fprintf(out, "  DependsOn: %v\n", output.DependsOn)
 			fmt.Fprintf(out, "  Reason:    %s\n", output.Reason)
-			fmt.Fprintf(out, "  Events:    %d\n", output.Events)
 			fmt.Fprintf(out, "  Created:   %s\n", output.CreatedAt)
 			fmt.Fprintf(out, "  Updated:   %s\n", output.UpdatedAt)
 			fmt.Fprintf(out, "  CreatedBy: %s\n", output.CreatedBy)

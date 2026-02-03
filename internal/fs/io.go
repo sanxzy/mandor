@@ -172,11 +172,6 @@ func (r *Reader) CountEntityLines(filePath string) (int, error) {
 	return count, nil
 }
 
-// CountEventLines counts event lines in events.jsonl
-func (r *Reader) CountEventLines(projectID string) (int, error) {
-	return r.CountEntityLines(r.paths.ProjectEventsPath(projectID))
-}
-
 // ReadNDJSON reads NDJSON file and unmarshal each line
 func (r *Reader) ReadNDJSON(filepath string, processor func([]byte) error) error {
 	file, err := os.Open(filepath)
@@ -388,11 +383,6 @@ func (w *Writer) WriteProjectSchema(projectID string, schema *domain.ProjectSche
 	return w.WriteJSON(w.paths.ProjectSchemaPath(projectID), schema)
 }
 
-// AppendProjectEvent appends an event to events.jsonl
-func (w *Writer) AppendProjectEvent(projectID string, event *domain.ProjectEvent) error {
-	return w.AppendNDJSON(w.paths.ProjectEventsPath(projectID), event)
-}
-
 // DeleteProjectDir removes the project directory and all contents
 func (w *Writer) DeleteProjectDir(projectID string) error {
 	projectDir := w.paths.ProjectDirPath(projectID)
@@ -447,10 +437,6 @@ func (r *Reader) ReadFeature(projectID, featureID string) (*domain.Feature, erro
 		return nil, domain.NewValidationError("Feature not found: " + featureID)
 	}
 	return feature, nil
-}
-
-func (w *Writer) AppendFeatureEvent(projectID string, event *domain.FeatureEvent) error {
-	return w.AppendNDJSON(w.paths.ProjectEventsPath(projectID), event)
 }
 
 func (w *Writer) WriteFeature(projectID string, feature *domain.Feature) error {
@@ -513,10 +499,6 @@ func (r *Reader) ReadTask(projectID, taskID string) (*domain.Task, error) {
 		return nil, domain.NewValidationError("Task not found: " + taskID)
 	}
 	return task, nil
-}
-
-func (w *Writer) AppendTaskEvent(projectID string, event *domain.TaskEvent) error {
-	return w.AppendNDJSON(w.paths.ProjectEventsPath(projectID), event)
 }
 
 func (w *Writer) WriteTask(projectID string, task *domain.Task) error {
@@ -673,10 +655,6 @@ func (r *Reader) ReadIssue(projectID, issueID string) (*domain.Issue, error) {
 		return nil, domain.NewValidationError("Issue not found: " + issueID)
 	}
 	return issue, nil
-}
-
-func (w *Writer) AppendIssueEvent(projectID string, event *domain.IssueEvent) error {
-	return w.AppendNDJSON(w.paths.ProjectEventsPath(projectID), event)
 }
 
 func (w *Writer) WriteIssue(projectID string, issue *domain.Issue) error {

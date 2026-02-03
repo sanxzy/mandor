@@ -257,42 +257,43 @@ func (s *IssueService) CreateIssue(input *domain.IssueCreateInput) (*domain.Issu
 		return nil, err
 	}
 
-	event := &domain.IssueEvent{
-		Layer: "issue",
-		Type:  "created",
-		ID:    issueID,
-		By:    creator,
-		Ts:    now,
-	}
-	if err := s.writer.AppendIssueEvent(input.ProjectID, event); err != nil {
-		return nil, err
-	}
+	// TODO: Event system being removed - Phase 1 commented out
+	// event := &domain.IssueEvent{
+	// 	Layer: "issue",
+	// 	Type:  "created",
+	// 	ID:    issueID,
+	// 	By:    creator,
+	// 	Ts:    now,
+	// }
+	// if err := s.writer.AppendIssueEvent(input.ProjectID, event); err != nil {
+	// 	return nil, err
+	// }
 
-	if issue.Status == domain.IssueStatusReady {
-		readyEvent := &domain.IssueEvent{
-			Layer: "issue",
-			Type:  "ready",
-			ID:    issueID,
-			By:    "system",
-			Ts:    now,
-		}
-		if err := s.writer.AppendIssueEvent(input.ProjectID, readyEvent); err != nil {
-			return nil, err
-		}
-	}
+	// if issue.Status == domain.IssueStatusReady {
+	// 	readyEvent := &domain.IssueEvent{
+	// 		Layer: "issue",
+	// 		Type:  "ready",
+	// 		ID:    issueID,
+	// 		By:    "system",
+	// 		Ts:    now,
+	// 	}
+	// 	if err := s.writer.AppendIssueEvent(input.ProjectID, readyEvent); err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 
-	if issue.Status == domain.IssueStatusBlocked {
-		blockedEvent := &domain.IssueEvent{
-			Layer: "issue",
-			Type:  "blocked",
-			ID:    issueID,
-			By:    "system",
-			Ts:    now,
-		}
-		if err := s.writer.AppendIssueEvent(input.ProjectID, blockedEvent); err != nil {
-			return nil, err
-		}
-	}
+	// if issue.Status == domain.IssueStatusBlocked {
+	// 	blockedEvent := &domain.IssueEvent{
+	// 		Layer: "issue",
+	// 		Type:  "blocked",
+	// 		ID:    issueID,
+	// 		By:    "system",
+	// 		Ts:    now,
+	// 	}
+	// 	if err := s.writer.AppendIssueEvent(input.ProjectID, blockedEvent); err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 
 	return issue, nil
 }
@@ -383,8 +384,6 @@ func (s *IssueService) GetIssueDetail(input *domain.IssueDetailInput) (*domain.I
 		return nil, domain.NewValidationError("Issue not found: " + input.IssueID)
 	}
 
-	events, _ := s.reader.CountEventLines(input.ProjectID)
-
 	return &domain.IssueDetailOutput{
 		ID:                  issue.ID,
 		ProjectID:           issue.ProjectID,
@@ -399,7 +398,7 @@ func (s *IssueService) GetIssueDetail(input *domain.IssueDetailInput) (*domain.I
 		AffectedTests:       issue.AffectedTests,
 		ImplementationSteps: issue.ImplementationSteps,
 		LibraryNeeds:        issue.LibraryNeeds,
-		Events:              events,
+		Events:              0,
 		CreatedAt:           issue.CreatedAt.Format(time.RFC3339),
 		LastUpdatedAt:       issue.LastUpdatedAt.Format(time.RFC3339),
 		CreatedBy:           issue.CreatedBy,
@@ -584,17 +583,18 @@ func (s *IssueService) UpdateIssue(input *domain.IssueUpdateInput) ([]string, er
 		}
 	}
 
-	event := &domain.IssueEvent{
-		Layer:   "issue",
-		Type:    "updated",
-		ID:      input.IssueID,
-		By:      updater,
-		Ts:      now,
-		Changes: changes,
-	}
-	if err := s.writer.AppendIssueEvent(input.ProjectID, event); err != nil {
-		return nil, err
-	}
+	// TODO: Event system being removed - Phase 1 commented out
+	// event := &domain.IssueEvent{
+	// 	Layer:   "issue",
+	// 	Type:    "updated",
+	// 	ID:      input.IssueID,
+	// 	By:      updater,
+	// 	Ts:      now,
+	// 	Changes: changes,
+	// }
+	// if err := s.writer.AppendIssueEvent(input.ProjectID, event); err != nil {
+	// 	return nil, err
+	// }
 
 	return changes, nil
 }
@@ -650,21 +650,6 @@ func (s *IssueService) ReadDependency(projectID, issueID string) (*domain.Issue,
 	return s.reader.ReadIssue(projectID, issueID)
 }
 
-func (s *IssueService) GetIssueEvents(projectID, issueID string) ([]domain.IssueEvent, error) {
-	var events []domain.IssueEvent
-	err := s.reader.ReadNDJSON(s.paths.ProjectEventsPath(projectID), func(raw []byte) error {
-		var event domain.IssueEvent
-		if err := json.Unmarshal(raw, &event); err != nil {
-			return err
-		}
-		if event.Layer == "issue" && event.ID == issueID {
-			events = append(events, event)
-		}
-		return nil
-	})
-	return events, err
-}
-
 func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (bool, error) {
 	unblockedAny := false
 	now := time.Now().UTC()
@@ -685,7 +670,8 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 
 	// Track which issues need to be written back
 	issuesToWrite := make(map[string]*domain.Issue)
-	eventsToAppend := []*domain.IssueEvent{}
+	// TODO: Event system being removed - eventsToAppend no longer needed
+	// eventsToAppend := []*domain.IssueEvent{}
 
 	// Process all issues to find those that should unblock
 	for _, issue := range allIssues {
@@ -719,14 +705,15 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 			issuesToWrite[issue.ID] = issue
 			unblockedAny = true
 
-			event := &domain.IssueEvent{
-				Layer: "issue",
-				Type:  "ready",
-				ID:    issue.ID,
-				By:    "system",
-				Ts:    now,
-			}
-			eventsToAppend = append(eventsToAppend, event)
+			// TODO: Event system being removed - Phase 1 commented out
+			// event := &domain.IssueEvent{
+			// 	Layer: "issue",
+			// 	Type:  "ready",
+			// 	ID:    issue.ID,
+			// 	By:    "system",
+			// 	Ts:    now,
+			// }
+			// eventsToAppend = append(eventsToAppend, event)
 		}
 	}
 
@@ -735,11 +722,12 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 		if err := s.writer.ReplaceIssues(projectID, allIssues, issuesToWrite); err != nil {
 			return false, err
 		}
-		for _, event := range eventsToAppend {
-			if err := s.writer.AppendIssueEvent(projectID, event); err != nil {
-				return false, err
-			}
-		}
+		// TODO: Event system being removed - Phase 1 commented out
+		// for _, event := range eventsToAppend {
+		// 	if err := s.writer.AppendIssueEvent(projectID, event); err != nil {
+		// 		return false, err
+		// 	}
+		// }
 	}
 
 	return unblockedAny, nil

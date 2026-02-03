@@ -236,8 +236,6 @@ func NewUpdateCmd() *cobra.Command {
 					if detailOutput.Reason != "" && detailOutput.Status == domain.IssueStatusCancelled {
 						fmt.Fprintf(out, "\n  Cancellation Reason: %s\n", detailOutput.Reason)
 					}
-
-					fmt.Fprintf(out, "\n  Events:      %d\n", detailOutput.Events)
 				}
 			}
 

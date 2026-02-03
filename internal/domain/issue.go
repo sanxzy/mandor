@@ -49,15 +49,6 @@ type Issue struct {
 	LastUpdatedBy       string    `json:"last_updated_by"`
 }
 
-type IssueEvent struct {
-	Layer   string    `json:"layer"`
-	Type    string    `json:"type"`
-	ID      string    `json:"id"`
-	By      string    `json:"by"`
-	Ts      time.Time `json:"ts"`
-	Changes []string  `json:"changes,omitempty"`
-}
-
 type IssueCreateInput struct {
 	ProjectID           string
 	Name                string

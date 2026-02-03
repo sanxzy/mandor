@@ -90,7 +90,6 @@ func NewDetailCmd() *cobra.Command {
 			fmt.Fprintf(out, "  Updated:   %s\n", output.UpdatedAt)
 			fmt.Fprintf(out, "  CreatedBy: %s\n", output.CreatedBy)
 			fmt.Fprintf(out, "  UpdatedBy: %s\n", output.UpdatedBy)
-			fmt.Fprintf(out, "  Events:    %d\n", output.Events)
 
 			return nil
 		},
