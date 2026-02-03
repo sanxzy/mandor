@@ -670,8 +670,6 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 
 	// Track which issues need to be written back
 	issuesToWrite := make(map[string]*domain.Issue)
-	// TODO: Event system being removed - eventsToAppend no longer needed
-	// eventsToAppend := []*domain.IssueEvent{}
 
 	// Process all issues to find those that should unblock
 	for _, issue := range allIssues {
@@ -704,16 +702,6 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 			issue.LastUpdatedAt = now
 			issuesToWrite[issue.ID] = issue
 			unblockedAny = true
-
-			// TODO: Event system being removed - Phase 1 commented out
-			// event := &domain.IssueEvent{
-			// 	Layer: "issue",
-			// 	Type:  "ready",
-			// 	ID:    issue.ID,
-			// 	By:    "system",
-			// 	Ts:    now,
-			// }
-			// eventsToAppend = append(eventsToAppend, event)
 		}
 	}
 
@@ -722,12 +710,6 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 		if err := s.writer.ReplaceIssues(projectID, allIssues, issuesToWrite); err != nil {
 			return false, err
 		}
-		// TODO: Event system being removed - Phase 1 commented out
-		// for _, event := range eventsToAppend {
-		// 	if err := s.writer.AppendIssueEvent(projectID, event); err != nil {
-		// 		return false, err
-		// 	}
-		// }
 	}
 
 	return unblockedAny, nil

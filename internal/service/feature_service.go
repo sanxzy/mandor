@@ -550,12 +550,6 @@ func (s *FeatureService) unblockDependents(projectID, doneFeatureID string) (boo
 		if err := s.writer.ReplaceFeatures(projectID, allFeatures, featuresToWrite); err != nil {
 			return false, err
 		}
-		// TODO: Event system being removed - Phase 1 commented out
-		// for _, event := range eventsToAppend {
-		// 	if err := s.writer.AppendFeatureEvent(projectID, event); err != nil {
-		// 		return false, err
-		// 	}
-		// }
 	}
 
 	return unblockedAny, nil
