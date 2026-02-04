@@ -231,15 +231,25 @@ go vet ./...
 mandor/
 ├── cmd/
 │   └── mandor/
-│       └── main.go              # CLI entry point
+│       └── main.go                    # CLI entry point
 ├── internal/
-│   ├── cmd/                      # Command handlers (Cobra)
-│   │   ├── root.go               # Root command
-│   │   ├── workspace/            # Workspace commands
+│   ├── ai/                            # AI integration (Claude agents)
+│   │   └── project.go
+│   ├── cmd/                           # Command handlers (Cobra)
+│   │   ├── root.go                    # Root command
+│   │   ├── completion.go              # Shell completion
+│   │   ├── populate.go                # Populate reference data
+│   │   ├── summary.go                 # Legacy summary command
+│   │   ├── version.go                 # Version command
+│   │   ├── ai/                        # AI commands
+│   │   │   ├── root.go
+│   │   │   ├── agents.go
+│   │   │   └── claude.go
+│   │   ├── workspace/                 # Workspace commands
 │   │   │   ├── init.go
 │   │   │   ├── status.go
 │   │   │   └── config.go
-│   │   ├── project/              # Project commands
+│   │   ├── project/                   # Project commands
 │   │   │   ├── project.go
 │   │   │   ├── create.go
 │   │   │   ├── list.go
@@ -247,78 +257,112 @@ mandor/
 │   │   │   ├── update.go
 │   │   │   ├── delete.go
 │   │   │   └── reopen.go
-│   │   ├── feature/              # Feature commands
+│   │   ├── feature/                   # Feature commands
 │   │   │   ├── feature.go
 │   │   │   ├── create.go
 │   │   │   ├── list.go
 │   │   │   ├── detail.go
 │   │   │   └── update.go
-│   │   ├── task/                 # Task commands
+│   │   ├── task/                      # Task commands
 │   │   │   ├── task.go
 │   │   │   ├── create.go
 │   │   │   ├── list.go
+│   │   │   ├── ready.go
+│   │   │   ├── blocked.go
 │   │   │   ├── detail.go
-│   │   │   └── update.go
-│   │   └── issue/                # Issue commands
-│   │       ├── issue.go
-│   │       ├── create.go
-│   │       ├── list.go
-│   │       ├── detail.go
-│   │       └── update.go
-│   ├── service/                  # Business logic layer
+│   │   │   ├── update.go
+│   │   │   └── summary.go
+│   │   ├── issue/                     # Issue commands
+│   │   │   ├── issue.go
+│   │   │   ├── create.go
+│   │   │   ├── list.go
+│   │   │   ├── ready.go
+│   │   │   ├── blocked.go
+│   │   │   ├── detail.go
+│   │   │   ├── update.go
+│   │   │   └── summary.go
+│   │   └── track/                     # Unified tracking command
+│   │       ├── track.go
+│   │       ├── handlers.go
+│   │       ├── output.go
+│   │       └── types.go
+│   ├── service/                       # Business logic layer
 │   │   ├── workspace_service.go
 │   │   ├── status_service.go
 │   │   ├── project_service.go
 │   │   ├── feature_service.go
 │   │   ├── task_service.go
 │   │   └── issue_service.go
-│   ├── domain/                   # Data models & validation
+│   ├── domain/                        # Data models & validation
+│   │   ├── errors.go
 │   │   ├── workspace.go
 │   │   ├── project.go
 │   │   ├── feature.go
 │   │   ├── task.go
 │   │   └── issue.go
-│   ├── fs/                       # Filesystem I/O
+│   ├── fs/                            # Filesystem I/O
 │   │   ├── paths.go
 │   │   └── io.go
-│   └── util/                     # Utilities
+│   └── util/                          # Utilities
 │       ├── id.go
 │       └── git.go
 ├── tests/
-│   └── unit/                     # Unit tests
+│   └── unit/                          # Unit tests
 │       ├── cmd/
 │       │   ├── workspace/
 │       │   ├── project/
 │       │   ├── feature/
 │       │   ├── task/
-│       │   └── issue/
+│       │   ├── issue/
+│       │   ├── populate_test.go
+│       │   └── completion_test.go
 │       └── service/
 │           ├── workspace_service_test.go
+│           ├── status_service_test.go
 │           ├── project_service_test.go
 │           ├── feature_service_test.go
 │           ├── task_service_test.go
 │           └── issue_service_test.go
-├── docs/                         # Documentation
-│   ├── prd.md
+├── npm/                               # NPM package wrapper
+│   ├── bin/
+│   │   └── mandor                     # CLI wrapper script
+│   ├── lib/
+│   │   ├── index.js
+│   │   ├── install.js
+│   │   ├── config.js
+│   │   └── build.js
+│   └── package.json
+├── binaries/                          # Cross-platform binaries
+│   ├── darwin-amd64/
+│   ├── darwin-arm64/
+│   ├── linux-amd64/
+│   ├── linux-arm64/
+│   ├── windows-amd64/
+│   ├── windows-arm64/
+│   ├── *.tar.gz                       # Compressed archives
+│   └── mandor                         # Current platform binary
+├── docs/                              # Documentation
+│   ├── DEVELOPMENT_GUIDE.md           # This file
+│   ├── README.md                      # Command reference
 │   ├── rules/
 │   │   ├── dependency-rules.md
-│   │   ├── status-type-reference.md
-│   │   └── event-type-reference.md
-│   ├── plans/
-│   │   └── commands/
-│   └── test/
-│       ├── integration_test.md
-│       └── integration_task_test.md
+│   │   └── status-type-reference.md
+│   ├── test/
+│   │   └── integration_test.md
+│   └── bugs/
+│       └── test_complex.md              # Comprehensive test report (61 scenarios)
 ├── scripts/
-│   └── build.sh
-├── build/                        # Build output
-├── IMPL
-│   ├── IMPLEMENT_SUMMARY.md
-│   └── AGENTS.md
-├── README.md
-├── DEVELOPMENT_GUIDE.md
-├── go.mod
-└── go.sum
+│   └── build.sh                         # Build script
+├── .mandor/                             # Workspace data (local development)
+├── CHANGELOG.md                         # Version history
+├── README.md                            # Main command documentation
+├── AGENTS.md                            # Agent workflow guide
+├── package.json                         # NPM package metadata
+├── go.mod                               # Go module definition
+├── go.sum                               # Go module checksums
+├── .pre-commit-config.yaml              # Pre-commit hooks
+├── .gitignore                           # Git ignore rules
+└── .npmignore                           # NPM ignore rules
 ```
 
 ## Architecture
