@@ -1,6 +1,6 @@
 {
   "name": "@mandors/cli",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Event-based task manager CLI for AI agent workflows",
   "main": "npm/lib/index.js",
   "bin": {
@@ -21,12 +21,12 @@
   "scripts": {
     "postinstall": "node npm/lib/install.js",
     "build": "node npm/scripts/build.js",
-    "build:darwin:x64": "GOOS=darwin GOARCH=x64 go build -o binaries/darwin-x64/mandor ./cmd/mandor",
+    "build:darwin:x64": "GOOS=darwin GOARCH=amd64 go build -o binaries/darwin-amd64/mandor ./cmd/mandor",
     "build:darwin:arm64": "GOOS=darwin GOARCH=arm64 go build -o binaries/darwin-arm64/mandor ./cmd/mandor",
-    "build:linux:x64": "GOOS=linux GOARCH=x64 go build -o binaries/linux-x64/mandor ./cmd/mandor",
+    "build:linux:x64": "GOOS=linux GOARCH=amd64 go build -o binaries/linux-amd64/mandor ./cmd/mandor",
     "build:linux:arm64": "GOOS=linux GOARCH=arm64 go build -o binaries/linux-arm64/mandor ./cmd/mandor",
-    "build:win32:x64": "GOOS=win32 GOARCH=x64 go build -o binaries/win32-x64/mandor.exe ./cmd/mandor",
-    "build:win32:arm64": "GOOS=win32 GOARCH=arm64 go build -o binaries/win32-arm64/mandor.exe ./cmd/mandor",
+    "build:win32:x64": "GOOS=windows GOARCH=amd64 go build -o binaries/windows-amd64/mandor.exe ./cmd/mandor",
+    "build:win32:arm64": "GOOS=windows GOARCH=arm64 go build -o binaries/windows-arm64/mandor.exe ./cmd/mandor",
     "version:major": "npm version major && git push --follow-tags",
     "version:minor": "npm version minor && git push --follow-tags",
     "version:patch": "npm version patch && git push --follow-tags",

@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.4] - 2026-02-04
+
+### Added
+- Comprehensive test coverage: 61 test scenarios across 16 test suites with 100% pass rate
+- Validated dependency resolution (linear, fan-in, fan-out, diamond, deep chains)
+- Validated cross-project task dependencies (3-project chains)
+- Validated real-world workflows (feature releases, bug fixes, security/debt tracking)
+- Validated status transitions with dependent unblocking cascades
+- Validated data persistence and soft-delete recovery
+- Validated error handling and circular dependency prevention
+
+### Tested Features
+- Task/feature/issue creation with full metadata (steps, test cases, files, libraries)
+- Multiple dependencies using pipe-separated format: --depends-on "id1|id2|id3"
+- ALL-must-be-done semantics for multiple dependencies
+- Cross-project task dependencies when enabled (cross_project_allowed flag)
+- Feature status transitions: draft→active→done (requires intermediate states)
+- Done state immutability (cannot modify completed tasks)
+- Soft-delete (cancel) with full data preservation and recovery
+- Self-dependency and circular dependency detection (exit code 2)
+- Valid scopes: frontend, backend, fullstack, cli, desktop, android, flutter, react-native, ios, swift
+- Valid issue types: bug, improvement, debt, security, performance
+- Valid priorities: P0-P5
+
 ## [0.4.1] - 2026-02-03
 
 ### Changed
