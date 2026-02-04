@@ -18,7 +18,11 @@ func NewConfigCmd() *cobra.Command {
 
 Available keys:
   - default_priority: Default priority for new entities (P0-P5, default: P3)
-  - strict_mode: Enforce strict validation rules (true/false, default: false)`,
+  - strict_mode: Enforce strict validation rules (true/false, default: false)
+  - goal.lengths.project: Min chars for project goal (default: 500)
+  - goal.lengths.feature: Min chars for feature goal (default: 300)
+  - goal.lengths.task: Min chars for task goal (default: 500)
+  - goal.lengths.issue: Min chars for issue goal (default: 200)`,
 	}
 
 	cmd.AddCommand(newConfigGetCmd())
@@ -60,6 +64,13 @@ func newConfigGetCmd() *cobra.Command {
 				fmt.Println()
 				fmt.Printf("default_priority  %s\n", ws.Config.DefaultPriority)
 				fmt.Printf("strict_mode       %v\n", ws.Config.StrictMode)
+				fmt.Println()
+				fmt.Println("Goal Lengths (min chars)")
+				fmt.Println("─────────────────────────")
+				fmt.Printf("goal.lengths.project  %d\n", ws.Config.GoalLengths.Project)
+				fmt.Printf("goal.lengths.feature  %d\n", ws.Config.GoalLengths.Feature)
+				fmt.Printf("goal.lengths.task     %d\n", ws.Config.GoalLengths.Task)
+				fmt.Printf("goal.lengths.issue    %d\n", ws.Config.GoalLengths.Issue)
 				fmt.Println()
 				fmt.Println("Project Dependency Rules")
 				fmt.Println("════════════════════════")
@@ -111,13 +122,22 @@ func newConfigSetCmd() *cobra.Command {
 					)
 				}
 				value = boolValue
+			case "goal.lengths.project", "goal.lengths.feature", "goal.lengths.task", "goal.lengths.issue":
+				var length int
+				_, err := fmt.Sscanf(valueStr, "%d", &length)
+				if err != nil || length < 0 {
+					return domain.NewValidationError(
+						"Invalid value for goal.lengths.\nUse a non-negative integer (0-9999)",
+					)
+				}
+				value = length
 			default:
 				return domain.NewValidationError(
-					fmt.Sprintf("Unknown configuration key: %s\n\nAvailable keys:\n  - default_priority\n  - strict_mode", key),
+					fmt.Sprintf("Unknown configuration key: %s\n\nAvailable keys:\n  - default_priority\n  - strict_mode\n  - goal.lengths.project\n  - goal.lengths.feature\n  - goal.lengths.task\n  - goal.lengths.issue", key),
 				)
 			}
 
-			// Update config
+			// Update config for non-goal.lengths keys
 			if err := svc.UpdateWorkspaceConfig(key, value); err != nil {
 				return err
 			}
@@ -168,6 +188,42 @@ func newConfigListCmd() *cobra.Command {
 			fmt.Println("  Desc:     Enforce strict validation rules")
 			fmt.Println()
 
+			// goal.lengths.project
+			fmt.Println("goal.lengths.project")
+			fmt.Println("  Type:     integer")
+			fmt.Printf("  Current:  %d\n", ws.Config.GoalLengths.Project)
+			fmt.Println("  Default:  500")
+			fmt.Println("  Options:  0-9999")
+			fmt.Println("  Desc:     Minimum characters for project goal")
+			fmt.Println()
+
+			// goal.lengths.feature
+			fmt.Println("goal.lengths.feature")
+			fmt.Println("  Type:     integer")
+			fmt.Printf("  Current:  %d\n", ws.Config.GoalLengths.Feature)
+			fmt.Println("  Default:  300")
+			fmt.Println("  Options:  0-9999")
+			fmt.Println("  Desc:     Minimum characters for feature goal")
+			fmt.Println()
+
+			// goal.lengths.task
+			fmt.Println("goal.lengths.task")
+			fmt.Println("  Type:     integer")
+			fmt.Printf("  Current:  %d\n", ws.Config.GoalLengths.Task)
+			fmt.Println("  Default:  500")
+			fmt.Println("  Options:  0-9999")
+			fmt.Println("  Desc:     Minimum characters for task goal")
+			fmt.Println()
+
+			// goal.lengths.issue
+			fmt.Println("goal.lengths.issue")
+			fmt.Println("  Type:     integer")
+			fmt.Printf("  Current:  %d\n", ws.Config.GoalLengths.Issue)
+			fmt.Println("  Default:  200")
+			fmt.Println("  Options:  0-9999")
+			fmt.Println("  Desc:     Minimum characters for issue goal")
+			fmt.Println()
+
 			fmt.Println("Use 'mandor config get <key>' for value.")
 			fmt.Println("Use 'mandor config set <key> <value>' to update.")
 
@@ -205,43 +261,75 @@ func newConfigResetCmd() *cobra.Command {
 				if err := svc.UpdateWorkspaceConfig("strict_mode", false); err != nil {
 					return err
 				}
+				if err := svc.ResetAllGoalLengths(); err != nil {
+					return err
+				}
 
 				fmt.Println("✓ Reset all configuration to defaults")
 				fmt.Println("  - default_priority = P3")
 				fmt.Println("  - strict_mode = false")
+				fmt.Println("  - goal.lengths.project = 500")
+				fmt.Println("  - goal.lengths.feature = 300")
+				fmt.Println("  - goal.lengths.task = 500")
+				fmt.Println("  - goal.lengths.issue = 200")
 				return nil
 			}
 
 			// Reset specific key
 			key := args[0]
-			var defaultValue interface{}
 
 			switch key {
 			case "default_priority":
-				defaultValue = "P3"
+				if !skipConfirm {
+					fmt.Print("Reset default_priority to default (P3)? [y/N] ")
+					var response string
+					fmt.Scanln(&response)
+					if strings.ToLower(response) != "y" {
+						return nil
+					}
+				}
+				if err := svc.UpdateWorkspaceConfig("default_priority", "P3"); err != nil {
+					return err
+				}
+				fmt.Printf("✓ Reset: default_priority = P3 (default)\n")
+				return nil
+
 			case "strict_mode":
-				defaultValue = false
+				if !skipConfirm {
+					fmt.Print("Reset strict_mode to default (false)? [y/N] ")
+					var response string
+					fmt.Scanln(&response)
+					if strings.ToLower(response) != "y" {
+						return nil
+					}
+				}
+				if err := svc.UpdateWorkspaceConfig("strict_mode", false); err != nil {
+					return err
+				}
+				fmt.Printf("✓ Reset: strict_mode = false (default)\n")
+				return nil
+
+			case "goal.lengths.project", "goal.lengths.feature", "goal.lengths.task", "goal.lengths.issue":
+				entity := strings.Split(key, ".")[2]
+				if !skipConfirm {
+					fmt.Printf("Reset %s to default? [y/N] ", key)
+					var response string
+					fmt.Scanln(&response)
+					if strings.ToLower(response) != "y" {
+						return nil
+					}
+				}
+				if err := svc.ResetGoalLength(entity); err != nil {
+					return err
+				}
+				fmt.Printf("✓ Reset: %s (default)\n", key)
+				return nil
+
 			default:
 				return domain.NewValidationError(
 					fmt.Sprintf("Unknown configuration key: %s", key),
 				)
 			}
-
-			if !skipConfirm {
-				fmt.Printf("Reset %s to default (%v)? [y/N] ", key, defaultValue)
-				var response string
-				fmt.Scanln(&response)
-				if strings.ToLower(response) != "y" {
-					return nil
-				}
-			}
-
-			if err := svc.UpdateWorkspaceConfig(key, defaultValue); err != nil {
-				return err
-			}
-
-			fmt.Printf("✓ Reset: %s = %v (default)\n", key, defaultValue)
-			return nil
 		},
 	}
 

@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"mandor/internal/domain"
@@ -140,9 +141,20 @@ func (s *WorkspaceService) UpdateWorkspaceConfig(key string, value interface{}) 
 		}
 		ws.Config.StrictMode = boolValue
 
+	case "goal.lengths.project", "goal.lengths.feature", "goal.lengths.task", "goal.lengths.issue":
+		intValue, ok := value.(int)
+		if !ok {
+			return domain.NewValidationError(fmt.Sprintf("%s must be an integer", key))
+		}
+		if intValue < 0 {
+			return domain.NewValidationError(fmt.Sprintf("%s must be non-negative", key))
+		}
+		entity := strings.Split(key, ".")[2]
+		return s.SetGoalLength(entity, intValue)
+
 	default:
 		return domain.NewValidationError(
-			fmt.Sprintf("Unknown configuration key: %s\n\nAvailable keys:\n  - default_priority\n  - strict_mode", key),
+			fmt.Sprintf("Unknown configuration key: %s\n\nAvailable keys:\n  - default_priority\n  - strict_mode\n  - goal.lengths.project\n  - goal.lengths.feature\n  - goal.lengths.task\n  - goal.lengths.issue", key),
 		)
 	}
 
@@ -165,9 +177,106 @@ func (s *WorkspaceService) GetConfigValue(key string) (interface{}, error) {
 		return ws.Config.DefaultPriority, nil
 	case "strict_mode":
 		return ws.Config.StrictMode, nil
+	case "goal.lengths.project":
+		return ws.Config.GoalLengths.Project, nil
+	case "goal.lengths.feature":
+		return ws.Config.GoalLengths.Feature, nil
+	case "goal.lengths.task":
+		return ws.Config.GoalLengths.Task, nil
+	case "goal.lengths.issue":
+		return ws.Config.GoalLengths.Issue, nil
 	default:
 		return nil, domain.NewValidationError(
 			fmt.Sprintf("Unknown configuration key: %s", key),
 		)
 	}
+}
+
+// GetGoalLength returns the configured minimum goal length for an entity
+func (s *WorkspaceService) GetGoalLength(entity string) int {
+	ws, err := s.reader.ReadWorkspace()
+	if err != nil {
+		return 0
+	}
+
+	switch entity {
+	case "project":
+		return ws.Config.GoalLengths.Project
+	case "feature":
+		return ws.Config.GoalLengths.Feature
+	case "task":
+		return ws.Config.GoalLengths.Task
+	case "issue":
+		return ws.Config.GoalLengths.Issue
+	default:
+		return 0
+	}
+}
+
+// SetGoalLength sets the minimum goal length for an entity
+func (s *WorkspaceService) SetGoalLength(entity string, length int) error {
+	ws, err := s.reader.ReadWorkspace()
+	if err != nil {
+		return err
+	}
+
+	switch entity {
+	case "project":
+		ws.Config.GoalLengths.Project = length
+	case "feature":
+		ws.Config.GoalLengths.Feature = length
+	case "task":
+		ws.Config.GoalLengths.Task = length
+	case "issue":
+		ws.Config.GoalLengths.Issue = length
+	default:
+		return domain.NewValidationError(
+			fmt.Sprintf("Unknown entity: %s (use: project, feature, task, issue)", entity),
+		)
+	}
+
+	ws.LastUpdatedAt = time.Now().UTC()
+	return s.writer.WriteWorkspace(ws)
+}
+
+// ResetGoalLength resets goal length for an entity to default
+func (s *WorkspaceService) ResetGoalLength(entity string) error {
+	defaults := domain.DefaultGoalLengths()
+
+	ws, err := s.reader.ReadWorkspace()
+	if err != nil {
+		return err
+	}
+
+	switch entity {
+	case "project":
+		ws.Config.GoalLengths.Project = defaults.Project
+	case "feature":
+		ws.Config.GoalLengths.Feature = defaults.Feature
+	case "task":
+		ws.Config.GoalLengths.Task = defaults.Task
+	case "issue":
+		ws.Config.GoalLengths.Issue = defaults.Issue
+	default:
+		return domain.NewValidationError(
+			fmt.Sprintf("Unknown entity: %s (use: project, feature, task, issue)", entity),
+		)
+	}
+
+	ws.LastUpdatedAt = time.Now().UTC()
+	return s.writer.WriteWorkspace(ws)
+}
+
+// ResetAllGoalLengths resets all goal lengths to defaults
+func (s *WorkspaceService) ResetAllGoalLengths() error {
+	defaults := domain.DefaultGoalLengths()
+
+	ws, err := s.reader.ReadWorkspace()
+	if err != nil {
+		return err
+	}
+
+	ws.Config.GoalLengths = defaults
+	ws.LastUpdatedAt = time.Now().UTC()
+	return s.writer.WriteWorkspace(ws)
 }
