@@ -6,7 +6,7 @@ This guide covers setting up the development environment, running tests, buildin
 
 ### Prerequisites
 
-- **Go 1.21+** - Download from [golang.org](https://golang.org/dl/)
+- **Go 1.25+** - Download from [golang.org](https://golang.org/dl/)
 - **Git** - For version control
 - **jq** - For JSON processing in scripts (optional but recommended)
 
@@ -86,38 +86,44 @@ GOOS=darwin GOARCH=amd64 go build -o build/mandor-darwin-amd64 ./cmd/mandor
 GOOS=windows GOARCH=amd64 go build -o build/mandor-windows-amd64.exe ./cmd/mandor
 ```
 
-### Release Build
+### Release Build with NPM
 
 ```bash
-# Build all platforms
-./scripts/build.sh
+# From root directory
+npm run build
 
-# Or manually
-GOOS=linux GOARCH=amd64 go build -o release/mandor-linux-x64 ./cmd/mandor
-GOOS=darwin GOARCH=amd64 go build -o release/mandor-darwin-x64 ./cmd/mandor
-GOOS=windows GOARCH=amd64 go build -o release/mandor-windows-x64.exe ./cmd/mandor
+# Binaries built to binaries/ directory with platform-specific subdirs:
+# - binaries/darwin-amd64/mandor (Intel Mac)
+# - binaries/darwin-arm64/mandor (Apple Silicon)
+# - binaries/linux-amd64/mandor (Linux x86_64)
+# - binaries/linux-arm64/mandor (Linux ARM64)
+# - binaries/windows-amd64/mandor.exe (Windows x86_64)
+# - binaries/windows-arm64/mandor.exe (Windows ARM64)
+
+# Compressed archives also created:
+# - binaries/darwin-amd64.tar.gz
+# - binaries/linux-amd64.tar.gz
+# etc.
 ```
 
 ## NPM Package Build Commands
 
-The NPM package (`@mandors/cli`) wraps the Go binary for cross-platform distribution.
+The NPM package (`@mandors/cli@0.4.4+`) wraps the Go binary for cross-platform distribution.
 
 ```bash
-cd npm
-
-# Build supported platforms (attempts all 6, skips unsupported)
+# Build supported platforms (attempts all 6, only succeeds on compatible systems)
 npm run build
 
-# Build specific platforms
-npm run build:darwin:x64    # Darwin x64 (Intel Macs)
-npm run build:darwin:arm64  # Darwin arm64 (Apple Silicon)
-npm run build:linux:x64     # Linux x64
-npm run build:linux:arm64   # Linux arm64
-npm run build:win32:x64     # Windows x64
-npm run build:win32:arm64   # Windows arm64
+# Build specific platforms (from package.json scripts)
+npm run build:darwin:x64    # Darwin x86_64 (Intel Macs) - GOOS=darwin GOARCH=amd64
+npm run build:darwin:arm64  # Darwin ARM64 (Apple Silicon) - GOOS=darwin GOARCH=arm64
+npm run build:linux:x64     # Linux x86_64 - GOOS=linux GOARCH=amd64
+npm run build:linux:arm64   # Linux ARM64 - GOOS=linux GOARCH=arm64
+npm run build:win32:x64     # Windows x86_64 - GOOS=windows GOARCH=amd64
+npm run build:win32:arm64   # Windows ARM64 - GOOS=windows GOARCH=arm64
 ```
 
-Binaries are output to `npm/binaries/` directory as tar.gz archives for npm package distribution.
+Binaries are output to `binaries/` directory with platform-specific subdirectories. Compressed tar.gz archives are automatically created for distribution and GitHub releases.
 
 ### Package Structure
 
@@ -681,25 +687,40 @@ Examples:
 
 ### Version Bumping
 
-1. Update version in code (if applicable)
-2. Update CHANGELOG.md
-3. Create git tag: `git tag v1.0.0`
-4. Push tag: `git push origin v1.0.0`
+1. Update version in `package.json`
+2. Update `CHANGELOG.md` with new features/fixes
+3. Build binaries: `npm run build`
+4. Create GitHub release: `gh release create v0.4.4 -t "Title" -F CHANGELOG.md`
+5. Upload binaries: `gh release upload v0.4.4 binaries/*.tar.gz`
+6. Commit changes: `git add package.json CHANGELOG.md && git commit -m "vX.Y.Z: description"`
+7. Push to origin: `git push`
+8. Publish to npm: `npm publish --access public`
 
-### Building Release
+### Release Checklist
 
 ```bash
-# Clean build directory
-rm -rf build/*
+# 1. Update version and changelog
+# (edit package.json and CHANGELOG.md)
 
-# Build all platforms
-./scripts/build.sh
+# 2. Build all platforms
+npm run build
 
-# Sign binaries (if applicable)
-# ...
+# 3. Create git tag and GitHub release
+gh release create vX.Y.Z -t "vX.Y.Z - Description" -F CHANGELOG.md
 
-# Create release notes
-# ...
+# 4. Upload binaries (darwin-arm64.tar.gz, linux-arm64.tar.gz, etc.)
+gh release upload vX.Y.Z binaries/*.tar.gz
+
+# 5. Commit and push
+git add package.json CHANGELOG.md
+git commit -m "vX.Y.Z: Production release with [description]"
+git push
+
+# 6. Publish to npm
+npm publish --access public
+
+# 7. Verify
+npm info @mandors/cli | grep -A5 dist-tags
 ```
 
 ## Troubleshooting
@@ -726,9 +747,10 @@ ls -la .mandor/
 
 ### Getting Help
 
-- Check existing issues: https://github.com/budisantoso/mandor/issues
+- Check existing issues: https://github.com/sanxzy/mandor/issues
 - Review documentation: `/docs` directory
 - Run with `--help` for command options
+- See [README.md](../README.md) for command reference
 
 ---
 
@@ -736,12 +758,24 @@ ls -la .mandor/
 
 | Resource | Description |
 |----------|-------------|
-| [PRD](docs/prd.md) | Product requirements document |
-| [Dependency Rules](docs/rules/dependency-rules.md) | Dependency validation rules |
-| [Status Reference](docs/rules/status-type-reference.md) | Status transitions |
-| [Event Reference](docs/rules/event-type-reference.md) | Event types |
-| [IMPLEMENT_SUMMARY.md](IMPLEMENT_SUMMARY.md) | Implementation progress |
-| [AGENTS.md](AGENTS.md) | Agent workflow guide |
+| [README.md](../README.md) | Comprehensive CLI documentation and command reference |
+| [Dependency Rules](rules/dependency-rules.md) | Dependency validation rules |
+| [Status Reference](rules/status-type-reference.md) | Status transitions and valid values |
+| [Testing](test/integration_test.md) | Integration test scenarios (61+ scenarios documented) |
+| [CHANGELOG.md](../CHANGELOG.md) | Version history and releases |
+
+## Comprehensive Testing
+
+As of v0.4.4, Mandor has passed **61 integration test scenarios** across 16 test suites covering:
+
+- **Dependency Resolution**: Linear chains, fan-in, fan-out, diamond patterns, deep chains (5+ levels)
+- **Cross-Project Coordination**: Multi-project dependency chains and cross-project task coordination
+- **Status Transitions**: Task/feature/issue state flows with dependent unblocking cascades
+- **Real-World Workflows**: Feature releases, bug fixes, security tracking
+- **Data Persistence**: Soft-delete with recovery, metadata preservation
+- **Error Handling**: Validation, circular dependency detection, invalid transitions
+
+See [test_complex.md](../docs/bugs/test_complex.md) for complete test report.
 
 ---
 
