@@ -43,19 +43,23 @@ func TestValidateGoalLength(t *testing.T) {
 	tests := []struct {
 		name     string
 		goal     string
+		minLen   int
 		expected bool
 	}{
-		{"exactly 500", string(make([]byte, 500)), false},
-		{"501 chars", longGoal, true},
-		{"empty", "", false},
-		{"short goal", shortGoal, false},
+		{"exactly 500", string(make([]byte, 500)), 500, true},
+		{"501 chars", longGoal, 500, true},
+		{"empty", "", 500, false},
+		{"short goal", shortGoal, 500, false},
+		{"10 chars with min 5", "12345", 5, true},
+		{"5 chars with min 5", "12345", 5, true},
+		{"4 chars with min 5", "1234", 5, false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ValidateGoalLength(tt.goal)
+			result := ValidateGoalLength(tt.goal, tt.minLen)
 			if result != tt.expected {
-				t.Errorf("ValidateGoalLength(len=%d) = %v, want %v", len(tt.goal), result, tt.expected)
+				t.Errorf("ValidateGoalLength(len=%d, minLen=%d) = %v, want %v", len(tt.goal), tt.minLen, result, tt.expected)
 			}
 		})
 	}

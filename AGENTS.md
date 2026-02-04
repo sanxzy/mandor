@@ -1,33 +1,65 @@
-# Agent Instructions - Mandor Project
+# Mandor Essential Commands
 
-## Output and Communication Rules
+Use these three commands to manage your work:
 
-**Avoid Creating Summary Files**
-- Do NOT create executive summary files unless explicitly asked
-- Do NOT create summary.md or recap files
-- Do NOT create files ending with "_SUMMARY" unless requested
+---
 
-**Focus on Action Over Documentation**
-1. Make the fixes/changes
-2. Test to verify they work
-3. Provide concise output about what was done
-4. Only document if user asks
+## 1. mandor populate
 
-**Response Style**
-- Keep responses short and to the point
-- Provide direct answers without lengthy preamble
-- Avoid unnecessary explanations or summaries
-- One-to-three sentences when possible
-- Focus on what was accomplished, not how it was done
+View all available commands and usage instructions.
 
-## Development Guidelines
+```bash
+mandor populate
+```
 
-This is the Mandor CLI project. When making changes:
+Shows complete reference guide with examples for creating projects, features, tasks, issues, and managing dependencies.
 
-1. Update the relevant source files in `internal/`
-2. Build and test with `go build -o binaries/mandor ./cmd/mandor`
-3. Run CLI commands to verify fixes work
-4. Document critical bugs in BUG_REPORT.md if needed
-5. Create test scenarios to verify behavior
+---
 
-See root AGENTS.md for session completion and git push requirements.
+## 2. mandor track
+
+Check status of workspace, projects, features, and tasks.
+
+```bash
+# View entire workspace
+mandor track
+
+# View specific project
+mandor track project <project-id>
+
+# View feature with tasks
+mandor track feature <feature-id>
+
+# View single task
+mandor track task <task-id>
+```
+
+Shows what's ready, blocked, in progress, or done. Use before starting work.
+
+---
+
+## 3. mandor session note
+
+Record and read session progress (for AI agents).
+
+```bash
+# Log what you completed
+mandor session note "Completed v0.4.4 release and testing"
+
+# Read last 50 notes
+mandor session note --read
+
+# Read more notes
+mandor session note --read --offset 100
+```
+
+End each session with a note. Start next session by reading notes to resume work.
+
+---
+
+## Quick Workflow
+
+1. `mandor track` - See what's ready
+2. `mandor populate` - Learn how to create/update work
+3. `mandor session note "done"` - Log progress before ending session
+4. `mandor session note --read` - Check progress when resuming

@@ -37,7 +37,7 @@ func outputPopulate(cmd *cobra.Command) error {
 ╚════════════════════════════════════════════════════════════════════╝
 
 WHY MANDOR
-════════════════════════════════════════════════════════════════════
+═══════════════════════════════════════════════════════════════════════
 
 Stop writing markdown plans that go stale. Mandor provides:
   ✓ Single source of truth in structured JSONL format
@@ -54,26 +54,35 @@ OLD APPROACH:
   Status: Last updated 3 days ago
 
 NEW APPROACH:
-  mandor feature create "Feature" --project api --goal "..."
-  mandor task create "Task A" --feature api-feature-xxx --goal "..."
-  mandor task create "Task B" --feature api-feature-xxx --goal "..." \
-    --depends-on task-a-id
+  mandor feature create "Authentication" --project api --goal "..."
+  mandor task create api-feature-xxx "Task A" --goal "..." \
+    --implementation-steps "Step 1|Step 2" \
+    --test-cases "Test A|Test B" \
+    --derivable-files "file1.go|file2.go" \
+    --library-needs "none"
+  mandor task create api-feature-xxx "Task B" --goal "..." \
+    --implementation-steps "Step 1|Step 2" \
+    --test-cases "Test A|Test B" \
+    --derivable-files "file1.go|file2.go" \
+    --library-needs "none" \
+    --depends-on api-feature-xxx-task-001
   
   mandor track feature api-feature-xxx    # Always current
 
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
  TABLE OF CONTENTS
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
 
   1. Workspace Setup        6. Task Management
   2. Project Management     7. Issue Management
   3. Feature Management     8. Track Commands
-  4. Configuration          9. AI Commands
-  5. Status Transitions    10. Best Practices
+  4. Configuration          9. Session Management
+  5. Status Transitions    10. AI Commands
+                          11. Best Practices
 
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
  1. WORKSPACE SETUP
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
 
 ▶ mandor init [--workspace-name <name>] [-y]
   Initialize workspace in current directory
@@ -101,16 +110,21 @@ NEW APPROACH:
   Manage workspace configuration
   
   Available keys:
-    default_priority    Default priority (P0-P5, default: P3)
-    strict_mode        Strict validation (true/false, default: false)
+    default_priority      Default priority (P0-P5, default: P3)
+    strict_mode          Strict validation (true/false, default: false)
+    goal.lengths.project  Min chars for project goal (default: 500)
+    goal.lengths.feature Min chars for feature goal (default: 300)
+    goal.lengths.task    Min chars for task goal (default: 500)
+    goal.lengths.issue   Min chars for issue goal (default: 200)
   
   Example:
     mandor config set default_priority P2
     mandor config get default_priority
+    mandor config list
 
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
  2. PROJECT MANAGEMENT
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
 
 ▶ mandor project create <id> --name <text> --goal <text> [FLAGS]
   Create a new project
@@ -187,9 +201,9 @@ NEW APPROACH:
   Example:
     mandor project reopen legacy
 
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
  3. FEATURE MANAGEMENT
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
 
 ▶ mandor feature create <name> --project <id> --goal <text> [FLAGS]
   Create feature in project
@@ -255,9 +269,9 @@ NEW APPROACH:
     mandor feature update api-feature-xxx --project api --status active
     mandor feature update api-feature-xxx --project api --cancel --reason "Out of scope"
 
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
  4. CONFIGURATION
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
 
 ▶ mandor config list
   Show all configuration keys with descriptions
@@ -284,9 +298,9 @@ NEW APPROACH:
   Example:
     mandor config reset default_priority
 
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
  5. STATUS TRANSITIONS
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
 
 FEATURE STATUS FLOW:
   draft ──→ active ──→ done
@@ -309,9 +323,9 @@ ISSUE STATUS FLOW:
    └─→ wontfix (with reason)
    └─→ cancelled (with reason)
 
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
  6. TASK MANAGEMENT
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
 
 ▶ mandor task create <feature_id> <name> --goal <text> \
                      --implementation-steps <steps> \
@@ -331,7 +345,7 @@ ISSUE STATUS FLOW:
   
   Optional:
     --priority <P0-P5>          Priority (default: from config)
-    --depends-on <ids>          Pipe-separated task IDs (pipe-separated)
+    --depends-on <ids>          Pipe-separated task IDs
     -y, --yes                   Skip confirmation
   
   Example:
@@ -353,7 +367,7 @@ ISSUE STATUS FLOW:
     --include-deleted Include cancelled tasks
   
   Example:
-    mandor task detail api-task-xxx-001 --json
+    mandor task detail api-feature-xxx-task-001 --json
 
 ▶ mandor task update <id> [FLAGS]
   Update task or change status
@@ -378,13 +392,13 @@ ISSUE STATUS FLOW:
     -y, --yes                          Skip confirmation
   
   Examples:
-    mandor task update api-task-xxx-001 --status in_progress
-    mandor task update api-task-xxx-001 --status done
-    mandor task update api-task-xxx-001 --cancel --reason "Superseded by task Y"
+    mandor task update api-feature-xxx-task-001 --status in_progress
+    mandor task update api-feature-xxx-task-001 --status done
+    mandor task update api-feature-xxx-task-001 --cancel --reason "Superseded by task Y"
 
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
  7. ISSUE MANAGEMENT
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
 
 ▶ mandor issue create <name> --project <id> --type <type> \
                       --goal <text> --affected-files <files> \
@@ -413,7 +427,8 @@ ISSUE STATUS FLOW:
       --goal "Goroutine not cleaned up in token refresh handler" \
       --affected-files "src/handlers/auth.go|src/middleware/auth.go" \
       --affected-tests "src/handlers/auth_test.go" \
-      --implementation-steps "Identify|Fix|Add tests|Verify"
+      --implementation-steps "Identify|Fix|Add tests|Verify" \
+      --library-needs "none"
 
 ▶ mandor issue detail <id> [--project <id>] [FLAGS]
   Show issue details
@@ -442,7 +457,7 @@ ISSUE STATUS FLOW:
     --affected-tests <tests>        Replace affected tests (pipe-separated)
     --implementation-steps <steps>  Replace implementation steps (pipe-separated)
     --library-needs <libs>          Replace library needs (pipe-separated)
-    --depends-on <ids>              Replace dependencies (pipe-separated)
+    --depends <ids>                  Replace dependencies (pipe-separated)
     --depends-add <ids>             Add dependencies (pipe-separated)
     --depends-remove <ids>          Remove dependencies (pipe-separated)
     --start                         Transition to in_progress
@@ -459,9 +474,9 @@ ISSUE STATUS FLOW:
     mandor issue update api-issue-abc123 --start
     mandor issue update api-issue-abc123 --wontfix --reason "Working as intended"
 
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
  8. TRACK COMMANDS (Real-Time Visibility)
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
 
 ▶ mandor track
   Show workspace overview (all projects and summaries)
@@ -479,6 +494,12 @@ ISSUE STATUS FLOW:
     mandor track
     mandor track --json
 
+▶ mandor track workspace
+  Show workspace overview (explicit)
+  
+  Example:
+    mandor track workspace
+
 ▶ mandor track project <id>
   Show project issues and status
   
@@ -486,6 +507,7 @@ ISSUE STATUS FLOW:
     --json          Machine-readable output
     --csv           CSV export
     --tree          Tree visualization
+    --graph         ASCII graph
     --verbose       Show all fields
     --summary       Counts only
     --group-by <f>  Group by status or priority
@@ -500,6 +522,7 @@ ISSUE STATUS FLOW:
     --json          Machine-readable output
     --csv           CSV export
     --tree          Tree visualization
+    --graph         ASCII graph
     --verbose       Show all fields
     --summary       Counts only
     --group-by <f>  Group by status or priority
@@ -515,7 +538,7 @@ ISSUE STATUS FLOW:
     --verbose Show all fields
   
   Example:
-    mandor track task api-task-xxx-001
+    mandor track task api-feature-xxx-task-001
 
 ▶ mandor track issue <id>
   Show single issue details
@@ -527,9 +550,29 @@ ISSUE STATUS FLOW:
   Example:
     mandor track issue api-issue-abc123
 
-═════════════════════════════════════════════════════════════════════════
- 9. AI COMMANDS
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
+ 9. SESSION MANAGEMENT (AI Agent Progress Tracking)
+════════════════════════════════════════════════════════════════════════
+
+▶ mandor session note [text]
+  Add a timestamped note about work completed or in progress
+  
+  Notes are stored in .mandor/session-notes.jsonl as NDJSON format.
+  This provides a lightweight way for AI agents to track progress across sessions.
+  
+  Flags:
+    -r, --read                  Read recent notes instead of adding
+    -o, --offset <count>        Number of notes to show (default: 50)
+  
+  Examples:
+    mandor session note "Completed v0.4.4 release and testing"
+    mandor session note "Started performance optimization - blocked on benchmarks"
+    mandor session note --read                 # Show last 50 notes
+    mandor session note --read --offset 100    # Show last 100 notes
+
+════════════════════════════════════════════════════════════════════════
+ 10. AI COMMANDS
+════════════════════════════════════════════════════════════════════════
 
 ▶ mandor ai agents
   Generate AGENTS.md for multi-agent coordination
@@ -543,9 +586,9 @@ ISSUE STATUS FLOW:
   Example:
     mandor ai claude > CLAUDE.md
 
-═════════════════════════════════════════════════════════════════════════
- 10. BEST PRACTICES
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
+ 11. BEST PRACTICES
+════════════════════════════════════════════════════════════════════════
 
 1. USE MEANINGFUL IDS
    ✓ Good:  user-auth, auth-api, login-flow
@@ -589,15 +632,19 @@ ISSUE STATUS FLOW:
     mandor config set default_priority P2
     mandor config set strict_mode true
 
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
  QUICK WORKFLOWS
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
 
 SETUP NEW PROJECT:
   1. mandor init "Project" -y
   2. mandor project create api --name "API Service" --goal "..."
-  3. mandor feature create "Feature" --project api --goal "..."
-  4. mandor task create api-feature-xxx "Task" --goal "..." [FLAGS]
+  3. mandor feature create "Authentication" --project api --goal "..."
+  4. mandor task create api-feature-xxx "Task" --goal "..." \
+       --implementation-steps "Step 1|Step 2" \
+       --test-cases "Test A|Test B" \
+       --derivable-files "file.go" \
+       --library-needs "none"
 
 TRACK PROGRESS:
   1. mandor track                              # Workspace overview
@@ -613,12 +660,20 @@ MANAGE BLOCKERS:
   4. View feature: mandor track feature api-feature-xxx
 
 CREATE DEPENDENT TASK:
-  1. mandor task create api-feature-xxx "Task A" --goal "..."
+  1. mandor task create api-feature-xxx "Task A" --goal "..." \
+       --implementation-steps "Step 1|Step 2" \
+       --test-cases "Test A|Test B" \
+       --derivable-files "file.go" \
+       --library-needs "none"
   2. mandor task create api-feature-xxx "Task B" --goal "..." \
-       --depends-on task-a-id
+       --implementation-steps "Step 1|Step 2" \
+       --test-cases "Test A|Test B" \
+       --derivable-files "file.go" \
+       --library-needs "none" \
+       --depends-on api-feature-xxx-task-001
   3. Task B auto-transitions to ready when Task A is done
 
-═════════════════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════════════
 
 For more information:
   • GitHub: https://github.com/sanxzy/mandor
@@ -626,6 +681,5 @@ For more information:
 
 Built for AI Agent Workflows
 `)
-
 	return nil
 }

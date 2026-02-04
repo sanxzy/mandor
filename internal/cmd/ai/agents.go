@@ -40,21 +40,46 @@ func NewAgentsCmd() *cobra.Command {
 }
 
 func generateAIDoc(projectName, createdAt string) string {
-	return "# Project Task Management\n\n" +
-		"This project uses **Mandor CLI** for event-based task management.\n" +
-		"All tasks, features, and issues must be tracked using Mandor.\n\n" +
+	return "# Mandor Essential Commands\n\n" +
+		"Use these three commands to manage your work:\n\n" +
 		"---\n\n" +
-		"## Required Tool\n\n" +
-		"- Mandor CLI is mandatory for all development work.\n" +
-		"- Task and issue management outside of Mandor is not allowed.\n\n" +
+		"## 1. mandor populate\n\n" +
+		"View all available commands and usage instructions.\n\n" +
+		"```bash\n" +
+		"mandor populate\n" +
+		"```\n\n" +
+		"Shows complete reference guide with examples for creating projects, features, tasks, " +
+		"issues, and managing dependencies.\n\n" +
 		"---\n\n" +
-		"## Getting Started\n\n" +
-		"To view available commands and usage instructions, run:\n\n" +
-		"mandor populate\n\n" +
+		"## 2. mandor track\n\n" +
+		"Check status of workspace, projects, features, and tasks.\n\n" +
+		"```bash\n" +
+		"# View entire workspace\n" +
+		"mandor track\n\n" +
+		"# View specific project\n" +
+		"mandor track project <project-id>\n\n" +
+		"# View feature with tasks\n" +
+		"mandor track feature <feature-id>\n\n" +
+		"# View single task\n" +
+		"mandor track task <task-id>\n" +
+		"```\n\n" +
+		"Shows what's ready, blocked, in progress, or done. Use before starting work.\n\n" +
 		"---\n\n" +
-		"## Critical Rules\n\n" +
-		"- All tasks and issues must be created and managed in Mandor.\n" +
-		"- Before starting any work, the related task or issue **must be updated to `in_progress`**.\n" +
-		"- Always keep task status updated to reflect the current state of development.\n" +
-		"- All development work must be tied to Mandor-managed tasks or issues.\n"
+		"## 3. mandor session note\n\n" +
+		"Record and read session progress.\n\n" +
+		"```bash\n" +
+		"# Log what you completed\n" +
+		"mandor session note \"Completed v0.4.4 release and testing\"\n\n" +
+		"# Read last 50 notes\n" +
+		"mandor session note --read\n\n" +
+		"# Read more notes\n" +
+		"mandor session note --read --offset 100\n" +
+		"```\n\n" +
+		"End each session with a note. Start next session by reading notes to resume work.\n\n" +
+		"---\n\n" +
+		"## Quick Workflow\n\n" +
+		"1. `mandor track` - See what's ready\n" +
+		"2. `mandor populate` - Learn how to create/update work\n" +
+		"3. `mandor session note \"done\"` - Log progress before ending session\n" +
+		"4. `mandor session note --read` - Check progress when resuming\n"
 }

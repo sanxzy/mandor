@@ -75,6 +75,11 @@ func (p *Paths) ProjectIssuesPath(projectID string) string {
 	return filepath.Join(p.ProjectDirPath(projectID), "issues.jsonl")
 }
 
+// SessionNotesPath returns the path to session-notes.jsonl
+func (p *Paths) SessionNotesPath() string {
+	return filepath.Join(p.MandorDirPath(), "session-notes.jsonl")
+}
+
 // ProjectDirExists checks if a project directory exists
 func (p *Paths) ProjectDirExists(projectID string) bool {
 	_, err := os.Stat(p.ProjectDirPath(projectID))

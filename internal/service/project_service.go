@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
 	"mandor/internal/domain"
@@ -228,8 +229,9 @@ func (s *ProjectService) UpdateProject(input *domain.ProjectUpdateInput) ([]stri
 		if *input.Goal == "" {
 			return nil, domain.NewValidationError("Project goal cannot be empty.")
 		}
-		if !domain.ValidateGoalLength(*input.Goal) {
-			return nil, domain.NewValidationError("Project goal must be at least 500 characters.")
+		minLen := s.GetProjectGoalMinLength()
+		if !domain.ValidateGoalLength(*input.Goal, minLen) {
+			return nil, domain.NewValidationError(fmt.Sprintf("Project goal must be at least %d characters.", minLen))
 		}
 		project.Goal = *input.Goal
 		changes = append(changes, "goal")
@@ -426,4 +428,15 @@ func (s *ProjectService) ReopenProject(input *domain.ProjectReopenInput) (string
 
 func (s *ProjectService) GetProject(projectID string) (*domain.Project, error) {
 	return s.reader.ReadProjectMetadata(projectID)
+}
+
+func (s *ProjectService) GetProjectGoalMinLength() int {
+	ws, err := s.reader.ReadWorkspace()
+	if err != nil {
+		return domain.GoalMinLength
+	}
+	if ws.Config.GoalLengths.Project > 0 {
+		return ws.Config.GoalLengths.Project
+	}
+	return domain.GoalMinLength
 }

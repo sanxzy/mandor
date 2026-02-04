@@ -167,11 +167,12 @@ func TestCreateCmd_Success(t *testing.T) {
 	writeTestProjectForIssueCmd(t, tmpDir, "auth")
 
 	cmd := issue.NewCreateCmd()
+	goal := strings.Repeat("x", 201)
 	cmd.SetArgs([]string{
 		"Test Issue",
 		"--project", "auth",
 		"--type", "bug",
-		"--goal", "Test goal description",
+		"--goal", goal,
 		"--affected-files", "src/file1.ts,src/file2.ts",
 		"--affected-tests", "tests/file1.test.ts",
 		"--implementation-steps", "Step 1,Step 2",
@@ -237,11 +238,12 @@ func TestCreateCmd_WithDependency(t *testing.T) {
 	}
 
 	cmd := issue.NewCreateCmd()
+	goal := strings.Repeat("x", 201)
 	cmd.SetArgs([]string{
 		"Test Issue",
 		"--project", "auth",
 		"--type", "security",
-		"--goal", "Test goal description",
+		"--goal", goal,
 		"--affected-files", "src/file1.ts",
 		"--affected-tests", "tests/file1.test.ts",
 		"--implementation-steps", "Step 1",

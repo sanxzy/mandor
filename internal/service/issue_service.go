@@ -58,11 +58,8 @@ func (s *IssueService) ValidateCreateInput(input *domain.IssueCreateInput) error
 		return domain.NewValidationError("Issue goal is required (--goal).")
 	}
 
-	if !domain.ValidateIssueGoalLength(input.Goal) {
-		minLen := domain.IssueGoalMinLength
-		if util.IsDevelopment() {
-			minLen = domain.IssueGoalMinLengthDevelopment
-		}
+	minLen := s.getIssueGoalMinLength()
+	if !domain.ValidateIssueGoalLength(input.Goal, minLen) {
 		return domain.NewValidationError(fmt.Sprintf("Issue goal must be at least %d characters. Current length: %d characters.", minLen, len(input.Goal)))
 	}
 
@@ -488,6 +485,10 @@ func (s *IssueService) UpdateIssue(input *domain.IssueUpdateInput) ([]string, er
 	}
 
 	if input.Goal != nil && *input.Goal != issue.Goal {
+		minLen := s.getIssueGoalMinLength()
+		if !domain.ValidateIssueGoalLength(*input.Goal, minLen) {
+			return nil, domain.NewValidationError(fmt.Sprintf("Issue goal must be at least %d characters. Current length: %d characters.", minLen, len(*input.Goal)))
+		}
 		issue.Goal = *input.Goal
 		changes = append(changes, "goal")
 	}
@@ -723,4 +724,15 @@ func extractProjectIDFromIssueID(issueID string) string {
 		return ""
 	}
 	return parts[0]
+}
+
+func (s *IssueService) getIssueGoalMinLength() int {
+	ws, err := s.reader.ReadWorkspace()
+	if err != nil {
+		return domain.IssueGoalMinLength
+	}
+	if ws.Config.GoalLengths.Issue > 0 {
+		return ws.Config.GoalLengths.Issue
+	}
+	return domain.IssueGoalMinLength
 }

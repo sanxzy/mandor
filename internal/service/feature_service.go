@@ -58,11 +58,8 @@ func (s *FeatureService) ValidateCreateInput(input *domain.FeatureCreateInput) e
 		return domain.NewValidationError("Feature goal is required (--goal).")
 	}
 
-	if !domain.ValidateFeatureGoalLength(input.Goal) {
-		minLen := domain.FeatureGoalMinLength
-		if util.IsDevelopment() {
-			minLen = domain.FeatureGoalMinLengthDevelopment
-		}
+	minLen := s.getFeatureGoalMinLength()
+	if !domain.ValidateFeatureGoalLength(input.Goal, minLen) {
 		return domain.NewValidationError(fmt.Sprintf("Feature goal must be at least %d characters. Current length: %d characters.", minLen, len(input.Goal)))
 	}
 
@@ -363,6 +360,13 @@ func (s *FeatureService) ValidateUpdateInput(input *domain.FeatureUpdateInput) e
 		return domain.NewValidationError("Feature goal cannot be empty.")
 	}
 
+	if input.Goal != nil {
+		minLen := s.getFeatureGoalMinLength()
+		if !domain.ValidateFeatureGoalLength(*input.Goal, minLen) {
+			return domain.NewValidationError(fmt.Sprintf("Feature goal must be at least %d characters. Current length: %d characters.", minLen, len(*input.Goal)))
+		}
+	}
+
 	if input.Priority != nil && !domain.ValidatePriority(*input.Priority) {
 		return domain.NewValidationError("Invalid priority. Valid options: P0, P1, P2, P3, P4, P5")
 	}
@@ -570,4 +574,15 @@ func (s *FeatureService) findDependents(projectID, featureID string) ([]string, 
 		return nil
 	})
 	return dependents, err
+}
+
+func (s *FeatureService) getFeatureGoalMinLength() int {
+	ws, err := s.reader.ReadWorkspace()
+	if err != nil {
+		return domain.FeatureGoalMinLength
+	}
+	if ws.Config.GoalLengths.Feature > 0 {
+		return ws.Config.GoalLengths.Feature
+	}
+	return domain.FeatureGoalMinLength
 }

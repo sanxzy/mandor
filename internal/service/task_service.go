@@ -111,11 +111,8 @@ func (s *TaskService) ValidateCreateInput(input *domain.TaskCreateInput) error {
 		return domain.NewValidationError("Task goal is required (--goal).")
 	}
 
-	if !domain.ValidateTaskGoalLength(input.Goal) {
-		minLen := domain.TaskGoalMinLength
-		if util.IsDevelopment() {
-			minLen = domain.TaskGoalMinLengthDevelopment
-		}
+	minLen := s.getTaskGoalMinLength()
+	if !domain.ValidateTaskGoalLength(input.Goal, minLen) {
 		return domain.NewValidationError(fmt.Sprintf("Task goal must be at least %d characters. Current length: %d characters.", minLen, len(input.Goal)))
 	}
 
@@ -636,6 +633,10 @@ func (s *TaskService) UpdateTask(input *domain.TaskUpdateInput) ([]string, error
 	}
 
 	if input.Goal != nil && *input.Goal != task.Goal {
+		minLen := s.getTaskGoalMinLength()
+		if !domain.ValidateTaskGoalLength(*input.Goal, minLen) {
+			return nil, domain.NewValidationError(fmt.Sprintf("Task goal must be at least %d characters. Current length: %d characters.", minLen, len(*input.Goal)))
+		}
 		task.Goal = *input.Goal
 		changes = append(changes, "goal")
 	}
@@ -902,4 +903,15 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 	}
 
 	return unblockedAny, nil
+}
+
+func (s *TaskService) getTaskGoalMinLength() int {
+	ws, err := s.reader.ReadWorkspace()
+	if err != nil {
+		return domain.TaskGoalMinLength
+	}
+	if ws.Config.GoalLengths.Task > 0 {
+		return ws.Config.GoalLengths.Task
+	}
+	return domain.TaskGoalMinLength
 }

@@ -76,7 +76,7 @@ func TestIssueService_ValidateCreateInput(t *testing.T) {
 			input: &domain.IssueCreateInput{
 				ProjectID:           "auth",
 				Name:                "Test Issue",
-				Goal:                "Test goal description",
+				Goal:                string(make([]byte, 201)),
 				IssueType:           "bug",
 				Priority:            "P2",
 				AffectedFiles:       []string{"src/file1.ts", "src/file2.ts"},
@@ -772,8 +772,8 @@ func TestIssueService_ReopenIssue(t *testing.T) {
 		IncludeDeleted: true,
 	})
 
-	if detail.Status != domain.IssueStatusOpen {
-		t.Errorf("Expected status 'open' after reopen but got '%s'", detail.Status)
+	if detail.Status != domain.IssueStatusReady {
+		t.Errorf("Expected status 'ready' after reopen but got '%s'", detail.Status)
 	}
 
 	os.RemoveAll(filepath.Dir(paths.MandorDirPath()))

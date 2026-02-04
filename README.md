@@ -48,6 +48,7 @@ Mandor is a CLI tool for managing tasks, features, and issues in AI agent workfl
 
 ---
 
+
 ## Core Concepts
 
 ### Entity Types
@@ -100,6 +101,7 @@ cancelled → (terminal, can reopen to any status)
 
 ---
 
+
 ## Installation
 
 ### Install with curl
@@ -117,6 +119,7 @@ mandor --help
 ```
 
 ---
+
 
 ## Quick Start
 
@@ -160,7 +163,7 @@ mandor task create api-feature-xxx "Login Endpoint" \
   --test-cases "Valid creds return token|Invalid creds rejected|Tokens properly formatted" \
   --derivable-files "login_handler.go|login_test.go" \
   --library-needs "none" \
-  --depends-on api-task-xxx-001 \
+  --depends-on api-feature-xxx-task-001 \
   --priority P1
 ```
 
@@ -187,6 +190,7 @@ mandor track feature api-feature-xxx  # Now shows "Login Endpoint" as ready
 
 ---
 
+
 ## Commands Reference
 
 ### Workspace Commands
@@ -196,7 +200,7 @@ mandor track feature api-feature-xxx  # Now shows "Login Endpoint" as ready
 mandor init [--workspace-name <name>] [-y]
 
 # View workspace and project status
-mandor status [--project <id>] [--json]
+mandor status [--project <id>] [--summary] [--json]
 
 # Manage configuration
 mandor config get <key>
@@ -236,6 +240,19 @@ mandor track task <task-id>
 mandor track issue <issue-id>
 ```
 
+### Session Commands
+
+```bash
+# Add a progress note (AI agents use this to track work)
+mandor session note "Completed v0.4.4 release and testing"
+
+# Read recent session notes (last 50 entries by default)
+mandor session note --read
+
+# Read more notes with offset
+mandor session note --read --offset 100
+```
+
 ### Project Commands
 
 ```bash
@@ -269,7 +286,7 @@ mandor feature update <feature-id> --project <id> [--name <text>] [--goal <goal>
 
 ```bash
 # Create a task
-mandor task create <feature-id> <name> --goal <goal> \
+mandor task create <feature_id> <name> --goal <goal> \
   --implementation-steps <steps> --test-cases <cases> \
   --derivable-files <files> --library-needs <libs> \
   [--priority <priority>] [--depends-on <ids>]
@@ -302,10 +319,12 @@ mandor issue update <issue-id> [--name <text>] [--goal <goal>] [--priority <prio
 
 ```bash
 # AI-assisted documentation generation
-mandor ai --help
+mandor ai agents
+mandor ai claude
 ```
 
 ---
+
 
 ## Common Workflows
 
@@ -330,7 +349,7 @@ mandor feature create "Authentication" --project api \
   --scope backend
 
 # Create tasks with explicit dependencies
-mandor task create auth-feature-id "JWT Parser" \
+mandor task create api-feature-xxx "JWT Parser" \
   --goal "Validate JWT tokens..." \
   --implementation-steps "Step 1|Step 2" \
   --test-cases "Test invalid tokens|Test expired" \
@@ -338,14 +357,14 @@ mandor task create auth-feature-id "JWT Parser" \
   --library-needs "jsonwebtoken" \
   --priority P1
 
-mandor task create auth-feature-id "Login Endpoint" \
+mandor task create api-feature-xxx "Login Endpoint" \
   --goal "Accept credentials and return JWT..." \
-  --depends-on jwt-parser-task-id \
+  --depends-on api-feature-xxx-task-001 \
   --priority P1
 
 # Real-time progress queries
-mandor track feature auth-feature-id                 # See all tasks and status
-mandor track task jwt-parser-task-id                 # See specific task details
+mandor track feature api-feature-xxx                 # See all tasks and status
+mandor track task api-feature-xxx-task-001          # See specific task details
 ```
 
 **Benefits:**
@@ -369,48 +388,49 @@ mandor status --project api
 mandor track project api
 
 # Create tasks with dependencies
-mandor task create feature-id "Step 2" \
+mandor task create api-feature-xxx "Task" \
   --goal "..." \
   --implementation-steps "..." \
   --test-cases "..." \
   --derivable-files "..." \
   --library-needs "..." \
-  --depends-on task-id-1|task-id-2
+  --depends-on api-feature-xxx-task-001
 
 # See all feature tasks with status
-mandor track feature feature-id
+mandor track feature api-feature-xxx
 
 # Mark as done (auto-unblocks dependents)
-mandor task update task-id --status done
+mandor task update api-feature-xxx-task-001 --status done
 
 # Verify dependents auto-transitioned to ready
-mandor track feature feature-id
+mandor track feature api-feature-xxx
 ```
 
 ### Issue Tracking
 
 ```bash
 # Create a bug issue
-mandor issue create "Fix memory leak in auth" \
+mandor issue create "Memory leak in auth handler" \
   --project api \
   --type bug \
   --priority P0 \
-  --goal "Goroutine leak in token refresh handler..." \
+  --goal "Goroutine not cleaned up in token refresh handler..." \
   --affected-files "src/handlers/auth.go|src/middleware/auth.go" \
   --affected-tests "src/handlers/auth_test.go" \
-  --implementation-steps "Identify leak|Add cleanup|Test|Verify"
+  --implementation-steps "Identify|Fix|Add tests|Verify" \
+  --library-needs "none"
 
 # View issue details
-mandor issue detail issue-id --project api
+mandor issue detail api-issue-abc123
 
 # Start working on an issue
-mandor issue update issue-id --start
+mandor issue update api-issue-abc123 --start
 
 # Mark as resolved
-mandor issue update issue-id --resolve
+mandor issue update api-issue-abc123 --resolve
 
 # Mark as won't fix with reason
-mandor issue update issue-id --wontfix --reason "Working as intended"
+mandor issue update api-issue-abc123 --wontfix --reason "Working as intended"
 
 # See project issues with track
 mandor track project api
@@ -437,6 +457,7 @@ mandor config reset default_priority
 
 ---
 
+
 ## Best Practices
 
 ### 1. Use Meaningful IDs
@@ -456,7 +477,7 @@ mandor project create p1
 mandor feature create f123
 ```
 
-### 2. Write Clear Goals
+### 2. Write Clear Goals (min char requirement enforced)
 
 Goals should include:
 - What is being built/fixed
@@ -489,7 +510,13 @@ Deep dependency chains (>5 levels) are hard to manage. Consider breaking into sm
 
 ```bash
 # Good: tasks depend on other tasks in same feature
-mandor task create "Task B" --feature feature-id --depends-on task-a-id
+mandor task create api-feature-xxx "Task B" \
+  --goal "..." \
+  --implementation-steps "..." \
+  --test-cases "..." \
+  --derivable-files "..." \
+  --library-needs "none" \
+  --depends-on api-feature-xxx-task-001
 
 # Consider splitting if: task chains exceed 5 levels
 ```
@@ -501,7 +528,12 @@ mandor task create "Task B" --feature feature-id --depends-on task-a-id
 
 ```bash
 # Feature work
-mandor task create "Add OAuth2" --feature api-auth
+mandor task create api-feature-xxx "Add OAuth2" \
+  --goal "..." \
+  --implementation-steps "..." \
+  --test-cases "..." \
+  --derivable-files "..." \
+  --library-needs "..."
 
 # Bug fix
 mandor issue create "Fix auth timeout" --project api --type bug
@@ -512,11 +544,11 @@ mandor issue create "Fix auth timeout" --project api --type bug
 Always provide clear reasons when cancelling:
 
 ```bash
-mandor task update task-id --cancel --reason "Superseded by feature X"
-mandor feature update feature-id --project api --cancel --reason "Sticking with JWT, OAuth2 adds too much complexity"
+mandor task update api-feature-xxx-task-001 --cancel --reason "Superseded by feature X"
+mandor feature update api-feature-xxx --project api --cancel --reason "Sticking with JWT, OAuth2 adds too much complexity"
 ```
 
-### 7. Use Pipe-Separated Lists
+### 7. Use Pipe Separators For Lists
 
 For flags accepting multiple values, use pipe separators:
 
@@ -531,16 +563,22 @@ For flags accepting multiple values, use pipe separators:
 --depends-on task-1|task-2|task-3
 ```
 
-### 8. Use --dry-run to Preview Changes
+### 8. Use --dry-run Before Major Changes
 
 Before making significant updates, preview with `--dry-run`:
 
 ```bash
-mandor task update task-id --status done --cancel --dry-run
-mandor feature update feature-id --project api --cancel --reason "..." --dry-run
+mandor task update api-feature-xxx-task-001 --status done --dry-run
+mandor feature update api-feature-xxx --project api --cancel --reason "..." --dry-run
 ```
 
-### 9. Set Configuration Early
+### 9. Dependency Auto-Resolution
+
+- Mark task done → dependents auto-transition to ready
+- Mark issue resolved → dependents auto-transition to ready
+- Manual block → must manually unblock
+
+### 10. Configure Early, Rarely Change
 
 Configure workspace defaults at the start:
 
@@ -550,7 +588,7 @@ mandor config set default_priority P2
 mandor config set strict_mode true
 ```
 
-### 10. Review Status Regularly
+### 11. Review Status Regularly
 
 ```bash
 # Workspace overview
@@ -563,13 +601,14 @@ mandor status --project api
 mandor track project api
 
 # See feature tasks
-mandor track feature feature-id
+mandor track feature api-feature-xxx
 
 # See task details
-mandor track task task-id
+mandor track task api-feature-xxx-task-001
 ```
 
 ---
+
 
 ## Troubleshooting
 
@@ -625,10 +664,11 @@ The transition isn't allowed by the state machine:
 Reopen the feature first:
 
 ```bash
-mandor feature update <id> --project <pid> --reopen
+mandor feature update <feature-id> --project <project-id> --reopen
 ```
 
 ---
+
 
 ## Configuration Keys
 
@@ -636,8 +676,13 @@ mandor feature update <id> --project <pid> --reopen
 |-----|------|---------|-------------|
 | `default_priority` | string | P3 | Default priority for new entities (P0-P5) |
 | `strict_mode` | boolean | false | Enable strict dependency validation |
+| `goal.lengths.project` | integer | 500 | Min chars for project goal |
+| `goal.lengths.feature` | integer | 300 | Min chars for feature goal |
+| `goal.lengths.task` | integer | 500 | Min chars for task goal |
+| `goal.lengths.issue` | integer | 200 | Min chars for issue goal |
 
 ---
+
 
 ## File Structure
 
@@ -645,6 +690,7 @@ mandor feature update <id> --project <pid> --reopen
 .mandor/
 ├── workspace.json          # Workspace metadata
 ├── config.json             # Workspace configuration
+├── session-notes.jsonl     # AI agent session progress notes (NDJSON)
 └── projects/
     └── <project-id>/
         ├── project.json    # Project metadata
@@ -653,7 +699,14 @@ mandor feature update <id> --project <pid> --reopen
         └── issues.jsonl    # Issue records
 ```
 
+**Session Notes Format (session-notes.jsonl):**
+```json
+{"timestamp":"2026-02-04T12:45:00Z","note":"Completed v0.4.4 release and testing"}
+{"timestamp":"2026-02-04T14:20:00Z","note":"Started performance optimization - blocked on benchmarks"}
+```
+
 ---
+
 
 ## Support
 
@@ -662,5 +715,6 @@ mandor feature update <id> --project <pid> --reopen
 - Repository: https://github.com/sanxzy/mandor
 
 ---
+
 
 **Built for AI Agent Workflows**

@@ -127,7 +127,7 @@ func TestFeatureValidateCreateInput_Valid(t *testing.T) {
 	input := &domain.FeatureCreateInput{
 		ProjectID: "testproject",
 		Name:      "Test Feature",
-		Goal:      "Test goal for feature",
+		Goal:      string(make([]byte, 301)),
 		Scope:     "fullstack",
 		Priority:  "P3",
 		DependsOn: nil,

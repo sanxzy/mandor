@@ -160,7 +160,7 @@ func TestTaskValidateCreateInput_Valid(t *testing.T) {
 	input := &domain.TaskCreateInput{
 		FeatureID:           "testproject-feature-abc",
 		Name:                "Test Task",
-		Goal:                "This is a test task goal for validation",
+		Goal:                string(make([]byte, 501)),
 		ImplementationSteps: []string{"step1", "step2"},
 		TestCases:           []string{"test1", "test2"},
 		DerivableFiles:      []string{"file1", "file2"},

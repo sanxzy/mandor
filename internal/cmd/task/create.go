@@ -45,10 +45,6 @@ func NewCreateCmd() *cobra.Command {
 				return domain.NewValidationError("Task goal is required (--goal).")
 			}
 
-			if len(createGoal) < 500 {
-				return domain.NewValidationError("Goal must be at least 500 characters.")
-			}
-
 			implSteps := splitByPipe(createImplSteps)
 			if len(implSteps) == 0 || (len(implSteps) == 1 && implSteps[0] == "") {
 				return domain.NewValidationError("Implementation steps are required (--implementation-steps).")

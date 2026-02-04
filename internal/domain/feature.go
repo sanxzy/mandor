@@ -1,10 +1,6 @@
 package domain
 
-import (
-	"time"
-
-	"mandor/internal/util"
-)
+import "time"
 
 const (
 	FeatureStatusDraft     = "draft"
@@ -14,10 +10,7 @@ const (
 	FeatureStatusCancelled = "cancelled"
 )
 
-const (
-	FeatureGoalMinLength            = 300
-	FeatureGoalMinLengthDevelopment = 2
-)
+const FeatureGoalMinLength = 300
 
 type Feature struct {
 	ID        string    `json:"id"`
@@ -139,10 +132,6 @@ func ValidateFeatureStatus(status string) bool {
 	return false
 }
 
-func ValidateFeatureGoalLength(goal string) bool {
-	minLength := FeatureGoalMinLength
-	if util.IsDevelopment() {
-		minLength = FeatureGoalMinLengthDevelopment
-	}
+func ValidateFeatureGoalLength(goal string, minLength int) bool {
 	return len(goal) >= minLength
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	"mandor/internal/domain"
 	"mandor/internal/service"
-	"mandor/internal/util"
 )
 
 var (
@@ -65,11 +64,8 @@ func NewCreateCmd() *cobra.Command {
 				return domain.NewValidationError("Project goal is required.")
 			}
 
-			if !domain.ValidateGoalLength(goal) {
-				minLen := domain.GoalMinLength
-				if util.IsDevelopment() {
-					minLen = domain.GoalMinLengthDevelopment
-				}
+			minLen := svc.GetProjectGoalMinLength()
+			if !domain.ValidateGoalLength(goal, minLen) {
 				return domain.NewValidationError(fmt.Sprintf("Project goal must be at least %d characters. Current length: %d characters.", minLen, len(goal)))
 			}
 

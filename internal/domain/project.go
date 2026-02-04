@@ -3,8 +3,6 @@ package domain
 import (
 	"strings"
 	"time"
-
-	"mandor/internal/util"
 )
 
 const (
@@ -25,10 +23,7 @@ const (
 	CycleAllowed    = "allowed"
 )
 
-const (
-	GoalMinLength            = 500
-	GoalMinLengthDevelopment = 2
-)
+const GoalMinLength = 500
 
 type Project struct {
 	ID        string    `json:"id"`
@@ -42,11 +37,7 @@ type Project struct {
 	UpdatedBy string    `json:"updated_by"`
 }
 
-func ValidateGoalLength(goal string) bool {
-	minLength := GoalMinLength
-	if util.IsDevelopment() {
-		minLength = GoalMinLengthDevelopment
-	}
+func ValidateGoalLength(goal string, minLength int) bool {
 	return len(goal) >= minLength
 }
 

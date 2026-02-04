@@ -1,10 +1,6 @@
 package domain
 
-import (
-	"time"
-
-	"mandor/internal/util"
-)
+import "time"
 
 const (
 	IssueStatusOpen       = "open"
@@ -24,10 +20,7 @@ const (
 	IssueTypePerformance = "performance"
 )
 
-const (
-	IssueGoalMinLength            = 200
-	IssueGoalMinLengthDevelopment = 2
-)
+const IssueGoalMinLength = 200
 
 type Issue struct {
 	ID                  string    `json:"id"`
@@ -181,11 +174,7 @@ func ValidateIssueType(issueType string) bool {
 	return false
 }
 
-func ValidateIssueGoalLength(goal string) bool {
-	minLength := IssueGoalMinLength
-	if util.IsDevelopment() {
-		minLength = IssueGoalMinLengthDevelopment
-	}
+func ValidateIssueGoalLength(goal string, minLength int) bool {
 	return len(goal) >= minLength
 }
 

@@ -10,6 +10,7 @@ import (
 	"mandor/internal/cmd/issue"
 	"mandor/internal/cmd/populate"
 	"mandor/internal/cmd/project"
+	"mandor/internal/cmd/session"
 	"mandor/internal/cmd/task"
 	"mandor/internal/cmd/track"
 	"mandor/internal/cmd/workspace"
@@ -61,6 +62,9 @@ For more information, visit: https://github.com/budisantoso/mandor`,
 
 	// Add summary command
 	rootCmd.AddCommand(NewSummaryCmd())
+
+	// Add session command
+	rootCmd.AddCommand(session.NewSessionCmd())
 
 	return rootCmd
 }
