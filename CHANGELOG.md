@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.5] - 2026-02-04
+
+### Added
+- New `mandor session note` command for AI agent session progress tracking
+- Session notes stored in `.mandor/session-notes.jsonl` (NDJSON format)
+- Support for reading last 50 notes with `--read` flag
+- Support for custom note count with `--offset` flag
+- Section 9 in `mandor populate` for Session Management documentation
+- Updated AGENTS.md generation to focus on three essential commands: populate, track, session note
+- Session continuity guidance for AI agents in generated AGENTS.md
+
+### Changed
+- `mandor populate` output reorganized with numbered sections (1-11)
+- README updated with Session Commands section
+- File structure documentation updated to include session-notes.jsonl
+- AGENTS.md generation now provides minimal, focused guidance on core three commands
+
+### Fixed
+- Session note command properly handles empty file creation
+- Timestamp formatting uses ISO 8601 with UTC timezone
+
 ## [0.4.4] - 2026-02-04
 
 ### Added
