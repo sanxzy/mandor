@@ -148,7 +148,7 @@ mandor feature create "Authentication" --project api \
 
 ```bash
 # Create first task (no dependencies)
-mandor task create api-feature-xxx "JWT Parser" \
+mandor task create api-feature-xxxx "JWT Parser" \
   --goal "Parse and validate JWT tokens in incoming requests with expiry and signature verification" \
   --implementation-steps "Setup crypto library|Add token validation|Handle expiry|Return errors" \
   --test-cases "Valid token accepted|Expired token rejected|Invalid signature rejected" \
@@ -156,11 +156,11 @@ mandor task create api-feature-xxx "JWT Parser" \
   --priority P1
 
 # Create dependent task (depends on JWT Parser)
-mandor task create api-feature-xxx "Login Endpoint" \
+mandor task create api-feature-xxxx "Login Endpoint" \
   --goal "Accept user credentials and return JWT token with refresh token flow" \
   --implementation-steps "Setup endpoint|Validate credentials|Generate JWT|Return tokens" \
   --test-cases "Valid creds return token|Invalid creds rejected|Tokens properly formatted" \
-  --depends-on api-feature-xxx-task-001 \
+  --depends-on api-feature-xxxx-task-xxxx \
   --priority P1
 ```
 
@@ -168,7 +168,7 @@ mandor task create api-feature-xxx "Login Endpoint" \
 
 ```bash
 # See all tasks in feature with visualization
-mandor track feature api-feature-xxx
+mandor track feature api-feature-xxxx
 
 # Get task details
 mandor task detail <task-id>
@@ -182,7 +182,7 @@ mandor task update <task-id> --status in_progress
 mandor task update <task-id> --status done
 
 # Dependent tasks auto-transition to "ready"
-mandor track feature api-feature-xxx  # Now shows "Login Endpoint" as ready
+mandor track feature api-feature-xxxx  # Now shows "Login Endpoint" as ready
 ```
 
 ---
@@ -507,11 +507,11 @@ Deep dependency chains (>5 levels) are hard to manage. Consider breaking into sm
 
 ```bash
 # Good: tasks depend on other tasks in same feature
-mandor task create api-feature-xxx "Task B" \
+mandor task create api-feature-xxxx "Task B" \
   --goal "..." \
   --implementation-steps "..." \
   --test-cases "..." \
-  --depends-on api-feature-xxx-task-001
+  --depends-on api-feature-xxxx-task-xxxx
 
 # Consider splitting if: task chains exceed 5 levels
 ```
@@ -523,7 +523,7 @@ mandor task create api-feature-xxx "Task B" \
 
 ```bash
 # Feature work
-mandor task create api-feature-xxx "Add OAuth2" \
+mandor task create api-feature-xxxx "Add OAuth2" \
   --goal "..." \
   --implementation-steps "..." \
   --test-cases "..." \
@@ -538,8 +538,8 @@ mandor issue create "Fix auth timeout" --project api --type bug
 Always provide clear reasons when cancelling:
 
 ```bash
-mandor task update api-feature-xxx-task-001 --cancel --reason "Superseded by feature X"
-mandor feature update api-feature-xxx --project api --cancel --reason "Sticking with JWT, OAuth2 adds too much complexity"
+mandor task update api-feature-xxxx-task-xxxx --cancel --reason "Superseded by feature X"
+mandor feature update api-feature-xxxx --project api --cancel --reason "Sticking with JWT, OAuth2 adds too much complexity"
 ```
 
 ### 7. Use Pipe Separators For Lists
@@ -562,8 +562,8 @@ For flags accepting multiple values, use pipe separators:
 Before making significant updates, preview with `--dry-run`:
 
 ```bash
-mandor task update api-feature-xxx-task-001 --status done --dry-run
-mandor feature update api-feature-xxx --project api --cancel --reason "..." --dry-run
+mandor task update api-feature-xxxx-task-xxxx --status done --dry-run
+mandor feature update api-feature-xxxx --project api --cancel --reason "..." --dry-run
 ```
 
 ### 9. Dependency Auto-Resolution
@@ -595,10 +595,10 @@ mandor status --project api
 mandor track project api
 
 # See feature tasks
-mandor track feature api-feature-xxx
+mandor track feature api-feature-xxxx
 
 # See task details
-mandor track task api-feature-xxx-task-001
+mandor track task api-feature-xxxx-task-xxxx
 ```
 
 ---
