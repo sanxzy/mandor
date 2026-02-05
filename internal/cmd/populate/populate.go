@@ -58,13 +58,10 @@ NEW APPROACH:
   mandor task create api-feature-xxx "Task A" --goal "..." \
     --implementation-steps "Step 1|Step 2" \
     --test-cases "Test A|Test B" \
-    --derivable-files "file1.go|file2.go" \
-    --library-needs "none"
+    --library-needs "golang-jwt"
   mandor task create api-feature-xxx "Task B" --goal "..." \
     --implementation-steps "Step 1|Step 2" \
     --test-cases "Test A|Test B" \
-    --derivable-files "file1.go|file2.go" \
-    --library-needs "none" \
     --depends-on api-feature-xxx-task-001
   
   mandor track feature api-feature-xxx    # Always current
@@ -329,9 +326,7 @@ ISSUE STATUS FLOW:
 
 ▶ mandor task create <feature_id> <name> --goal <text> \
                      --implementation-steps <steps> \
-                     --test-cases <cases> \
-                     --derivable-files <files> \
-                     --library-needs <libs> [FLAGS]
+                     --test-cases <cases> [FLAGS]
   Create task in feature
   
   Required:
@@ -340,10 +335,9 @@ ISSUE STATUS FLOW:
     --goal <text>               Goal (min 500 chars)
     --implementation-steps      Pipe-separated steps
     --test-cases                Pipe-separated test cases
-    --derivable-files           Pipe-separated files to create
-    --library-needs             Pipe-separated libraries (or "none")
   
   Optional:
+    --library-needs <libs>      Pipe-separated libraries (optional, use "none" if not needed)
     --priority <P0-P5>          Priority (default: from config)
     --depends-on <ids>          Pipe-separated task IDs
     -y, --yes                   Skip confirmation
@@ -353,7 +347,6 @@ ISSUE STATUS FLOW:
       --goal "Parse and validate JWT tokens in requests" \
       --implementation-steps "Setup crypto|Add validation|Handle expiry" \
       --test-cases "Valid accepted|Expired rejected|Invalid rejected" \
-      --derivable-files "jwt_validator.go|jwt_test.go" \
       --library-needs "golang-jwt"
 
 ▶ mandor task detail <id> [FLAGS]
@@ -642,9 +635,7 @@ SETUP NEW PROJECT:
   3. mandor feature create "Authentication" --project api --goal "..."
   4. mandor task create api-feature-xxx "Task" --goal "..." \
        --implementation-steps "Step 1|Step 2" \
-       --test-cases "Test A|Test B" \
-       --derivable-files "file.go" \
-       --library-needs "none"
+       --test-cases "Test A|Test B"
 
 TRACK PROGRESS:
   1. mandor track                              # Workspace overview
@@ -662,14 +653,10 @@ MANAGE BLOCKERS:
 CREATE DEPENDENT TASK:
   1. mandor task create api-feature-xxx "Task A" --goal "..." \
        --implementation-steps "Step 1|Step 2" \
-       --test-cases "Test A|Test B" \
-       --derivable-files "file.go" \
-       --library-needs "none"
+       --test-cases "Test A|Test B"
   2. mandor task create api-feature-xxx "Task B" --goal "..." \
        --implementation-steps "Step 1|Step 2" \
        --test-cases "Test A|Test B" \
-       --derivable-files "file.go" \
-       --library-needs "none" \
        --depends-on api-feature-xxx-task-001
   3. Task B auto-transitions to ready when Task A is done
 
