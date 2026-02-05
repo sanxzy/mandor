@@ -16,7 +16,6 @@ var (
 	updatePriority      string
 	updateImplSteps     string
 	updateTestCases     string
-	updateDerivable     string
 	updateLibraries     string
 	updateStatus        string
 	updateReason        string
@@ -32,7 +31,7 @@ var (
 
 func NewUpdateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "update <task_id> [--name] [--priority] [--goal] [--implementation-steps] [--test-cases] [--derivable-files] [--library-needs] [--status <ready|in_progress|done>] [--cancel --reason] [--reopen] [--depends <ids>]",
+		Use:   "update <task_id> [--name] [--priority] [--goal] [--implementation-steps] [--test-cases] [--library-needs] [--status <ready|in_progress|done>] [--cancel --reason] [--reopen] [--depends <ids>]",
 		Short: "Update a task",
 		Long:  "Update task properties, change status, cancel, or reopen.",
 		Args:  cobra.ExactArgs(1),
@@ -49,7 +48,7 @@ func NewUpdateCmd() *cobra.Command {
 			taskID := args[0]
 
 			var namePtr, goalPtr, priorityPtr, statusPtr, reasonPtr *string
-			var implStepsPtr, testCasesPtr, derivablePtr, librariesPtr *[]string
+			var implStepsPtr, testCasesPtr, librariesPtr *[]string
 			var dependsOnPtr, dependsAddPtr, dependsRemovePtr *[]string
 
 			if updateName != "" {
@@ -82,10 +81,6 @@ func NewUpdateCmd() *cobra.Command {
 				cases := splitByPipe(updateTestCases)
 				testCasesPtr = &cases
 			}
-			if updateDerivable != "" {
-				files := splitByPipe(updateDerivable)
-				derivablePtr = &files
-			}
 			if updateLibraries != "" {
 				libs := splitByPipe(updateLibraries)
 				librariesPtr = &libs
@@ -111,7 +106,6 @@ func NewUpdateCmd() *cobra.Command {
 				Priority:            priorityPtr,
 				ImplementationSteps: implStepsPtr,
 				TestCases:           testCasesPtr,
-				DerivableFiles:      derivablePtr,
 				LibraryNeeds:        librariesPtr,
 				Status:              statusPtr,
 				Reason:              reasonPtr,
@@ -176,10 +170,6 @@ func NewUpdateCmd() *cobra.Command {
 					for i, tc := range detailOutput.TestCases {
 						fmt.Fprintf(out, "    %d. %s\n", i+1, tc)
 					}
-					fmt.Fprintf(out, "  Derivable Files (%d):\n", len(detailOutput.DerivableFiles))
-					for _, f := range detailOutput.DerivableFiles {
-						fmt.Fprintf(out, "    - %s\n", f)
-					}
 					fmt.Fprintf(out, "  Library Needs (%d):\n", len(detailOutput.LibraryNeeds))
 					for _, lib := range detailOutput.LibraryNeeds {
 						fmt.Fprintf(out, "    - %s\n", lib)
@@ -213,7 +203,6 @@ func NewUpdateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&updatePriority, "priority", "", "New priority (P0-P5)")
 	cmd.Flags().StringVar(&updateImplSteps, "implementation-steps", "", "Update implementation steps (pipe-separated)")
 	cmd.Flags().StringVar(&updateTestCases, "test-cases", "", "Update test cases (pipe-separated)")
-	cmd.Flags().StringVar(&updateDerivable, "derivable-files", "", "Update derivable files (pipe-separated)")
 	cmd.Flags().StringVar(&updateLibraries, "library-needs", "", "Update library needs (pipe-separated)")
 	cmd.Flags().StringVar(&updateStatus, "status", "", "New status (ready, in_progress, done)")
 	cmd.Flags().StringVar(&updateReason, "reason", "", "Cancellation reason (required with --cancel)")

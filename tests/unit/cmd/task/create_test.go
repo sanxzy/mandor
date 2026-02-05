@@ -117,7 +117,7 @@ func TestTaskCreateCmd_NotInitialized(t *testing.T) {
 	os.Chdir(tmpDir)
 
 	cmd := task.NewCreateCmd()
-	cmd.SetArgs([]string{"Test Task", "--feature", "testproject-feature-abc", "--goal", "Test goal", "--implementation-steps", "step1,step2", "--test-cases", "test1,test2", "--derivable-files", "file1,file2", "--library-needs", "lib1,lib2"})
+	cmd.SetArgs([]string{"Test Task", "--feature", "testproject-feature-abc", "--goal", "Test goal", "--implementation-steps", "step1,step2", "--test-cases", "test1,test2", "--library-needs", "lib1,lib2"})
 
 	err = cmd.Execute()
 	if err == nil {
@@ -156,7 +156,7 @@ func TestTaskCreateCmd_MissingGoal(t *testing.T) {
 	os.Chdir(tmpDir)
 
 	cmd := task.NewCreateCmd()
-	cmd.SetArgs([]string{"Test Task", "--feature", "testproject-feature-abc", "--implementation-steps", "step1,step2", "--test-cases", "test1,test2", "--derivable-files", "file1,file2", "--library-needs", "lib1,lib2"})
+	cmd.SetArgs([]string{"Test Task", "--feature", "testproject-feature-abc", "--implementation-steps", "step1,step2", "--test-cases", "test1,test2", "--library-needs", "lib1,lib2"})
 
 	err := cmd.Execute()
 	if err == nil {
@@ -171,7 +171,7 @@ func TestTaskCreateCmd_MissingImplSteps(t *testing.T) {
 	os.Chdir(tmpDir)
 
 	cmd := task.NewCreateCmd()
-	cmd.SetArgs([]string{"Test Task", "--feature", "testproject-feature-abc", "--goal", "Test goal", "--test-cases", "test1,test2", "--derivable-files", "file1,file2", "--library-needs", "lib1,lib2"})
+	cmd.SetArgs([]string{"Test Task", "--feature", "testproject-feature-abc", "--goal", "Test goal", "--test-cases", "test1,test2", "--library-needs", "lib1,lib2"})
 
 	err := cmd.Execute()
 	if err == nil {
@@ -188,7 +188,7 @@ func TestTaskCreateCmd_InvalidPriority(t *testing.T) {
 	writeTestFeatureForTaskCmd(t, tmpDir, "testproject", "testproject-feature-abc", domain.FeatureStatusActive)
 
 	cmd := task.NewCreateCmd()
-	cmd.SetArgs([]string{"Test Task", "--feature", "testproject-feature-abc", "--goal", "Test goal", "--implementation-steps", "step1", "--test-cases", "test1", "--derivable-files", "file1", "--library-needs", "lib1", "--priority", "P6"})
+	cmd.SetArgs([]string{"Test Task", "--feature", "testproject-feature-abc", "--goal", "Test goal", "--implementation-steps", "step1", "--test-cases", "test1", "--library-needs", "lib1", "--priority", "P6"})
 
 	err := cmd.Execute()
 	if err == nil {
@@ -211,7 +211,6 @@ func TestTaskCreateCmd_Success(t *testing.T) {
 		"--goal", "This is a test task goal",
 		"--implementation-steps", "step1,step2",
 		"--test-cases", "test1,test2",
-		"--derivable-files", "file1,file2",
 		"--library-needs", "lib1,lib2",
 	})
 

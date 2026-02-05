@@ -72,10 +72,6 @@ func NewDetailCmd() *cobra.Command {
 			for i, tc := range output.TestCases {
 				fmt.Fprintf(out, "    %d. %s\n", i+1, tc)
 			}
-			fmt.Fprintf(out, "  Derivable Files (%d):\n", len(output.DerivableFiles))
-			for _, f := range output.DerivableFiles {
-				fmt.Fprintf(out, "    - %s\n", f)
-			}
 			fmt.Fprintf(out, "  Library Needs (%d):\n", len(output.LibraryNeeds))
 			for _, lib := range output.LibraryNeeds {
 				fmt.Fprintf(out, "    - %s\n", lib)

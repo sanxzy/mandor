@@ -124,10 +124,6 @@ func (s *TaskService) ValidateCreateInput(input *domain.TaskCreateInput) error {
 		return domain.NewValidationError("Test cases are required (--test-cases).")
 	}
 
-	if len(input.DerivableFiles) == 0 {
-		return domain.NewValidationError("Derivable files are required (--derivable-files).")
-	}
-
 	if len(input.LibraryNeeds) == 0 {
 		return domain.NewValidationError("Library needs are required (--library-needs).")
 	}
@@ -286,7 +282,6 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 		DependsOn:           input.DependsOn,
 		ImplementationSteps: input.ImplementationSteps,
 		TestCases:           input.TestCases,
-		DerivableFiles:      input.DerivableFiles,
 		LibraryNeeds:        input.LibraryNeeds,
 		CreatedAt:           now,
 		UpdatedAt:           now,
@@ -503,7 +498,6 @@ func (s *TaskService) GetTaskDetail(input *domain.TaskDetailInput) (*domain.Task
 		Reason:              task.Reason,
 		ImplementationSteps: task.ImplementationSteps,
 		TestCases:           task.TestCases,
-		DerivableFiles:      task.DerivableFiles,
 		LibraryNeeds:        task.LibraryNeeds,
 		Events:              0,
 		CreatedAt:           task.CreatedAt.Format(time.RFC3339),
@@ -654,11 +648,6 @@ func (s *TaskService) UpdateTask(input *domain.TaskUpdateInput) ([]string, error
 	if input.TestCases != nil {
 		task.TestCases = *input.TestCases
 		changes = append(changes, "test_cases")
-	}
-
-	if input.DerivableFiles != nil {
-		task.DerivableFiles = *input.DerivableFiles
-		changes = append(changes, "derivable_files")
 	}
 
 	if input.LibraryNeeds != nil {

@@ -267,7 +267,6 @@ func handleTask(cmd *cobra.Command, taskID string) error {
 				Goal:                task.Goal,
 				ImplementationSteps: task.ImplementationSteps,
 				TestCases:           task.TestCases,
-				Derivables:          task.DerivableFiles,
 				BlockedBy:           task.DependsOn,
 			},
 		},

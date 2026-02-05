@@ -25,7 +25,6 @@ type Task struct {
 	Reason              string    `json:"reason,omitempty"`
 	ImplementationSteps []string  `json:"implementation_steps,omitempty"`
 	TestCases           []string  `json:"test_cases,omitempty"`
-	DerivableFiles      []string  `json:"derivable_files,omitempty"`
 	LibraryNeeds        []string  `json:"library_needs,omitempty"`
 	CreatedAt           time.Time `json:"created_at"`
 	UpdatedAt           time.Time `json:"updated_at"`
@@ -39,7 +38,6 @@ type TaskCreateInput struct {
 	Goal                string
 	ImplementationSteps []string
 	TestCases           []string
-	DerivableFiles      []string
 	LibraryNeeds        []string
 	Priority            string
 	DependsOn           []string
@@ -74,7 +72,6 @@ type TaskUpdateInput struct {
 	Priority            *string
 	ImplementationSteps *[]string
 	TestCases           *[]string
-	DerivableFiles      *[]string
 	LibraryNeeds        *[]string
 	Status              *string
 	Reason              *string
@@ -117,7 +114,6 @@ type TaskDetailOutput struct {
 	Reason              string   `json:"reason,omitempty"`
 	ImplementationSteps []string `json:"implementation_steps"`
 	TestCases           []string `json:"test_cases"`
-	DerivableFiles      []string `json:"derivable_files"`
 	LibraryNeeds        []string `json:"library_needs"`
 	Events              int      `json:"events"`
 	CreatedAt           string   `json:"created_at"`

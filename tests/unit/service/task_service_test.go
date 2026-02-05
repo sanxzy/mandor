@@ -128,7 +128,6 @@ func writeTestTask(t *testing.T, tmpDir, projectID, taskID string, status string
 		DependsOn:           dependsOn,
 		ImplementationSteps: []string{"step1", "step2"},
 		TestCases:           []string{"test1", "test2"},
-		DerivableFiles:      []string{"file1"},
 		LibraryNeeds:        []string{"lib1"},
 		CreatedAt:           time.Now().UTC(),
 		UpdatedAt:           time.Now().UTC(),
@@ -163,7 +162,6 @@ func TestTaskValidateCreateInput_Valid(t *testing.T) {
 		Goal:                string(make([]byte, 501)),
 		ImplementationSteps: []string{"step1", "step2"},
 		TestCases:           []string{"test1", "test2"},
-		DerivableFiles:      []string{"file1", "file2"},
 		LibraryNeeds:        []string{"lib1", "lib2"},
 		Priority:            "P3",
 	}
@@ -183,7 +181,6 @@ func TestTaskValidateCreateInput_MissingFeature(t *testing.T) {
 		Goal:                "Test goal",
 		ImplementationSteps: []string{"step1"},
 		TestCases:           []string{"test1"},
-		DerivableFiles:      []string{"file1"},
 		LibraryNeeds:        []string{"lib1"},
 	}
 
@@ -206,7 +203,6 @@ func TestTaskValidateCreateInput_MissingName(t *testing.T) {
 		Goal:                "Test goal",
 		ImplementationSteps: []string{"step1"},
 		TestCases:           []string{"test1"},
-		DerivableFiles:      []string{"file1"},
 		LibraryNeeds:        []string{"lib1"},
 	}
 
@@ -238,7 +234,6 @@ func TestTaskValidateCreateInput_MissingGoal(t *testing.T) {
 		Goal:                "",
 		ImplementationSteps: []string{"step1"},
 		TestCases:           []string{"test1"},
-		DerivableFiles:      []string{"file1"},
 		LibraryNeeds:        []string{"lib1"},
 	}
 
@@ -261,7 +256,6 @@ func TestTaskValidateCreateInput_MissingImplSteps(t *testing.T) {
 		Goal:                "Test goal",
 		ImplementationSteps: []string{},
 		TestCases:           []string{"test1"},
-		DerivableFiles:      []string{"file1"},
 		LibraryNeeds:        []string{"lib1"},
 	}
 
@@ -284,7 +278,6 @@ func TestTaskValidateCreateInput_InvalidPriority(t *testing.T) {
 		Goal:                "Test goal",
 		ImplementationSteps: []string{"step1"},
 		TestCases:           []string{"test1"},
-		DerivableFiles:      []string{"file1"},
 		LibraryNeeds:        []string{"lib1"},
 		Priority:            "P6",
 	}
@@ -305,7 +298,6 @@ func TestTaskValidateCreateInput_ProjectNotFound(t *testing.T) {
 		Goal:                "Test goal",
 		ImplementationSteps: []string{"step1"},
 		TestCases:           []string{"test1"},
-		DerivableFiles:      []string{"file1"},
 		LibraryNeeds:        []string{"lib1"},
 	}
 
@@ -328,7 +320,6 @@ func TestTaskCreate(t *testing.T) {
 		Goal:                "This is a test task goal",
 		ImplementationSteps: []string{"step1", "step2"},
 		TestCases:           []string{"test1", "test2"},
-		DerivableFiles:      []string{"file1", "file2"},
 		LibraryNeeds:        []string{"lib1", "lib2"},
 		Priority:            "P2",
 	}
@@ -366,7 +357,6 @@ func TestTaskCreate_PendingStatus(t *testing.T) {
 		Goal:                "This task depends on another",
 		ImplementationSteps: []string{"step1"},
 		TestCases:           []string{"test1"},
-		DerivableFiles:      []string{"file1"},
 		LibraryNeeds:        []string{"lib1"},
 		DependsOn:           []string{"testproject-feature-abc-task-dep123"},
 	}

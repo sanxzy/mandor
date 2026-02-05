@@ -15,7 +15,6 @@ var (
 	createGoal      string
 	createImplSteps string
 	createTestCases string
-	createDerivable string
 	createLibraries string
 	createPriority  string
 	createDependsOn string
@@ -24,7 +23,7 @@ var (
 
 func NewCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create <feature_id> <name> --goal <text> --implementation-steps <steps> --test-cases <cases> --derivable-files <files> --library-needs <libs> [--priority <P0-P5>] [--depends-on <ids>] [-y]",
+		Use:   "create <feature_id> <name> --goal <text> --implementation-steps <steps> --test-cases <cases> --library-needs <libs> [--priority <P0-P5>] [--depends-on <ids>] [-y]",
 		Short: "Create a new task",
 		Long:  "Create a new task in the specified feature with the given details.",
 		Args:  cobra.ExactArgs(2),
@@ -55,11 +54,6 @@ func NewCreateCmd() *cobra.Command {
 				return domain.NewValidationError("Test cases are required (--test-cases).")
 			}
 
-			derivableFiles := splitByPipe(createDerivable)
-			if len(derivableFiles) == 0 || (len(derivableFiles) == 1 && derivableFiles[0] == "") {
-				return domain.NewValidationError("Derivable files are required (--derivable-files).")
-			}
-
 			if createLibraries == "" {
 				return domain.NewValidationError("Library needs are required (--library-needs).")
 			}
@@ -77,7 +71,6 @@ func NewCreateCmd() *cobra.Command {
 				Goal:                createGoal,
 				ImplementationSteps: implSteps,
 				TestCases:           testCases,
-				DerivableFiles:      derivableFiles,
 				LibraryNeeds:        libraries,
 				Priority:            createPriority,
 				DependsOn:           dependsOnList,
@@ -101,7 +94,6 @@ func NewCreateCmd() *cobra.Command {
 			fmt.Fprintf(out, "  Goal:               %s\n", truncate(task.Goal, 50))
 			fmt.Fprintf(out, "  Implementation Steps: %d\n", len(task.ImplementationSteps))
 			fmt.Fprintf(out, "  Test Cases:         %d\n", len(task.TestCases))
-			fmt.Fprintf(out, "  Derivable Files:    %d\n", len(task.DerivableFiles))
 			fmt.Fprintf(out, "  Library Needs:      %d\n", len(task.LibraryNeeds))
 			if len(task.DependsOn) > 0 {
 				fmt.Fprintf(out, "  Depends on:         %d task(s)\n", len(task.DependsOn))
@@ -121,7 +113,6 @@ func NewCreateCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&createGoal, "goal", "g", "", "Task goal (required, min 500 chars)")
 	cmd.Flags().StringVar(&createImplSteps, "implementation-steps", "", "Implementation steps (pipe-separated, required)")
 	cmd.Flags().StringVar(&createTestCases, "test-cases", "", "Test cases (pipe-separated, required)")
-	cmd.Flags().StringVar(&createDerivable, "derivable-files", "", "Derivable files (pipe-separated, required)")
 	cmd.Flags().StringVar(&createLibraries, "library-needs", "", "Required libraries (pipe-separated, required). Use \"none\" if no external libraries are needed.")
 	cmd.Flags().StringVar(&createPriority, "priority", "", "Priority (P0-P5, default from config)")
 	cmd.Flags().StringVar(&createDependsOn, "depends-on", "", "Pipe-separated task IDs this task depends on")
