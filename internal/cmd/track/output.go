@@ -67,12 +67,12 @@ func outputTable(out io.Writer, response *TrackResponse) error {
 
 func outputWorkspaceTable(out io.Writer, response *TrackResponse) error {
 	fmt.Fprintf(out, "Workspace Overview\n")
-	fmt.Fprintf(out, "%-30s %-10s %10s %10s %10s\n", "Project", "Status", "Features", "Tasks", "Issues")
-	fmt.Fprintf(out, strings.Repeat("-", 70)+"\n")
+	fmt.Fprintf(out, "%-20s %-30s %-10s %10s %10s %10s\n", "Project ID", "Project", "Status", "Features", "Tasks", "Issues")
+	fmt.Fprintf(out, strings.Repeat("-", 100)+"\n")
 
 	for _, proj := range response.Projects {
-		fmt.Fprintf(out, "%-30s %-10s %10d %10d %10d\n",
-			truncate(proj.Name, 30), proj.Status, proj.Features, proj.Tasks, proj.Issues)
+		fmt.Fprintf(out, "%-20s %-30s %-10s %10d %10d %10d\n",
+			truncate(proj.ID, 20), truncate(proj.Name, 30), proj.Status, proj.Features, proj.Tasks, proj.Issues)
 	}
 
 	fmt.Fprintf(out, "\n")
