@@ -23,7 +23,7 @@ var (
 
 func NewCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create <feature_id> <name> --goal <text> --implementation-steps <steps> --test-cases <cases> --library-needs <libs> [--priority <P0-P5>] [--depends-on <ids>] [-y]",
+		Use:   "create <feature_id> <name> --goal <text> --implementation-steps <steps> --test-cases <cases> [--library-needs <libs>] [--priority <P0-P5>] [--depends-on <ids>] [-y]",
 		Short: "Create a new task",
 		Long:  "Create a new task in the specified feature with the given details.",
 		Args:  cobra.ExactArgs(2),
@@ -52,10 +52,6 @@ func NewCreateCmd() *cobra.Command {
 			testCases := splitByPipe(createTestCases)
 			if len(testCases) == 0 || (len(testCases) == 1 && testCases[0] == "") {
 				return domain.NewValidationError("Test cases are required (--test-cases).")
-			}
-
-			if createLibraries == "" {
-				return domain.NewValidationError("Library needs are required (--library-needs).")
 			}
 
 			libraries := splitByPipe(createLibraries)
@@ -113,7 +109,7 @@ func NewCreateCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&createGoal, "goal", "g", "", "Task goal (required, min 500 chars)")
 	cmd.Flags().StringVar(&createImplSteps, "implementation-steps", "", "Implementation steps (pipe-separated, required)")
 	cmd.Flags().StringVar(&createTestCases, "test-cases", "", "Test cases (pipe-separated, required)")
-	cmd.Flags().StringVar(&createLibraries, "library-needs", "", "Required libraries (pipe-separated, required). Use \"none\" if no external libraries are needed.")
+	cmd.Flags().StringVar(&createLibraries, "library-needs", "", "Required libraries (pipe-separated, optional). Use \"none\" if no external libraries are needed.")
 	cmd.Flags().StringVar(&createPriority, "priority", "", "Priority (P0-P5, default from config)")
 	cmd.Flags().StringVar(&createDependsOn, "depends-on", "", "Pipe-separated task IDs this task depends on")
 	cmd.Flags().BoolVarP(&createYes, "yes", "y", false, "Skip confirmation prompts")

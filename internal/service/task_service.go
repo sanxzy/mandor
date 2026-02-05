@@ -124,10 +124,6 @@ func (s *TaskService) ValidateCreateInput(input *domain.TaskCreateInput) error {
 		return domain.NewValidationError("Test cases are required (--test-cases).")
 	}
 
-	if len(input.LibraryNeeds) == 0 {
-		return domain.NewValidationError("Library needs are required (--library-needs).")
-	}
-
 	// Apply default priority if not specified
 	if input.Priority == "" {
 		// Use default priority from workspace config

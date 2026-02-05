@@ -117,7 +117,7 @@ func TestTaskCreateCmd_NotInitialized(t *testing.T) {
 	os.Chdir(tmpDir)
 
 	cmd := task.NewCreateCmd()
-	cmd.SetArgs([]string{"Test Task", "--feature", "testproject-feature-abc", "--goal", "Test goal", "--implementation-steps", "step1,step2", "--test-cases", "test1,test2", "--library-needs", "lib1,lib2"})
+	cmd.SetArgs([]string{"testproject-feature-abc", "Test Task", "--goal", "Test goal", "--implementation-steps", "step1|step2", "--test-cases", "test1|test2", "--library-needs", "lib1|lib2"})
 
 	err = cmd.Execute()
 	if err == nil {
@@ -141,7 +141,7 @@ func TestTaskCreateCmd_MissingFeature(t *testing.T) {
 	os.Chdir(tmpDir)
 
 	cmd := task.NewCreateCmd()
-	cmd.SetArgs([]string{"Test Task", "--goal", "Test goal", "--implementation-steps", "step1,step2", "--test-cases", "test1,test2", "--derivable-files", "file1,file2", "--library-needs", "lib1,lib2"})
+	cmd.SetArgs([]string{"testproject-feature-abc", "Test Task", "--goal", "Test goal", "--implementation-steps", "step1|step2", "--test-cases", "test1|test2", "--library-needs", "lib1|lib2"})
 
 	err := cmd.Execute()
 	if err == nil {
@@ -156,7 +156,7 @@ func TestTaskCreateCmd_MissingGoal(t *testing.T) {
 	os.Chdir(tmpDir)
 
 	cmd := task.NewCreateCmd()
-	cmd.SetArgs([]string{"Test Task", "--feature", "testproject-feature-abc", "--implementation-steps", "step1,step2", "--test-cases", "test1,test2", "--library-needs", "lib1,lib2"})
+	cmd.SetArgs([]string{"testproject-feature-abc", "Test Task", "--implementation-steps", "step1|step2", "--test-cases", "test1|test2", "--library-needs", "lib1|lib2"})
 
 	err := cmd.Execute()
 	if err == nil {
@@ -171,7 +171,7 @@ func TestTaskCreateCmd_MissingImplSteps(t *testing.T) {
 	os.Chdir(tmpDir)
 
 	cmd := task.NewCreateCmd()
-	cmd.SetArgs([]string{"Test Task", "--feature", "testproject-feature-abc", "--goal", "Test goal", "--test-cases", "test1,test2", "--library-needs", "lib1,lib2"})
+	cmd.SetArgs([]string{"testproject-feature-abc", "Test Task", "--goal", "Test goal", "--test-cases", "test1|test2", "--library-needs", "lib1|lib2"})
 
 	err := cmd.Execute()
 	if err == nil {
@@ -187,8 +187,13 @@ func TestTaskCreateCmd_InvalidPriority(t *testing.T) {
 	writeTestProjectForTaskCmd(t, tmpDir, "testproject")
 	writeTestFeatureForTaskCmd(t, tmpDir, "testproject", "testproject-feature-abc", domain.FeatureStatusActive)
 
+	longGoal := "This is a test task goal that is long enough to meet the minimum requirement of five hundred characters. It needs to be detailed enough to explain what the task is about and what the expected outcomes should be. This is important for tracking purposes and understanding the scope of work. Add more details to make it even longer and more comprehensive."
+	for len(longGoal) < 500 {
+		longGoal += " More content to reach the 500 character minimum requirement for task goals."
+	}
+
 	cmd := task.NewCreateCmd()
-	cmd.SetArgs([]string{"Test Task", "--feature", "testproject-feature-abc", "--goal", "Test goal", "--implementation-steps", "step1", "--test-cases", "test1", "--library-needs", "lib1", "--priority", "P6"})
+	cmd.SetArgs([]string{"testproject-feature-abc", "Test Task", "--goal", longGoal, "--implementation-steps", "step1", "--test-cases", "test1", "--library-needs", "lib1", "--priority", "P6"})
 
 	err := cmd.Execute()
 	if err == nil {
@@ -204,14 +209,59 @@ func TestTaskCreateCmd_Success(t *testing.T) {
 	writeTestProjectForTaskCmd(t, tmpDir, "testproject")
 	writeTestFeatureForTaskCmd(t, tmpDir, "testproject", "testproject-feature-abc", domain.FeatureStatusActive)
 
+	longGoal := "This is a test task goal that is long enough to meet the minimum requirement of five hundred characters. It needs to be detailed enough to explain what the task is about and what the expected outcomes should be. This is important for tracking purposes and understanding the scope of work. Add more details to make it even longer and more comprehensive."
+	for len(longGoal) < 500 {
+		longGoal += " More content to reach the 500 character minimum requirement for task goals."
+	}
+
 	cmd := task.NewCreateCmd()
 	cmd.SetArgs([]string{
+		"testproject-feature-abc",
 		"New Task",
-		"--feature", "testproject-feature-abc",
-		"--goal", "This is a test task goal",
-		"--implementation-steps", "step1,step2",
-		"--test-cases", "test1,test2",
-		"--library-needs", "lib1,lib2",
+		"--goal", longGoal,
+		"--implementation-steps", "step1|step2",
+		"--test-cases", "test1|test2",
+		"--library-needs", "lib1|lib2",
+	})
+
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+
+	output := buf.String()
+	if len(output) == 0 {
+		t.Error("Expected output, got empty")
+	}
+
+	if !strings.Contains(output, "Task created:") {
+		t.Error("Expected 'Task created:' in output")
+	}
+}
+
+func TestTaskCreateCmd_WithoutLibraryNeeds(t *testing.T) {
+	tmpDir := setupTestTaskWorkspace(t)
+	defer os.RemoveAll(tmpDir)
+
+	os.Chdir(tmpDir)
+	writeTestProjectForTaskCmd(t, tmpDir, "testproject")
+	writeTestFeatureForTaskCmd(t, tmpDir, "testproject", "testproject-feature-abc", domain.FeatureStatusActive)
+
+	longGoal := "This is a test task goal that is long enough to meet the minimum requirement of five hundred characters. This task does not require specifying libraries and should work without the optional library-needs flag. It needs to be detailed enough to explain what the task is about and what the expected outcomes should be. Add more details to make it comprehensive."
+	for len(longGoal) < 500 {
+		longGoal += " More content to reach the 500 character minimum requirement for task goals."
+	}
+
+	cmd := task.NewCreateCmd()
+	cmd.SetArgs([]string{
+		"testproject-feature-abc",
+		"New Task Without Libraries",
+		"--goal", longGoal,
+		"--implementation-steps", "step1|step2",
+		"--test-cases", "test1|test2",
 	})
 
 	var buf bytes.Buffer
