@@ -152,7 +152,6 @@ mandor task create api-feature-xxx "JWT Parser" \
   --goal "Parse and validate JWT tokens in incoming requests with expiry and signature verification" \
   --implementation-steps "Setup crypto library|Add token validation|Handle expiry|Return errors" \
   --test-cases "Valid token accepted|Expired token rejected|Invalid signature rejected" \
-  --derivable-files "jwt_validator.go|jwt_test.go" \
   --library-needs "golang-jwt" \
   --priority P1
 
@@ -161,8 +160,6 @@ mandor task create api-feature-xxx "Login Endpoint" \
   --goal "Accept user credentials and return JWT token with refresh token flow" \
   --implementation-steps "Setup endpoint|Validate credentials|Generate JWT|Return tokens" \
   --test-cases "Valid creds return token|Invalid creds rejected|Tokens properly formatted" \
-  --derivable-files "login_handler.go|login_test.go" \
-  --library-needs "none" \
   --depends-on api-feature-xxx-task-001 \
   --priority P1
 ```
@@ -514,8 +511,6 @@ mandor task create api-feature-xxx "Task B" \
   --goal "..." \
   --implementation-steps "..." \
   --test-cases "..." \
-  --derivable-files "..." \
-  --library-needs "none" \
   --depends-on api-feature-xxx-task-001
 
 # Consider splitting if: task chains exceed 5 levels
@@ -532,8 +527,7 @@ mandor task create api-feature-xxx "Add OAuth2" \
   --goal "..." \
   --implementation-steps "..." \
   --test-cases "..." \
-  --derivable-files "..." \
-  --library-needs "..."
+  --library-needs "oauth2-lib"
 
 # Bug fix
 mandor issue create "Fix auth timeout" --project api --type bug
