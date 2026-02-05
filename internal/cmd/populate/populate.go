@@ -54,17 +54,17 @@ OLD APPROACH:
   Status: Last updated 3 days ago
 
 NEW APPROACH:
-  mandor feature create "Authentication" --project api --goal "..."
-  mandor task create api-feature-xxx "Task A" --goal "..." \
-    --implementation-steps "Step 1|Step 2" \
-    --test-cases "Test A|Test B" \
-    --library-needs "golang-jwt"
-  mandor task create api-feature-xxx "Task B" --goal "..." \
-    --implementation-steps "Step 1|Step 2" \
-    --test-cases "Test A|Test B" \
-    --depends-on api-feature-xxx-task-001
+   mandor feature create "Authentication" --project api --goal "..."
+   mandor task create api-feature-xxxx "Task A" --goal "..." \
+     --implementation-steps "Step 1|Step 2" \
+     --test-cases "Test A|Test B" \
+     --library-needs "golang-jwt"
+   mandor task create api-feature-xxxx "Task B" --goal "..." \
+     --implementation-steps "Step 1|Step 2" \
+     --test-cases "Test A|Test B" \
+     --depends-on api-feature-xxxx-task-xxxx
   
-  mandor track feature api-feature-xxx    # Always current
+  mandor track feature api-feature-xxxx    # Always current
 
 ════════════════════════════════════════════════════════════════════════
  TABLE OF CONTENTS
@@ -231,7 +231,7 @@ NEW APPROACH:
     --include-deleted   Include cancelled features
   
   Example:
-    mandor feature detail api-feature-xxx --project api --json
+    mandor feature detail api-feature-xxxx --project api --json
 
 ▶ mandor feature list --project <id> [FLAGS]
   List features in project
@@ -521,7 +521,7 @@ ISSUE STATUS FLOW:
     --group-by <f>  Group by status or priority
   
   Example:
-    mandor track feature api-feature-xxx --verbose
+    mandor track feature api-feature-xxxx --verbose
 
 ▶ mandor track task <id>
   Show single task details
@@ -531,7 +531,7 @@ ISSUE STATUS FLOW:
     --verbose Show all fields
   
   Example:
-    mandor track task api-feature-xxx-task-001
+    mandor track task api-feature-xxxx-task-xxxx
 
 ▶ mandor track issue <id>
   Show single issue details
@@ -630,35 +630,35 @@ ISSUE STATUS FLOW:
 ════════════════════════════════════════════════════════════════════════
 
 SETUP NEW PROJECT:
-  1. mandor init "Project" -y
-  2. mandor project create api --name "API Service" --goal "..."
-  3. mandor feature create "Authentication" --project api --goal "..."
-  4. mandor task create api-feature-xxx "Task" --goal "..." \
-       --implementation-steps "Step 1|Step 2" \
-       --test-cases "Test A|Test B"
+   1. mandor init "Project" -y
+   2. mandor project create api --name "API Service" --goal "..."
+   3. mandor feature create "Authentication" --project api --goal "..."
+   4. mandor task create api-feature-xxxx "Task" --goal "..." \
+        --implementation-steps "Step 1|Step 2" \
+        --test-cases "Test A|Test B"
 
 TRACK PROGRESS:
-  1. mandor track                              # Workspace overview
-  2. mandor track project api                  # Project issues
-  3. mandor track feature api-feature-xxx      # Feature tasks
-  4. mandor task update task-id --status in_progress
-  5. mandor task update task-id --status done  # Auto-unblocks dependents
+   1. mandor track                              # Workspace overview
+   2. mandor track project api                  # Project issues
+   3. mandor track feature api-feature-xxxx     # Feature tasks
+   4. mandor task update task-id --status in_progress
+   5. mandor task update task-id --status done  # Auto-unblocks dependents
 
 MANAGE BLOCKERS:
-  1. mandor track project api                  # See all issues
-  2. Add dependency: mandor task update id --depends-add other-id
-  3. Remove when ready: mandor task update id --depends-remove other-id
-  4. View feature: mandor track feature api-feature-xxx
+   1. mandor track project api                  # See all issues
+   2. Add dependency: mandor task update id --depends-add other-id
+   3. Remove when ready: mandor task update id --depends-remove other-id
+   4. View feature: mandor track feature api-feature-xxxx
 
 CREATE DEPENDENT TASK:
-  1. mandor task create api-feature-xxx "Task A" --goal "..." \
-       --implementation-steps "Step 1|Step 2" \
-       --test-cases "Test A|Test B"
-  2. mandor task create api-feature-xxx "Task B" --goal "..." \
-       --implementation-steps "Step 1|Step 2" \
-       --test-cases "Test A|Test B" \
-       --depends-on api-feature-xxx-task-001
-  3. Task B auto-transitions to ready when Task A is done
+   1. mandor task create api-feature-xxxx "Task A" --goal "..." \
+        --implementation-steps "Step 1|Step 2" \
+        --test-cases "Test A|Test B"
+   2. mandor task create api-feature-xxxx "Task B" --goal "..." \
+        --implementation-steps "Step 1|Step 2" \
+        --test-cases "Test A|Test B" \
+        --depends-on api-feature-xxxx-task-xxxx
+   3. Task B auto-transitions to ready when Task A is done
 
 ════════════════════════════════════════════════════════════════════════
 
