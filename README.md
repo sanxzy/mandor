@@ -346,22 +346,21 @@ mandor feature create "Authentication" --project api \
   --scope backend
 
 # Create tasks with explicit dependencies
-mandor task create api-feature-xxx "JWT Parser" \
+mandor task create api-feature-xxxx "JWT Parser" \
   --goal "Validate JWT tokens..." \
   --implementation-steps "Step 1|Step 2" \
   --test-cases "Test invalid tokens|Test expired" \
-  --derivable-files "jwt.go|jwt_test.go" \
   --library-needs "jsonwebtoken" \
   --priority P1
 
-mandor task create api-feature-xxx "Login Endpoint" \
+mandor task create api-feature-xxxx "Login Endpoint" \
   --goal "Accept credentials and return JWT..." \
-  --depends-on api-feature-xxx-task-001 \
+  --depends-on api-feature-xxxx-task-xxxx \
   --priority P1
 
 # Real-time progress queries
-mandor track feature api-feature-xxx                 # See all tasks and status
-mandor track task api-feature-xxx-task-001          # See specific task details
+mandor track feature api-feature-xxxx                 # See all tasks and status
+mandor track task api-feature-xxxx-task-xxxx         # See specific task details
 ```
 
 **Benefits:**
@@ -385,22 +384,21 @@ mandor status --project api
 mandor track project api
 
 # Create tasks with dependencies
-mandor task create api-feature-xxx "Task" \
+mandor task create api-feature-xxxx "Task" \
   --goal "..." \
   --implementation-steps "..." \
   --test-cases "..." \
-  --derivable-files "..." \
   --library-needs "..." \
-  --depends-on api-feature-xxx-task-001
+  --depends-on api-feature-xxxx-task-xxxx
 
 # See all feature tasks with status
-mandor track feature api-feature-xxx
+mandor track feature api-feature-xxxx
 
 # Mark as done (auto-unblocks dependents)
-mandor task update api-feature-xxx-task-001 --status done
+mandor task update api-feature-xxxx-task-xxxx --status done
 
 # Verify dependents auto-transitioned to ready
-mandor track feature api-feature-xxx
+mandor track feature api-feature-xxxx
 ```
 
 ### Issue Tracking
