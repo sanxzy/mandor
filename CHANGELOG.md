@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.7] - 2026-02-06
+
+### Changed
+- Standardized placeholder IDs in populate command output to use realistic pattern (api-feature-xxxx, api-feature-xxxx-task-xxxx)
+- Updated README.md examples to use consistent ID format matching actual nanoid generation patterns
+- Improved documentation clarity to prevent hallucinations in AI-generated code examples
+
+### Fixed
+- Placeholder ID formats in populate documentation now match actual ID generation (prevents confusion with numbered suffixes like -001)
+
+## [0.4.6] - 2026-02-05
+
+### Changed
+- Removed derivable_files field from task command documentation
+- Made library-needs flag optional for task creation
+- Updated populate command templates and README to reflect schema changes
+
 ## [0.4.5] - 2026-02-04
 
 ### Added
