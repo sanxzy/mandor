@@ -66,16 +66,19 @@ Mandor exists in an ecosystem of planning and task-tracking tools. Here's how it
 
 | Feature | Mandor | OpenSpec |
 |---------|--------|----------|
-| **Workflow** | Integrated Brief → Spec → Blueprint → Feature → Task pipeline | Proposal → Definition → Apply → Archive (4-phase) |
-| **Spec Format** | Structured YAML with requirement IDs, IAE scenarios, test cases | Markdown with YAML frontmatter |
-| **Planning Layers** | 5-tier: Brief captures intent; Spec captures requirements; Blueprint captures architecture | 1-tier: Single spec file for all information |
-| **Dependency Management** | Built-in cross-feature dependency tracking | Not integrated (handled separately) |
-| **Gate Enforcement** | Task-level gates enforce process discipline | No gates; workflow is informal |
-| **Feature Mapping** | Specs map to Features (1:1); Features map to Tasks (1:N) | Specs map directly to code implementation |
-| **Session Tracking** | AI session notes for progress recovery | Implementation notes in spec file only |
-| **Audience** | Teams with complex requirements, multi-layer planning | Individual developers, quick iterations |
+| **Workflow** | Brief → Spec → Blueprint → Feature → Task (5-phase with planning layers) | Proposal → Definition → Apply → Archive (4-phase, command-driven) |
+| **Planning Approach** | Enforced sequential planning upfront | Iterative refinement; specs evolve during work |
+| **Spec Format** | Structured YAML with requirement IDs, IAE scenarios, test cases | Markdown with YAML frontmatter, simpler format |
+| **Planning Layers** | 5-tier: Brief (intent) → Spec (requirements) → Blueprint (architecture) | Single spec file with all information (fluid, not rigid) |
+| **Dependency Management** | Built-in cross-feature dependency tracking with auto-resolution | Manual tracking; integrations with AI tools (Claude Code, Cursor, Copilot) |
+| **Gate Enforcement** | Task-level read gates enforce process discipline | No gates; status changes driven by `/opsx:` commands |
+| **Workflow Execution** | CLI-native with `mandor` binary | Command-driven with `/opsx:proposal`, `/opsx:apply`, `/opsx:archive` |
+| **Session Tracking** | AI session notes in workspace for context recovery | Implementation notes updated during `/opsx:apply` |
+| **File Storage** | Centralized `.mandor/` directory with JSONL records | Distributed `openspec/` directory (specs/ + changes/) |
+| **Philosophy** | Strict, deterministic, pre-planned | Fluid, iterative, brownfield-friendly |
+| **Audience** | Teams requiring structured planning and dependency management | Developers preferring quick iteration with AI integration |
 
-**Key Difference**: Mandor separates planning concerns (brief, spec, blueprint) from implementation (feature, task); OpenSpec merges them into a single executable spec.
+**Key Difference**: Mandor enforces upfront planning with strict gates and auto-resolving dependencies; OpenSpec embraces iterative fluid specs with tight AI tool integration and minimal ceremony.
 
 ### Quick Comparison Matrix
 
