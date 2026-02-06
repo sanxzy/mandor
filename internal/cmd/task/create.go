@@ -10,22 +10,13 @@ import (
 	"mandor/internal/util"
 )
 
-var (
-	createFeatureID string
-	createGoal      string
-	createImplSteps string
-	createTestCases string
-	createLibraries string
-	createPriority  string
-	createDependsOn string
-	createYes       bool
-)
+
 
 func NewCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create <feature_id> <name> --goal <text> --implementation-steps <steps> --test-cases <cases> [--library-needs <libs>] [--priority <P0-P5>] [--depends-on <ids>] [-y]",
+		Use:   "create <feature_id> <name> --spec-id <spec-id> --iae-scenarios <req-XXXX:scenario-YYYY>|<...> --goal <text> --implementation-steps <steps> --test-cases <cases> [--library-needs <libs>] [--priority <P0-P5>] [--depends-on <ids>] [-y]",
 		Short: "Create a new task",
-		Long:  "Create a new task in the specified feature with the given details.",
+		Long:  "Create a new task with IAE scenarios. Spec ID must match Feature's spec_id. IAE scenarios are pipe-separated req-XXXX:scenario-YYYY references.",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewTaskService()
@@ -37,38 +28,64 @@ func NewCreateCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			createFeatureID = args[0]
+			featureID := args[0]
 			taskName := args[1]
 
-			if createGoal == "" {
+			// Get flags
+			specID, _ := cmd.Flags().GetString("spec-id")
+			if specID == "" {
+				return domain.NewValidationError("Spec ID is required (--spec-id).")
+			}
+
+			iaeStr, _ := cmd.Flags().GetString("iae-scenarios")
+			if iaeStr == "" {
+				return domain.NewValidationError("IAE scenarios are required (--iae-scenarios, format: req-XXXX:scenario-YYYY or req-X:s1|req-X:s2).")
+			}
+
+			goalText, _ := cmd.Flags().GetString("goal")
+			if goalText == "" {
 				return domain.NewValidationError("Task goal is required (--goal).")
 			}
 
-			implSteps := splitByPipe(createImplSteps)
+			implStr, _ := cmd.Flags().GetString("implementation-steps")
+			testStr, _ := cmd.Flags().GetString("test-cases")
+			libStr, _ := cmd.Flags().GetString("library-needs")
+			priorityStr, _ := cmd.Flags().GetString("priority")
+			dependsOnStr, _ := cmd.Flags().GetString("depends-on")
+
+			// Parse IAE scenarios (pipe-separated)
+			iaeScenarios := splitByPipe(iaeStr)
+			if len(iaeScenarios) == 0 || (len(iaeScenarios) == 1 && iaeScenarios[0] == "") {
+				return domain.NewValidationError("IAE scenarios are required (--iae-scenarios).")
+			}
+
+			implSteps := splitByPipe(implStr)
 			if len(implSteps) == 0 || (len(implSteps) == 1 && implSteps[0] == "") {
 				return domain.NewValidationError("Implementation steps are required (--implementation-steps).")
 			}
 
-			testCases := splitByPipe(createTestCases)
+			testCases := splitByPipe(testStr)
 			if len(testCases) == 0 || (len(testCases) == 1 && testCases[0] == "") {
 				return domain.NewValidationError("Test cases are required (--test-cases).")
 			}
 
-			libraries := splitByPipe(createLibraries)
+			libraries := splitByPipe(libStr)
 
 			var dependsOnList []string
-			if createDependsOn != "" {
-				dependsOnList = splitByPipe(createDependsOn)
+			if dependsOnStr != "" {
+				dependsOnList = splitByPipe(dependsOnStr)
 			}
 
 			input := &domain.TaskCreateInput{
-				FeatureID:           createFeatureID,
+				FeatureID:           featureID,
+				SpecID:              specID,
 				Name:                taskName,
-				Goal:                createGoal,
+				Goal:                goalText,
+				IAEScenarios:        iaeScenarios,
 				ImplementationSteps: implSteps,
 				TestCases:           testCases,
 				LibraryNeeds:        libraries,
-				Priority:            createPriority,
+				Priority:            priorityStr,
 				DependsOn:           dependsOnList,
 			}
 
@@ -82,17 +99,20 @@ func NewCreateCmd() *cobra.Command {
 			}
 
 			out := cmd.OutOrStdout()
-			fmt.Fprintf(out, "Task created: %s\n", task.ID)
-			fmt.Fprintf(out, "  Name:               %s\n", task.Name)
-			fmt.Fprintf(out, "  Feature:            %s\n", task.FeatureID)
-			fmt.Fprintf(out, "  Priority:           %s\n", task.Priority)
-			fmt.Fprintf(out, "  Status:             %s\n", task.Status)
-			fmt.Fprintf(out, "  Goal:               %s\n", truncate(task.Goal, 50))
+			fmt.Fprintf(out, "✓ Task created: %s\n", task.ID)
+			fmt.Fprintf(out, "  Name:                 %s\n", task.Name)
+			fmt.Fprintf(out, "  Feature:              %s\n", task.FeatureID)
+			fmt.Fprintf(out, "  Spec ID:              %s\n", task.SpecID)
+			fmt.Fprintf(out, "  Priority:             %s\n", task.Priority)
+			fmt.Fprintf(out, "  Status:               %s\n", task.Status)
+			fmt.Fprintf(out, "  Goal:                 %s\n", truncate(task.Goal, 50))
+			fmt.Fprintf(out, "  IAE Scenarios:        %d\n", len(task.IAEScenarios))
 			fmt.Fprintf(out, "  Implementation Steps: %d\n", len(task.ImplementationSteps))
-			fmt.Fprintf(out, "  Test Cases:         %d\n", len(task.TestCases))
-			fmt.Fprintf(out, "  Library Needs:      %d\n", len(task.LibraryNeeds))
+			fmt.Fprintf(out, "  Test Cases:           %d\n", len(task.TestCases))
+			fmt.Fprintf(out, "  Library Needs:        %d\n", len(task.LibraryNeeds))
+			fmt.Fprintf(out, "  Read Gates:           brief=%v, spec=%v, notes=%v\n", task.ReadGates.IsReadBrief, task.ReadGates.IsReadSpec, task.ReadGates.IsReadSessionNotes)
 			if len(task.DependsOn) > 0 {
-				fmt.Fprintf(out, "  Depends on:         %d task(s)\n", len(task.DependsOn))
+				fmt.Fprintf(out, "  Depends on:           %d task(s)\n", len(task.DependsOn))
 			}
 
 			_, warning := util.GetGitUsernameWithWarning()
@@ -106,13 +126,21 @@ func NewCreateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&createGoal, "goal", "g", "", "Task goal (required, min 500 chars)")
-	cmd.Flags().StringVar(&createImplSteps, "implementation-steps", "", "Implementation steps (pipe-separated, required)")
-	cmd.Flags().StringVar(&createTestCases, "test-cases", "", "Test cases (pipe-separated, required)")
-	cmd.Flags().StringVar(&createLibraries, "library-needs", "", "Required libraries (pipe-separated, optional). Use \"none\" if no external libraries are needed.")
-	cmd.Flags().StringVar(&createPriority, "priority", "", "Priority (P0-P5, default from config)")
-	cmd.Flags().StringVar(&createDependsOn, "depends-on", "", "Pipe-separated task IDs this task depends on")
-	cmd.Flags().BoolVarP(&createYes, "yes", "y", false, "Skip confirmation prompts")
+	cmd.Flags().String("spec-id", "", "Spec ID (required, must match Feature's spec_id)")
+	cmd.Flags().String("iae-scenarios", "", "IAE scenarios (required, format: req-XXXX:scenario-YYYY or req-X:s1|req-X:s2)")
+	cmd.Flags().StringP("goal", "g", "", "Task goal (required, min 500 chars)")
+	cmd.Flags().String("implementation-steps", "", "Implementation steps (pipe-separated, required)")
+	cmd.Flags().String("test-cases", "", "Test cases (pipe-separated, required)")
+	cmd.Flags().String("library-needs", "", "Required libraries (pipe-separated, optional). Use \"none\" if no external libraries are needed.")
+	cmd.Flags().String("priority", "", "Priority (P0-P5, default from config)")
+	cmd.Flags().String("depends-on", "", "Pipe-separated task IDs this task depends on")
+	cmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompts")
+
+	cmd.MarkFlagRequired("spec-id")
+	cmd.MarkFlagRequired("iae-scenarios")
+	cmd.MarkFlagRequired("goal")
+	cmd.MarkFlagRequired("implementation-steps")
+	cmd.MarkFlagRequired("test-cases")
 
 	return cmd
 }

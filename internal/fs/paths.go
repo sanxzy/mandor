@@ -85,3 +85,23 @@ func (p *Paths) ProjectDirExists(projectID string) bool {
 	_, err := os.Stat(p.ProjectDirPath(projectID))
 	return err == nil
 }
+
+// BriefPath returns the path to brief.md
+func (p *Paths) BriefPath(projectID string) string {
+	return filepath.Join(p.ProjectDirPath(projectID), "brief.md")
+}
+
+// SpecsDirPath returns the path to specs directory
+func (p *Paths) SpecsDirPath(projectID string) string {
+	return filepath.Join(p.ProjectDirPath(projectID), "specs")
+}
+
+// SpecPath returns the path to a specific spec file
+func (p *Paths) SpecPath(projectID, specID string) string {
+	return filepath.Join(p.SpecsDirPath(projectID), specID+".md")
+}
+
+// BlueprintPath returns the path to blueprint.md
+func (p *Paths) BlueprintPath(projectID string) string {
+	return filepath.Join(p.ProjectDirPath(projectID), "blueprint.md")
+}

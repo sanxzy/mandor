@@ -1,712 +1,681 @@
-# Mandor - Deterministic Task Manager CLI for AI Agent Workflows
+# Mandor - Deterministic Task Manager for AI Agent Workflows
 
 <p align="center">
   <img src="logo.png" alt="Mandor Logo" width="600">
 </p>
 
 <p align="center">
-  <strong>Stop writing markdown plans. Start shipping features with deterministic task tracking.</strong>
+  <strong>Stop writing markdown plans that go stale.</strong>
 </p>
 
 <p align="center">
-  <strong>Dependency-aware | Structured storage | CLI-native | Built for AI agents</strong>
+  <strong>Deterministic task management with structured briefs, specifications, and blueprints.</strong>
 </p>
 
 <p align="center">
-  <a href="#installation">Installation</a> •
+  Gate-enforced | Dependency-aware | Structured storage | CLI-native
+</p>
+
+<p align="center">
   <a href="#quick-start">Quick Start</a> •
   <a href="#why-mandor">Why Mandor</a> •
-  <a href="#core-concepts">Core Concepts</a> •
+  <a href="#comparison-with-other-tools">Comparison</a> •
+  <a href="#workflow">Workflow</a> •
   <a href="#commands">Commands</a> •
-  <a href="#examples">Examples</a>
+  <a href="#best-practices">Best Practices</a>
 </p>
 
 ---
 
 ## Why Mandor
 
-**No More Markdown Plan Files**
-
-Traditional workflows scatter task state across markdown files, spreadsheets, and Slack messages. Dependencies are manual, status is fiction, and progress is invisible until code review.
+Traditional workflows scatter task state across markdown files, spreadsheets, and Slack. Dependencies are manual, status is fiction, and context is lost between sessions.
 
 Mandor brings **deterministic task management** to AI agent workflows:
 
-- **Single Source of Truth**: All state in structured JSONL files—queryable, reproducible, auditable
-- **Automatic Dependency Resolution**: Mark tasks done → dependents auto-transition to ready
-- **Schema-Driven**: Enforce implementation steps, test cases, and library needs upfront
+- **Single Source of Truth**: Brief → Spec → Blueprint → Feature → Task pipeline
+- **Gate-Enforced Progression**: All three gates (brief read, spec read, session notes) required before starting work
+- **Automatic Dependency Resolution**: Mark task done → dependents auto-transition to ready
+- **Cross-Feature Dependencies**: Task A (Feature 1) can depend on Task B (Feature 2) with cascading unblocking
+- **Schema-Driven**: Enforce implementation steps, test cases, requirements upfront
 - **CLI-Native**: Works in terminal, scripts, and CI/CD pipelines
-- **Dependency Tracking**: Full support for same-project and cross-project dependencies
-
-## Overview
-
-Mandor is a CLI tool for managing tasks, features, and issues in AI agent workflows:
-
-- **Structured Storage**: All data in JSONL format with full audit trail
-- **Real-Time Status**: Query tasks/issues by status (ready, blocked, in_progress)
-- **Dependency Tracking**: Automatic status transitions when dependencies complete
-- **Cross-Platform**: Go binary for macOS, Linux, Windows (arm64 & x64)
 
 ---
 
+## Comparison with Other Tools
 
-## Core Concepts
+Mandor exists in an ecosystem of planning and task-tracking tools. Here's how it compares:
 
-### Entity Types
+### Mandor vs. Beads (Git-Backed Issue Tracker)
 
-| Type | Purpose | Status Values |
-|------|---------|---------------|
-| **Workspace** | Top-level container for all projects | (single instance per directory) |
-| **Project** | Container for features and issues | (active/deleted) |
-| **Feature** | Logical grouping of related tasks | draft, active, done, blocked, cancelled |
-| **Task** | Work items within a feature | pending, ready, in_progress, done, blocked, cancelled |
-| **Issue** | Problems, bugs, or improvement requests | open, ready, in_progress, resolved, wontfix, blocked, cancelled |
+| Feature | Mandor | Beads |
+|---------|--------|-------|
+| **Workflow Structure** | Brief → Spec → Blueprint → Feature → Task (5-phase) | Beads → Molecules → Gates (3-tier) |
+| **Planning Upfront** | Enforces planning: brief & spec before tasks | Ad-hoc: beads created as-needed |
+| **Gate Enforcement** | 3 read gates (brief, spec, session notes) required before work | No gates; status changes are manual |
+| **Schema-Driven** | Specs define requirements, IAE scenarios, implementation steps | Beads have acceptance criteria only |
+| **Dependency Resolution** | Auto-blocking & auto-unblocking with cascading transitions | Manual dependency tracking with `bd depends` |
+| **Session Notes** | Built-in session note system per workspace | Manual implementation notes in beads |
+| **File Format** | Markdown specs + JSONL records (deterministic, auditable) | YAML beads + JSONL index |
+| **Data Storage** | Centralized `.mandor/` directory with projects | Distributed `beads/` directory |
+| **Best For** | Teams requiring upfront planning, structured workflows | Solo AI agents, rapid prototyping |
 
-### Dependency Types
+**Key Difference**: Mandor enforces planning discipline before work starts; Beads emphasizes rapid iteration with minimal overhead.
 
-- **Task Dependencies**: One task can depend on multiple tasks
-- **Feature Dependencies**: Features can depend on other features
-- **Issue Dependencies**: Issues can depend on other issues
+### Mandor vs. OpenSpec (Spec-Driven Development)
 
-### Status Transitions
+| Feature | Mandor | OpenSpec |
+|---------|--------|----------|
+| **Workflow** | Integrated Brief → Spec → Blueprint → Feature → Task pipeline | Proposal → Definition → Apply → Archive (4-phase) |
+| **Spec Format** | Structured YAML with requirement IDs, IAE scenarios, test cases | Markdown with YAML frontmatter |
+| **Planning Layers** | 5-tier: Brief captures intent; Spec captures requirements; Blueprint captures architecture | 1-tier: Single spec file for all information |
+| **Dependency Management** | Built-in cross-feature dependency tracking | Not integrated (handled separately) |
+| **Gate Enforcement** | Task-level gates enforce process discipline | No gates; workflow is informal |
+| **Feature Mapping** | Specs map to Features (1:1); Features map to Tasks (1:N) | Specs map directly to code implementation |
+| **Session Tracking** | AI session notes for progress recovery | Implementation notes in spec file only |
+| **Audience** | Teams with complex requirements, multi-layer planning | Individual developers, quick iterations |
 
-**Tasks:**
-```
-pending → {ready, in_progress, cancelled}
-ready → {in_progress, cancelled}
-in_progress → {done, blocked, cancelled}
-blocked → {ready, cancelled}
-done → (terminal)
-cancelled → (terminal)
-```
+**Key Difference**: Mandor separates planning concerns (brief, spec, blueprint) from implementation (feature, task); OpenSpec merges them into a single executable spec.
 
-**Features:**
-```
-draft → {active, blocked, cancelled}
-active → {done, blocked, cancelled}
-blocked → {draft, active, done, cancelled}
-done → {cancelled}
-cancelled → {draft}
-```
+### Quick Comparison Matrix
 
-**Issues:**
-```
-open → {ready, in_progress, blocked, resolved, wontfix, cancelled}
-ready → {in_progress, blocked, resolved, wontfix, cancelled}
-in_progress → {blocked, resolved, wontfix, cancelled}
-blocked → {ready, resolved, wontfix, cancelled}
-resolved → (terminal, can reopen to any status)
-wontfix → (terminal, can reopen to any status)
-cancelled → (terminal, can reopen to any status)
-```
+| Aspect | Mandor | Beads | OpenSpec |
+|--------|--------|-------|----------|
+| **Planning Upfront** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ |
+| **Gate Enforcement** | ⭐⭐⭐⭐⭐ | ⭐ | ⭐ |
+| **Auto Dependency Resolution** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ |
+| **AI-Native** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
+| **CLI-First** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ |
+| **Schema-Driven** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ |
+
+### When to Use Mandor
+
+**Choose Mandor if you need:**
+
+- **Enforced Planning Discipline**: Brief → Spec → Blueprint before any code
+- **Gate-Enforced Workflows**: Task-level gates prevent immature starts
+- **Cross-Feature Dependencies**: Tasks spanning multiple features with auto-resolution
+- **Session Context Recovery**: AI agents resume work with full context between sessions
+- **Schema-Driven Development**: Upfront definition of implementation steps, test cases, requirements
+- **Multi-Project Coordination**: Centralized workspace managing dependencies across projects
+- **Deterministic Execution**: Structured workflow with auditable, reproducible task progression
+
+**Mandor is optimal for:**
+- Teams that value upfront planning and structured workflows
+- AI-assisted development with session-based progress tracking
+- Complex features requiring multi-layer specification (intent → requirements → architecture → implementation)
+- Projects where dependency management is critical
 
 ---
-
 
 ## Installation
 
-### Install with curl
+### Build from Source
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh
-mandor --help
+cd Mandor
+go build -o mandor ./cmd/mandor
+./mandor --help
 ```
 
-### Install from npm
+### Install to PATH
 
 ```bash
-npm install -g @mandors/cli
+go build -o ~/.local/bin/mandor ./cmd/mandor
+export PATH="$HOME/.local/bin:$PATH"
 mandor --help
 ```
 
 ---
-
 
 ## Quick Start
 
 ### 1. Initialize Workspace
 
 ```bash
-mandor init "My Project"
+mandor init -y
 ```
 
-### 2. Create a Project
+### 2. Create Project
 
 ```bash
-mandor project create api --name "API Development" \
-  --goal "Build REST API service with authentication and endpoints"
+mandor project create api --name "API Service" \
+  --goal "REST API with JWT authentication, user management, and data endpoints"
 ```
 
-### 3. Create a Feature
+### 3. Create Brief (Project Intent & Capabilities)
 
 ```bash
-mandor feature create "Authentication" --project api \
-  --goal "Implement JWT-based authentication with login and refresh flows for secure API access" \
-  --scope backend
+mandor brief create -p api \
+  --name "JWT Authentication" \
+  --why "Need secure, stateless authentication for API endpoints" \
+  --capabilities "jwt-auth:JWT login flow|refresh:Token refresh endpoint" \
+  --tech-stack "golang,jwt,redis"
 ```
 
-### 4. Create Tasks with Dependencies
+Creates: `jwt-auth` (brief ID)
+
+### 4. Create Spec (Requirements with IAE Scenarios)
 
 ```bash
-# Create first task (no dependencies)
-mandor task create api-feature-xxxx "JWT Parser" \
-  --goal "Parse and validate JWT tokens in incoming requests with expiry and signature verification" \
-  --implementation-steps "Setup crypto library|Add token validation|Handle expiry|Return errors" \
-  --test-cases "Valid token accepted|Expired token rejected|Invalid signature rejected" \
-  --library-needs "golang-jwt" \
-  --priority P1
-
-# Create dependent task (depends on JWT Parser)
-mandor task create api-feature-xxxx "Login Endpoint" \
-  --goal "Accept user credentials and return JWT token with refresh token flow" \
-  --implementation-steps "Setup endpoint|Validate credentials|Generate JWT|Return tokens" \
-  --test-cases "Valid creds return token|Invalid creds rejected|Tokens properly formatted" \
-  --depends-on api-feature-xxxx-task-xxxx \
-  --priority P1
+mandor spec create -p api \
+  --capability jwt-auth \
+  --summary "JWT authentication specification" \
+  --requirements "Setup:Enable login:Import JWT lib|Validate:Verify token:Parse JWT|Refresh:Update token:Issue new JWT"
 ```
 
-### 5. View Task Progress
+Creates: `jwt-auth-spec` (spec ID with auto-generated requirement IDs: req-0001, req-0002, etc.)
+
+### 5. Create Blueprint (Technical Architecture)
 
 ```bash
-# See all tasks in feature with visualization
-mandor track feature api-feature-xxxx
-
-# Get task details
-mandor task detail <task-id>
+mandor blueprint create -p api \
+  --brief jwt-auth \
+  --problem "Secure API authentication without server-side session state" \
+  --decisions "Use JWT for stateless auth|HTTP-only cookies for token storage|Refresh tokens on expiry" \
+  --goals-in-scope "Authentication,Authorization,Token refresh"
 ```
 
-### 6. Mark Tasks Complete
+Creates: `api-blueprint` (blueprint ID)
+
+### 6. Create Feature (from Spec)
 
 ```bash
-# Get task ID from track output
-mandor task update <task-id> --status in_progress
-mandor task update <task-id> --status done
+mandor feature create "JWT Authentication" -p api \
+  --capability jwt-auth \
+  --spec-id jwt-auth-spec \
+  --scope backend \
+  -g "Implement JWT-based authentication with login flow, token validation, and refresh mechanism"
+```
 
-# Dependent tasks auto-transition to "ready"
-mandor track feature api-feature-xxxx  # Now shows "Login Endpoint" as ready
+Creates: `jwt-tokens` (feature ID, one-to-one mapping to spec-id)
+
+### 7. Create Tasks (with IAE Scenarios)
+
+```bash
+# Task 1: Setup JWT Library
+mandor task create jwt-tokens "Setup JWT Library" \
+  --spec-id jwt-auth-spec \
+  --iae-scenarios "req-0001:scenario-0001|req-0001:scenario-0002" \
+  -g "Configure golang-jwt library with crypto setup and validation" \
+  --implementation-steps "Import library|Configure settings|Add crypto|Add validation" \
+  --test-cases "JWT creates|JWT validates|JWT signature verifies" \
+  --library-needs "golang-jwt"
+```
+
+Creates: `jwt-tokens-task-a7K2` (status=ready, all gates=false)
+
+```bash
+# Task 2: Token Validation (depends on Task 1)
+mandor task create jwt-tokens "Token Validation Middleware" \
+  --spec-id jwt-auth-spec \
+  --iae-scenarios "req-0002:scenario-0001" \
+  --depends-on jwt-tokens-task-a7K2 \
+  -g "Implement middleware to validate JWT tokens on all protected endpoints" \
+  --implementation-steps "Create middleware|Extract token|Validate|Return errors" \
+  --test-cases "Valid passes|Expired rejects|Invalid rejects"
+```
+
+Creates: `jwt-tokens-task-b3M8` (status=blocked, waiting for task-a7K2)
+
+### 8. Track Progress
+
+```bash
+# See feature with all tasks
+mandor track feature jwt-tokens
+```
+
+Output shows:
+- Task 1: status=ready, gates=false
+- Task 2: status=blocked (waiting for Task 1)
+
+### 9. Set Gates & Start Work
+
+```bash
+# Read brief, spec, and session notes first
+# Then set gates for Task 1:
+mandor task set-gate jwt-tokens-task-a7K2 --is-read-brief
+mandor task set-gate jwt-tokens-task-a7K2 --is-read-spec
+mandor task set-gate jwt-tokens-task-a7K2 --is-read-session-notes
+
+# Transition to in_progress (requires all gates=true)
+mandor task update jwt-tokens-task-a7K2 --status in_progress
+
+# Work on implementation...
+
+# Mark complete
+mandor task update jwt-tokens-task-a7K2 --status done
+
+# Task 2 automatically transitions: blocked → ready
+mandor track feature jwt-tokens  # Now shows Task 2 as ready
+```
+
+### 10. Repeat for Task 2
+
+```bash
+# Set gates for Task 2
+mandor task set-gate jwt-tokens-task-b3M8 --is-read-brief
+mandor task set-gate jwt-tokens-task-b3M8 --is-read-spec
+mandor task set-gate jwt-tokens-task-b3M8 --is-read-session-notes
+
+# Start work
+mandor task update jwt-tokens-task-b3M8 --status in_progress
 ```
 
 ---
 
+## Workflow
 
-## Commands Reference
+### Complete Pipeline
 
-### Workspace Commands
-
-```bash
-# Initialize a new workspace
-mandor init [--workspace-name <name>] [-y]
-
-# View workspace and project status
-mandor status [--project <id>] [--summary] [--json]
-
-# Manage configuration
-mandor config get <key>
-mandor config set <key> <value>
-mandor config list
-mandor config reset <key>
-
-# Display all commands and best practices
-mandor populate
-
-# Show version
-mandor version
-
-# Generate shell completions
-mandor completion [bash|zsh|fish]
-
-# AI-assisted documentation
-mandor ai --help
+```
+1. Brief (Intent & Capabilities)
+   ↓
+2. Spec (Requirements & IAE Scenarios)
+   ↓
+3. Blueprint (Architecture Decisions)
+   ↓
+4. Feature (Spec Mapping)
+   ↓
+5. Task (Work Items with IAE References)
 ```
 
-### Track Commands
+### Gate Enforcement
 
-```bash
-# Track workspace status
-mandor track
+Every task has three read gates:
+- **IsReadBrief**: Have you read the Brief?
+- **IsReadSpec**: Have you read the Spec?
+- **IsReadSessionNotes**: Have you read session notes?
 
-# Track project status
-mandor track project <project-id>
+**All three gates MUST be true before ready → in_progress transition.**
 
-# Track feature with tasks
-mandor track feature <feature-id> [--verbose]
+Gates are NOT required for:
+- ready → cancelled
+- in_progress → done
+- blocked → ready (auto-transition)
 
-# Track specific task
-mandor track task <task-id>
+### Dependency Auto-Resolution
 
-# Track issue
-mandor track issue <issue-id>
-```
-
-### Session Commands
-
-```bash
-# Add a progress note (AI agents use this to track work)
-mandor session note "Completed v0.4.4 release and testing"
-
-# Read recent session notes (last 50 entries by default)
-mandor session note --read
-
-# Read more notes with offset
-mandor session note --read --offset 100
-```
-
-### Project Commands
-
-```bash
-# Create a project
-mandor project create <id> --name <name> --goal <goal> [OPTIONS]
-
-# Show project details
-mandor project detail <project-id>
-
-# Update project
-mandor project update <project-id> [--name <name>] [--goal <goal>] [--status <status>]
-```
-
-### Feature Commands
-
-```bash
-# Create a feature
-mandor feature create <name> --project <id> --goal <goal> [--scope <scope>] [--priority <priority>]
-
-# List features
-mandor feature list --project <id>
-
-# Show feature details
-mandor feature detail <feature-id> --project <id>
-
-# Update feature
-mandor feature update <feature-id> --project <id> [--name <text>] [--goal <goal>] [--scope <scope>] [--priority <priority>] [--status <status>] [--depends <ids>] [--cancel --reason <text>] [--reopen] [--dry-run]
-```
-
-### Task Commands
-
-```bash
-# Create a task
-mandor task create <feature_id> <name> --goal <goal> \
-  --implementation-steps <steps> --test-cases <cases> \
-  --derivable-files <files> --library-needs <libs> \
-  [--priority <priority>] [--depends-on <ids>]
-
-# Show task details
-mandor task detail <task-id>
-
-# Update task
-mandor task update <task-id> [--name <text>] [--goal <goal>] [--priority <priority>] \
-  [--status <status>] [--depends-add <ids>] [--depends-remove <ids>] [--cancel --reason <text>] [--dry-run]
-```
-
-### Issue Commands
-
-```bash
-# Create an issue
-mandor issue create <name> --project <id> --type <type> --goal <goal> \
-  --affected-files <files> --affected-tests <tests> \
-  --implementation-steps <steps> [--priority <priority>] [--depends-on <ids>] [--library-needs <libs>]
-
-# Show issue details
-mandor issue detail <issue-id> --project <id>
-
-# Update issue
-mandor issue update <issue-id> [--name <text>] [--goal <goal>] [--priority <priority>] \
-  [--type <type>] [--status <status>] [--start] [--resolve] [--wontfix] [--reason <text>] [--cancel --reason <text>] [--dry-run]
-```
-
-### AI Commands
-
-```bash
-# AI-assisted documentation generation
-mandor ai agents
-mandor ai claude
-```
+Tasks with `--depends-on`:
+- Auto-assigned `status=blocked` on creation
+- Stay blocked until ALL dependencies are `done`
+- Auto-transition `blocked → ready` when dependencies complete
+- Works cross-feature (Task A in Feature 1 depends on Task B in Feature 2)
+- Cascading: Task A done → unblocks Task B → Task B done → unblocks Task C
 
 ---
 
+## Commands
 
-## Common Workflows
+### Essential Three Commands
 
-### Replace This (Markdown Plan Files)
-
-```markdown
-# PLAN.md
-## Phase 1: Authentication
-- [ ] JWT parser (depends on cryptography)
-- [ ] Login endpoint (depends on JWT parser)
-- [ ] Refresh token (depends on JWT parser)
-
-Status: Last updated 3 days ago (probably stale!)
-```
-
-### With This (Mandor)
+#### 1. mandor populate
+View all available commands and usage instructions.
 
 ```bash
-# Create structured plan
-mandor feature create "Authentication" --project api \
-  --goal "Implement JWT and login endpoints" \
-  --scope backend
-
-# Create tasks with explicit dependencies
-mandor task create api-feature-xxxx "JWT Parser" \
-  --goal "Validate JWT tokens..." \
-  --implementation-steps "Step 1|Step 2" \
-  --test-cases "Test invalid tokens|Test expired" \
-  --library-needs "jsonwebtoken" \
-  --priority P1
-
-mandor task create api-feature-xxxx "Login Endpoint" \
-  --goal "Accept credentials and return JWT..." \
-  --depends-on api-feature-xxxx-task-xxxx \
-  --priority P1
-
-# Real-time progress queries
-mandor track feature api-feature-xxxx                 # See all tasks and status
-mandor track task api-feature-xxxx-task-xxxx         # See specific task details
+mandor populate                 # Full reference
+mandor populate | grep "brief"  # Find relevant sections
 ```
 
-**Benefits:**
-- No file sync required
-- Dependencies auto-validated
-- Blocking tasks auto-detected
-- Structured JSONL storage
-- Queryable via CLI or JSON
-- Works in CI/CD pipelines
-
-### Dependency Management
+#### 2. mandor track
+Check status of workspace, projects, features, tasks, issues.
 
 ```bash
-# View all projects and their status
-mandor status
-
-# Check a specific project
-mandor status --project api
-
-# View feature dependencies and progress
-mandor track project api
-
-# Create tasks with dependencies
-mandor task create api-feature-xxxx "Task" \
-  --goal "..." \
-  --implementation-steps "..." \
-  --test-cases "..." \
-  --library-needs "..." \
-  --depends-on api-feature-xxxx-task-xxxx
-
-# See all feature tasks with status
-mandor track feature api-feature-xxxx
-
-# Mark as done (auto-unblocks dependents)
-mandor task update api-feature-xxxx-task-xxxx --status done
-
-# Verify dependents auto-transitioned to ready
-mandor track feature api-feature-xxxx
+mandor track                        # Workspace overview
+mandor track project <project-id>   # Project features
+mandor track feature <feature-id>   # Feature with tasks
+mandor track task <task-id>         # Task with gate status
+mandor track task <task-id> --json  # Machine-readable
 ```
 
-### Issue Tracking
+#### 3. mandor session note
+Record and read session progress (for AI agents).
 
 ```bash
-# Create a bug issue
-mandor issue create "Memory leak in auth handler" \
-  --project api \
-  --type bug \
-  --priority P0 \
-  --goal "Goroutine not cleaned up in token refresh handler..." \
-  --affected-files "src/handlers/auth.go|src/middleware/auth.go" \
-  --affected-tests "src/handlers/auth_test.go" \
-  --implementation-steps "Identify|Fix|Add tests|Verify" \
-  --library-needs "none"
-
-# View issue details
-mandor issue detail api-issue-abc123
-
-# Start working on an issue
-mandor issue update api-issue-abc123 --start
-
-# Mark as resolved
-mandor issue update api-issue-abc123 --resolve
-
-# Mark as won't fix with reason
-mandor issue update api-issue-abc123 --wontfix --reason "Working as intended"
-
-# See project issues with track
-mandor track project api
+mandor session note "Completed Task 1 and dependencies"
+mandor session note --read           # Show last 50 notes
+mandor session note --read --offset 100  # Show more notes
 ```
 
-### Configuration
+### Full Command Reference
+
+**For complete command documentation, run:**
 
 ```bash
-# Set default priority
-mandor config set default_priority P2
-
-# Enable strict mode
-mandor config set strict_mode true
-
-# View all configuration
-mandor config list
-
-# Get specific value
-mandor config get default_priority
-
-# Reset to default
-mandor config reset default_priority
+mandor populate     # Shows all commands with examples
+mandor -h          # Shows available commands
+mandor <cmd> -h    # Shows specific command help
 ```
+
+### Quick Command List
+
+| Category | Commands |
+|----------|----------|
+| **Workspace** | `init`, `config` |
+| **Project** | `create`, `detail`, `update`, `delete`, `reopen` |
+| **Brief** | `create`, `read`, `update`, `delete`, `validate` |
+| **Spec** | `create`, `detail`, `update`, `delete`, `validate` |
+| **Blueprint** | `create`, `detail`, `update`, `delete`, `validate` |
+| **Feature** | `create`, `detail`, `update`, `delete` |
+| **Task** | `create`, `detail`, `set-gate`, `read-gates`, `update` |
+| **Issue** | `create`, `detail`, `update` |
+| **Track** | `track` (workspace\|project\|feature\|task\|issue) |
+| **Session** | `session note` |
 
 ---
-
 
 ## Best Practices
 
-### 1. Use Meaningful IDs
+### 1. Follow the Complete Workflow
 
-Project and feature IDs should be:
-- Short but descriptive
-- Lowercase with hyphens
-- Consistent naming convention
+Brief → Spec → Blueprint → Feature → Task
+
+Don't skip steps. Each phase builds context for the next.
+
+### 2. Write Comprehensive Briefs
+
+Include:
+- Clear problem statement and motivation
+- Well-defined capabilities with descriptions
+- Technical stack that will be used
+- Affected systems and dependencies
 
 ```bash
-# Good
-mandor project create user-auth
-mandor feature create jwt-tokens
-
-# Avoid
-mandor project create p1
-mandor feature create f123
+mandor brief create -p api \
+  --name "Authentication" \
+  --why "Secure stateless API authentication" \
+  --capabilities "login:User login|tokens:Token management" \
+  --tech-stack "golang,jwt,postgres"
 ```
 
-### 2. Write Clear Goals (min char requirement enforced)
+### 3. Detailed Specs with IAE Scenarios
 
-Goals should include:
-- What is being built/fixed
-- Why it matters
-- Technical requirements
-- Acceptance criteria
+Create specs with Intent-Action-Expectation scenarios:
 
 ```bash
-# Good
---goal "Implement JWT-based authentication with login and refresh flows for secure API access"
-
-# Avoid
---goal "Add authentication"
+mandor spec create -p api \
+  --capability login \
+  --summary "Login specification" \
+  --requirements "Login:User enters creds:Check password|Token:Generate JWT:Return token|Refresh:Extend session:Issue new token"
 ```
 
-### 3. Use Scopes for Features
+Specs become reference documents for tasks and gates.
 
-Organize by scope:
-- `frontend`, `backend`, `fullstack`
-- `cli`, `desktop`, `android`, `flutter`, `react-native`, `ios`, `swift`
+### 4. Link Tasks to Spec Requirements
+
+Tasks reference specific requirement-scenario pairs:
 
 ```bash
-mandor feature create "Login UI" --project api --scope frontend
-mandor feature create "Login API" --project api --scope backend
+mandor task create feature-id "Implement Login" \
+  --spec-id spec-id \
+  --iae-scenarios "req-0001:scenario-0001|req-0002:scenario-0001"
 ```
 
-### 4. Keep Dependencies Shallow
+Traces implementation back to requirements.
 
-Deep dependency chains (>5 levels) are hard to manage. Consider breaking into smaller features.
+### 5. Gate Enforcement Discipline
+
+Always follow the gate workflow:
+
+1. Read Brief thoroughly
+2. Read Spec with requirements
+3. Read session notes from previous work
+4. Set all three gates
+5. Transition to in_progress
+6. Implement
+7. Mark done (auto-unblocks dependents)
 
 ```bash
-# Good: tasks depend on other tasks in same feature
-mandor task create api-feature-xxxx "Task B" \
-  --goal "..." \
-  --implementation-steps "..." \
-  --test-cases "..." \
-  --depends-on api-feature-xxxx-task-xxxx
+# Check task status
+mandor track task <task-id>
 
-# Consider splitting if: task chains exceed 5 levels
+# Set gates
+mandor task set-gate <task-id> --is-read-brief
+mandor task set-gate <task-id> --is-read-spec
+mandor task set-gate <task-id> --is-read-session-notes
+
+# Start work
+mandor task update <task-id> --status in_progress
 ```
 
-### 5. Use Issues for Bugs, Tasks for Features
+### 6. Dependency Management
 
-- **Tasks**: Feature work, implementation, refactoring
-- **Issues**: Bugs, improvements, technical debt, security, performance
+Create dependent tasks with clear relationships:
 
 ```bash
-# Feature work
-mandor task create api-feature-xxxx "Add OAuth2" \
-  --goal "..." \
-  --implementation-steps "..." \
-  --test-cases "..." \
-  --library-needs "oauth2-lib"
+# Task A (no dependencies)
+mandor task create feature-id "Task A" \
+  --spec-id spec-id \
+  --iae-scenarios "req-0001:scenario-0001" \
+  -g "..." \
+  --implementation-steps "s1|s2" \
+  --test-cases "t1|t2"
 
-# Bug fix
-mandor issue create "Fix auth timeout" --project api --type bug
+# Task B (depends on Task A)
+mandor task create feature-id "Task B" \
+  --spec-id spec-id \
+  --iae-scenarios "req-0002:scenario-0001" \
+  --depends-on <task-a-id> \
+  -g "..." \
+  --implementation-steps "s1|s2" \
+  --test-cases "t1|t2"
 ```
 
-### 6. Document Cancellation Reasons
+Task B auto-blocks until Task A is done.
 
-Always provide clear reasons when cancelling:
+### 7. Configuration for Your Team
 
-```bash
-mandor task update api-feature-xxxx-task-xxxx --cancel --reason "Superseded by feature X"
-mandor feature update api-feature-xxxx --project api --cancel --reason "Sticking with JWT, OAuth2 adds too much complexity"
-```
-
-### 7. Use Pipe Separators For Lists
-
-For flags accepting multiple values, use pipe separators:
+Set defaults early, rarely change:
 
 ```bash
-# Implementation steps
---implementation-steps "Step 1|Step 2|Step 3"
-
-# Test cases
---test-cases "Case 1|Case 2|Case 3"
-
-# Dependencies
---depends-on task-1|task-2|task-3
-```
-
-### 8. Use --dry-run Before Major Changes
-
-Before making significant updates, preview with `--dry-run`:
-
-```bash
-mandor task update api-feature-xxxx-task-xxxx --status done --dry-run
-mandor feature update api-feature-xxxx --project api --cancel --reason "..." --dry-run
-```
-
-### 9. Dependency Auto-Resolution
-
-- Mark task done → dependents auto-transition to ready
-- Mark issue resolved → dependents auto-transition to ready
-- Manual block → must manually unblock
-
-### 10. Configure Early, Rarely Change
-
-Configure workspace defaults at the start:
-
-```bash
-mandor init "Project Name"
 mandor config set default_priority P2
 mandor config set strict_mode true
+mandor config set goal.lengths.task 500
 ```
 
-### 11. Review Status Regularly
+### 8. Document Status Changes
+
+Always explain why you're cancelling or changing status:
 
 ```bash
-# Workspace overview
-mandor status
+mandor task update <task-id> --status cancelled \
+  --reason "Superseded by feature X"
+```
 
-# Project summary
-mandor status --project api
+### 9. Use Pipe Separators for Lists
 
-# See feature progress
-mandor track project api
+```bash
+--implementation-steps "Step 1|Step 2|Step 3"
+--test-cases "Test 1|Test 2|Test 3"
+--iae-scenarios "req-0001:scenario-0001|req-0002:scenario-0001"
+--depends-on "task-1|task-2|task-3"
+```
 
-# See feature tasks
-mandor track feature api-feature-xxxx
+### 10. Track Regularly Before Starting
 
-# See task details
-mandor track task api-feature-xxxx-task-xxxx
+Always check status first:
+
+```bash
+mandor track feature <feature-id>   # See all task states
+mandor track task <task-id>         # Check gate status and dependencies
+```
+
+### 11. AI Agent Session Management
+
+Log your progress between sessions:
+
+```bash
+# End of session
+mandor session note "Completed task setup and testing, next: validation middleware"
+
+# Start of session
+mandor session note --read  # See what was done
 ```
 
 ---
 
+## Status Transitions
 
-## Troubleshooting
+### Task Lifecycle
 
-### "Command not found"
-
-Ensure mandor is in your PATH:
-
-```bash
-export PATH="$HOME/.local/bin:$PATH"
+```
+New (with depends-on)          New (no depends)
+    ↓                              ↓
+blocked                          ready
+    ↓                              ↓
+    └──────→ ready ←──────┐        │
+             ↓  ↑          │       │
+    in_progress │          │       │
+             ↓  │          │       │
+           done ├──cancelled│──────┤
+                │          │       │
+                └──────────┴───────┘
 ```
 
-### "Project not found"
-
-Check the project ID and ensure you're in the correct workspace:
-
-```bash
-mandor status
-```
-
-### "Entity not found"
-
-Verify the entity ID exists:
-
-```bash
-mandor track feature <feature-id>
-mandor track project <project-id>
-```
-
-### "Cross-project dependency detected"
-
-The project doesn't allow cross-project dependencies:
-
-```bash
-# Check project config
-mandor project detail <project-id>
-
-# Create new project with cross-project enabled
-mandor project create <id> --name "..." --goal "..." --task-dep cross_project_allowed
-```
-
-### "Invalid status transition"
-
-The transition isn't allowed by the state machine:
-
-```bash
-# Tasks: pending → ready → in_progress → done
-# Features: draft → active → done
-# Issues: open → ready → in_progress → resolved
-```
-
-### "Cannot create task for cancelled feature"
-
-Reopen the feature first:
-
-```bash
-mandor feature update <feature-id> --project <project-id> --reopen
-```
+**Rules:**
+- New task without `--depends-on`: status=ready, all gates=false
+- New task with `--depends-on`: status=blocked
+- blocked → ready: auto-transition when dependencies done
+- ready → in_progress: requires all three gates=true
+- ready → cancelled: allowed without gates
+- in_progress → done: allowed without gates
+- done: immutable, no transitions out
+- Error messages show which gates are unmet
 
 ---
-
-
-## Configuration Keys
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `default_priority` | string | P3 | Default priority for new entities (P0-P5) |
-| `strict_mode` | boolean | false | Enable strict dependency validation |
-| `goal.lengths.project` | integer | 500 | Min chars for project goal |
-| `goal.lengths.feature` | integer | 300 | Min chars for feature goal |
-| `goal.lengths.task` | integer | 500 | Min chars for task goal |
-| `goal.lengths.issue` | integer | 200 | Min chars for issue goal |
-
----
-
 
 ## File Structure
 
 ```
 .mandor/
 ├── workspace.json          # Workspace metadata
-├── config.json             # Workspace configuration
-├── session-notes.jsonl     # AI agent session progress notes (NDJSON)
+├── config.json             # Configuration
+├── session-notes.jsonl     # AI session progress (NDJSON)
 └── projects/
     └── <project-id>/
-        ├── project.json    # Project metadata
-        ├── features.jsonl  # Feature records
-        ├── tasks.jsonl     # Task records
-        └── issues.jsonl    # Issue records
-```
-
-**Session Notes Format (session-notes.jsonl):**
-```json
-{"timestamp":"2026-02-04T12:45:00Z","note":"Completed v0.4.4 release and testing"}
-{"timestamp":"2026-02-04T14:20:00Z","note":"Started performance optimization - blocked on benchmarks"}
+        ├── project.json
+        ├── briefs/
+        │   └── <brief-id>.md          # Brief document
+        ├── specs/
+        │   └── <spec-id>.md           # Spec with requirements
+        ├── blueprints.jsonl           # Blueprint records
+        ├── features.jsonl             # Feature records
+        ├── tasks.jsonl                # Task records
+        └── issues.jsonl               # Issue records
 ```
 
 ---
 
+## Configuration
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `default_priority` | string | P3 | Default priority for new entities (P0-P5) |
+| `strict_mode` | boolean | false | Enable strict validation |
+| `goal.lengths.project` | integer | 500 | Min chars for project goal |
+| `goal.lengths.feature` | integer | 300 | Min chars for feature goal |
+| `goal.lengths.task` | integer | 500 | Min chars for task goal |
+| `goal.lengths.issue` | integer | 200 | Min chars for issue goal |
+
+```bash
+mandor config list                                  # Show all
+mandor config get default_priority                  # Get one
+mandor config set default_priority P2               # Set one
+mandor config reset default_priority                # Reset to default
+```
+
+---
+
+## Troubleshooting
+
+### Gate Transition Error
+
+**Error:** "Cannot transition to in_progress: gates not set"
+
+**Solution:** Set all three gates before transitioning
+
+```bash
+mandor track task <task-id>  # Check which gates are false
+
+mandor task set-gate <task-id> --is-read-brief
+mandor task set-gate <task-id> --is-read-spec
+mandor task set-gate <task-id> --is-read-session-notes
+
+mandor task update <task-id> --status in_progress
+```
+
+### Task Blocked by Dependencies
+
+**Error:** "Task is blocked by dependencies"
+
+**Solution:** Complete all blocking tasks first
+
+```bash
+mandor track task <task-id>  # See which tasks are blocking
+
+# Complete each blocking task
+mandor task update <blocking-task-id> --status done
+
+# Dependent task auto-transitions to ready
+mandor track task <task-id>
+```
+
+### Feature Not Found
+
+**Error:** "Feature not found" or "Entity not found"
+
+**Solution:** Verify ID and check workspace
+
+```bash
+mandor track project <project-id>  # List all features
+mandor track feature <feature-id>  # Check if exists
+```
+
+---
+
+## Development
+
+### Build
+
+```bash
+cd Mandor
+go build -o mandor ./cmd/mandor
+```
+
+### Run Tests
+
+```bash
+go test ./...
+```
+
+### View All Commands
+
+```bash
+./mandor --help
+./mandor populate  # Full reference with examples
+```
+
+---
+
+## Key Features
+
+✓ **Structured Workflow**: Brief → Spec → Blueprint → Feature → Task
+✓ **Gate Enforcement**: Three read gates required before starting work
+✓ **Dependency Tracking**: Auto-blocking and auto-unblocking with cascading
+✓ **Cross-Feature Dependencies**: Tasks can depend across feature boundaries
+✓ **Session Tracking**: Session notes for AI agent progress
+✓ **CLI-Native**: Terminal, scripts, CI/CD pipelines
+✓ **Deterministic**: Single source of truth in JSONL files
+✓ **Auditable**: Full change history
+
+---
 
 ## Support
 
-- Issues: https://github.com/sanxzy/mandor/issues
-- Documentation: `/docs` directory
-- Repository: https://github.com/sanxzy/mandor
+- **Documentation**: Run `mandor populate` for complete command reference
+- **Help**: `mandor <command> --help` for any command
+- **Repository**: https://github.com/budisantoso/mandor
 
 ---
-
 
 **Built for AI Agent Workflows**

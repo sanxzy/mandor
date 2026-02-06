@@ -13,28 +13,32 @@ const (
 const FeatureGoalMinLength = 300
 
 type Feature struct {
-	ID        string    `json:"id"`
-	ProjectID string    `json:"project_id"`
-	Name      string    `json:"name"`
-	Goal      string    `json:"goal"`
-	Scope     string    `json:"scope,omitempty"`
-	Priority  string    `json:"priority"`
-	Status    string    `json:"status"`
-	DependsOn []string  `json:"depends_on,omitempty"`
-	Reason    string    `json:"reason,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	CreatedBy string    `json:"created_by"`
-	UpdatedBy string    `json:"updated_by"`
+	ID            string    `json:"id"`            // Derived from capability ID
+	CapabilityID  string    `json:"capability_id"` // Reference to Brief capability
+	SpecID        string    `json:"spec_id"`       // Reference to Spec (ONE-TO-ONE, IMMUTABLE)
+	ProjectID     string    `json:"project_id"`
+	Name          string    `json:"name"`
+	Goal          string    `json:"goal"`
+	Scope         string    `json:"scope,omitempty"`
+	Priority      string    `json:"priority"`
+	Status        string    `json:"status"`
+	DependsOn     []string  `json:"depends_on,omitempty"`
+	Reason        string    `json:"reason,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	CreatedBy     string    `json:"created_by"`
+	UpdatedBy     string    `json:"updated_by"`
 }
 
 type FeatureCreateInput struct {
-	ProjectID string
-	Name      string
-	Goal      string
-	Scope     string
-	Priority  string
-	DependsOn []string
+	ProjectID    string
+	CapabilityID string // From Brief capability
+	SpecID       string // ONE-TO-ONE mapping (immutable)
+	Name         string
+	Goal         string
+	Scope        string
+	Priority     string
+	DependsOn    []string
 }
 
 type FeatureListInput struct {
@@ -67,6 +71,13 @@ type FeatureUpdateInput struct {
 	DryRun    bool
 }
 
+type FeatureDeleteInput struct {
+	ProjectID string
+	FeatureID string
+	Force     bool
+	Reason    string
+}
+
 type FeatureListItem struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
@@ -86,20 +97,22 @@ type FeatureListOutput struct {
 }
 
 type FeatureDetailOutput struct {
-	ID        string   `json:"id"`
-	ProjectID string   `json:"project_id"`
-	Name      string   `json:"name"`
-	Goal      string   `json:"goal"`
-	Scope     string   `json:"scope,omitempty"`
-	Priority  string   `json:"priority"`
-	Status    string   `json:"status"`
-	DependsOn []string `json:"depends_on"`
-	Reason    string   `json:"reason,omitempty"`
-	Events    int      `json:"events"`
-	CreatedAt string   `json:"created_at"`
-	UpdatedAt string   `json:"updated_at"`
-	CreatedBy string   `json:"created_by"`
-	UpdatedBy string   `json:"updated_by"`
+	ID            string   `json:"id"`
+	CapabilityID  string   `json:"capability_id"`
+	SpecID        string   `json:"spec_id"`
+	ProjectID     string   `json:"project_id"`
+	Name          string   `json:"name"`
+	Goal          string   `json:"goal"`
+	Scope         string   `json:"scope,omitempty"`
+	Priority      string   `json:"priority"`
+	Status        string   `json:"status"`
+	DependsOn     []string `json:"depends_on"`
+	Reason        string   `json:"reason,omitempty"`
+	Events        int      `json:"events"`
+	CreatedAt     string   `json:"created_at"`
+	UpdatedAt     string   `json:"updated_at"`
+	CreatedBy     string   `json:"created_by"`
+	UpdatedBy     string   `json:"updated_by"`
 }
 
 func ValidateFeatureID(id string) bool {

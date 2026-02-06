@@ -58,19 +58,23 @@ func NewDetailCmd() *cobra.Command {
 			}
 
 			out := cmd.OutOrStdout()
-			fmt.Fprintf(out, "Feature: %s\n", output.ID)
-			fmt.Fprintf(out, "  Name:      %s\n", output.Name)
-			fmt.Fprintf(out, "  Project:   %s\n", output.ProjectID)
-			fmt.Fprintf(out, "  Goal:      %s\n", output.Goal)
-			fmt.Fprintf(out, "  Scope:     %s\n", output.Scope)
-			fmt.Fprintf(out, "  Priority:  %s\n", output.Priority)
-			fmt.Fprintf(out, "  Status:    %s\n", output.Status)
-			fmt.Fprintf(out, "  DependsOn: %v\n", output.DependsOn)
-			fmt.Fprintf(out, "  Reason:    %s\n", output.Reason)
-			fmt.Fprintf(out, "  Created:   %s\n", output.CreatedAt)
-			fmt.Fprintf(out, "  Updated:   %s\n", output.UpdatedAt)
-			fmt.Fprintf(out, "  CreatedBy: %s\n", output.CreatedBy)
-			fmt.Fprintf(out, "  UpdatedBy: %s\n", output.UpdatedBy)
+			fmt.Fprintf(out, "✓ Feature: %s\n", output.ID)
+			fmt.Fprintf(out, "  Name:         %s\n", output.Name)
+			fmt.Fprintf(out, "  Project:      %s\n", output.ProjectID)
+			fmt.Fprintf(out, "  Capability:   %s\n", output.CapabilityID)
+			fmt.Fprintf(out, "  Spec ID:      %s\n", output.SpecID)
+			fmt.Fprintf(out, "  Goal:         %s\n", output.Goal)
+			fmt.Fprintf(out, "  Scope:        %s\n", output.Scope)
+			fmt.Fprintf(out, "  Priority:     %s\n", output.Priority)
+			fmt.Fprintf(out, "  Status:       %s\n", output.Status)
+			fmt.Fprintf(out, "  DependsOn:    %v\n", output.DependsOn)
+			if output.Reason != "" {
+				fmt.Fprintf(out, "  Reason:       %s\n", output.Reason)
+			}
+			fmt.Fprintf(out, "  Created:      %s\n", output.CreatedAt)
+			fmt.Fprintf(out, "  Updated:      %s\n", output.UpdatedAt)
+			fmt.Fprintf(out, "  CreatedBy:    %s\n", output.CreatedBy)
+			fmt.Fprintf(out, "  UpdatedBy:    %s\n", output.UpdatedBy)
 
 			return nil
 		},

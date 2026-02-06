@@ -14,6 +14,7 @@ func NewFeatureCmd() *cobra.Command {
 	cmd.AddCommand(NewCreateCmd())
 	cmd.AddCommand(NewDetailCmd())
 	cmd.AddCommand(NewUpdateCmd())
+	cmd.AddCommand(NewDeleteCmd())
 
 	return cmd
 }

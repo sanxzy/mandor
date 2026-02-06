@@ -46,6 +46,48 @@ func (s *FeatureService) ValidateCreateInput(input *domain.FeatureCreateInput) e
 		return domain.NewValidationError("Project not found: " + input.ProjectID)
 	}
 
+	// Validate Capability ID
+	if strings.TrimSpace(input.CapabilityID) == "" {
+		return domain.NewValidationError("Capability ID is required.")
+	}
+
+	if !domain.ValidateCapabilityID(input.CapabilityID) {
+		return domain.NewValidationError(fmt.Sprintf("Error: Invalid capability ID '%s'\nSolution: use alphanumeric characters and hyphens only", input.CapabilityID))
+	}
+
+	// Verify capability exists in Brief
+	brief, err := s.loadBriefForProject(input.ProjectID)
+	if err != nil {
+		return domain.NewValidationError("Brief not found for project. Create a Brief first with this capability.")
+	}
+
+	if !s.capabilityExistsInBrief(brief, input.CapabilityID) {
+		return domain.NewValidationError(fmt.Sprintf("Capability '%s' not found in Brief. Create it in the Brief first.", input.CapabilityID))
+	}
+
+	// Validate Spec ID
+	if strings.TrimSpace(input.SpecID) == "" {
+		return domain.NewValidationError("Spec ID is required.")
+	}
+
+	// Expected spec ID format is {capability-id}-spec
+	expectedSpecID := input.CapabilityID + "-spec"
+	if input.SpecID != expectedSpecID {
+		return domain.NewValidationError(fmt.Sprintf("Error: Spec ID must match '{capability-id}-spec' format\nProvided: %s\nExpected: %s", input.SpecID, expectedSpecID))
+	}
+
+	// Verify spec exists
+	specSvc := NewSpecServiceWithPaths(s.paths)
+	spec, err := specSvc.ReadSpec(input.ProjectID, input.SpecID)
+	if err != nil {
+		return domain.NewValidationError(fmt.Sprintf("Spec not found: %s. Create the Spec first.", input.SpecID))
+	}
+
+	// Verify spec is not archived
+	if spec.Status == domain.SpecStatusArchived {
+		return domain.NewValidationError(fmt.Sprintf("Spec is archived: %s. Reactivate the Spec first.", input.SpecID))
+	}
+
 	if strings.TrimSpace(input.Name) == "" {
 		return domain.NewValidationError("Feature name is required.")
 	}
@@ -207,18 +249,20 @@ func (s *FeatureService) CreateFeature(input *domain.FeatureCreateInput) (*domai
 	featureID := input.ProjectID + "-feature-" + nanoid
 
 	feature := &domain.Feature{
-		ID:        featureID,
-		ProjectID: input.ProjectID,
-		Name:      input.Name,
-		Goal:      input.Goal,
-		Scope:     input.Scope,
-		Priority:  input.Priority,
-		Status:    domain.FeatureStatusDraft,
-		DependsOn: input.DependsOn,
-		CreatedAt: now,
-		UpdatedAt: now,
-		CreatedBy: creator,
-		UpdatedBy: creator,
+		ID:           featureID,
+		ProjectID:    input.ProjectID,
+		CapabilityID: input.CapabilityID,
+		SpecID:       input.SpecID,
+		Name:         input.Name,
+		Goal:         input.Goal,
+		Scope:        input.Scope,
+		Priority:     input.Priority,
+		Status:       domain.FeatureStatusDraft,
+		DependsOn:    input.DependsOn,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+		CreatedBy:    creator,
+		UpdatedBy:    creator,
 	}
 
 	if len(input.DependsOn) > 0 {
@@ -325,20 +369,22 @@ func (s *FeatureService) GetFeatureDetail(input *domain.FeatureDetailInput) (*do
 	}
 
 	return &domain.FeatureDetailOutput{
-		ID:        feature.ID,
-		ProjectID: feature.ProjectID,
-		Name:      feature.Name,
-		Goal:      feature.Goal,
-		Scope:     feature.Scope,
-		Priority:  feature.Priority,
-		Status:    feature.Status,
-		DependsOn: feature.DependsOn,
-		Reason:    feature.Reason,
-		Events:    0,
-		CreatedAt: feature.CreatedAt.Format(time.RFC3339),
-		UpdatedAt: feature.UpdatedAt.Format(time.RFC3339),
-		CreatedBy: feature.CreatedBy,
-		UpdatedBy: feature.UpdatedBy,
+		ID:           feature.ID,
+		CapabilityID: feature.CapabilityID,
+		SpecID:       feature.SpecID,
+		ProjectID:    feature.ProjectID,
+		Name:         feature.Name,
+		Goal:         feature.Goal,
+		Scope:        feature.Scope,
+		Priority:     feature.Priority,
+		Status:       feature.Status,
+		DependsOn:    feature.DependsOn,
+		Reason:       feature.Reason,
+		Events:       0,
+		CreatedAt:    feature.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:    feature.UpdatedAt.Format(time.RFC3339),
+		CreatedBy:    feature.CreatedBy,
+		UpdatedBy:    feature.UpdatedBy,
 	}, nil
 }
 
@@ -585,4 +631,74 @@ func (s *FeatureService) getFeatureGoalMinLength() int {
 		return ws.Config.GoalLengths.Feature
 	}
 	return domain.FeatureGoalMinLength
+}
+
+func (s *FeatureService) loadBriefForProject(projectID string) (*domain.Brief, error) {
+	briefSvc := NewBriefServiceWithPaths(s.paths)
+	return briefSvc.ReadBrief(projectID)
+}
+
+func (s *FeatureService) capabilityExistsInBrief(brief *domain.Brief, capabilityID string) bool {
+	for _, cap := range brief.NewCapabilities {
+		if cap.ID == capabilityID {
+			return true
+		}
+	}
+	for _, cap := range brief.ModifiedCapabilities {
+		if cap.ID == capabilityID {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *FeatureService) ValidateDeleteInput(input *domain.FeatureDeleteInput) error {
+	if !s.reader.ProjectExists(input.ProjectID) {
+		return domain.NewValidationError("Project not found: " + input.ProjectID)
+	}
+
+	feature, err := s.reader.ReadFeature(input.ProjectID, input.FeatureID)
+	if err != nil {
+		return domain.NewValidationError("Feature not found: " + input.FeatureID)
+	}
+
+	if feature.Status == domain.FeatureStatusCancelled {
+		return domain.NewValidationError("Feature is already cancelled. Use --force to delete.")
+	}
+
+	// Check for dependents
+	dependents, err := s.findDependents(input.ProjectID, input.FeatureID)
+	if err != nil {
+		return err
+	}
+	if len(dependents) > 0 && !input.Force {
+		return domain.NewValidationError(fmt.Sprintf("Feature has %d dependent(s). Use --force to delete anyway.", len(dependents)))
+	}
+
+	return nil
+}
+
+func (s *FeatureService) DeleteFeature(input *domain.FeatureDeleteInput) error {
+	feature, err := s.reader.ReadFeature(input.ProjectID, input.FeatureID)
+	if err != nil {
+		return err
+	}
+
+	updater := util.GetGitUsername()
+	now := time.Now().UTC()
+
+	// Mark as cancelled instead of deleting
+	feature.Status = domain.FeatureStatusCancelled
+	feature.Reason = input.Reason
+	if feature.Reason == "" {
+		feature.Reason = "Deleted"
+	}
+	feature.UpdatedAt = now
+	feature.UpdatedBy = updater
+
+	if err := s.writer.ReplaceFeature(input.ProjectID, feature); err != nil {
+		return err
+	}
+
+	return nil
 }

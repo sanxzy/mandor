@@ -697,3 +697,53 @@ func (w *Writer) ReplaceIssue(projectID string, issue *domain.Issue) error {
 
 	return nil
 }
+
+// ReadFile reads a file and returns its content as a string
+func (r *Reader) ReadFile(filePath string) (string, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", nil // File doesn't exist
+		}
+		return "", domain.NewSystemError("Cannot read file", err)
+	}
+	return string(data), nil
+}
+
+// CreateDirectory creates a directory
+func (w *Writer) CreateDirectory(dirPath string) error {
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		if os.IsPermission(err) {
+			return domain.NewPermissionError("Permission denied. Cannot create directory.")
+		}
+		return domain.NewSystemError("Cannot create directory", err)
+	}
+	return nil
+}
+
+// WriteFile writes content to a file
+func (w *Writer) WriteFile(filePath string, content string) error {
+	// Create parent directory if it doesn't exist
+	dir := filepath.Dir(filePath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		if os.IsPermission(err) {
+			return domain.NewPermissionError("Permission denied. Cannot create directory.")
+		}
+		return domain.NewSystemError("Cannot create directory", err)
+	}
+
+	tmpPath := filePath + ".tmp"
+	if err := os.WriteFile(tmpPath, []byte(content), 0644); err != nil {
+		if os.IsPermission(err) {
+			return domain.NewPermissionError("Permission denied. Cannot write file.")
+		}
+		return domain.NewSystemError("Cannot write file", err)
+	}
+
+	if err := os.Rename(tmpPath, filePath); err != nil {
+		os.Remove(tmpPath)
+		return domain.NewSystemError("Cannot save file", err)
+	}
+
+	return nil
+}

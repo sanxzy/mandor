@@ -6,11 +6,14 @@ import (
 
 	"github.com/spf13/cobra"
 	"mandor/internal/cmd/ai"
+	"mandor/internal/cmd/blueprint"
+	"mandor/internal/cmd/brief"
 	"mandor/internal/cmd/feature"
 	"mandor/internal/cmd/issue"
 	"mandor/internal/cmd/populate"
 	"mandor/internal/cmd/project"
 	"mandor/internal/cmd/session"
+	"mandor/internal/cmd/spec"
 	"mandor/internal/cmd/task"
 	"mandor/internal/cmd/track"
 	"mandor/internal/cmd/workspace"
@@ -35,10 +38,15 @@ For more information, visit: https://github.com/budisantoso/mandor`,
 	// Add project commands
 	rootCmd.AddCommand(project.NewProjectCmd())
 
-	// Add feature commands
+	// Add Brief/Spec/Blueprint commands (Phase 1-3)
+	rootCmd.AddCommand(brief.GetBriefCmd())
+	rootCmd.AddCommand(spec.GetSpecCmd())
+	rootCmd.AddCommand(blueprint.GetBlueprintCmd())
+
+	// Add feature commands (Phase 4)
 	rootCmd.AddCommand(feature.NewFeatureCmd())
 
-	// Add task commands
+	// Add task commands (Phase 5-6)
 	rootCmd.AddCommand(task.NewTaskCmd())
 
 	// Add issue commands

@@ -9,20 +9,13 @@ import (
 	"mandor/internal/util"
 )
 
-var (
-	projectID string
-	name      string
-	goal      string
-	scope     string
-	priority  string
-	dependsOn string
-)
+
 
 func NewCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create <name> --project <id> --goal <text>",
+		Use:   "create <name> [--project <id>] --capability <cap-id> --spec-id <spec-id> --goal <text>",
 		Short: "Create a new feature",
-		Long:  "Create a new feature in the specified project with the given name and goal.",
+		Long:  "Create a new feature in the specified project with ONE-TO-ONE Spec mapping (immutable)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewFeatureService()
@@ -34,27 +27,60 @@ func NewCreateCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			projectID, _ := cmd.Flags().GetString("project")
-			if projectID == "" {
+			// Get project ID from flags or parent commands
+			var projID string
+			for p := cmd; p != nil; p = p.Parent() {
+				if val, err := p.Flags().GetString("project"); err == nil && val != "" {
+					projID = val
+					break
+				}
+			}
+			if projID == "" {
 				return domain.NewValidationError("Project ID is required (--project).")
 			}
 
-			if goal == "" {
+			// Get capability ID from flags
+			capID, _ := cmd.Flags().GetString("capability")
+			if capID == "" {
+				return domain.NewValidationError("Capability ID is required (--capability).")
+			}
+
+			// Get spec ID from flags
+			sID, _ := cmd.Flags().GetString("spec-id")
+			if sID == "" {
+				return domain.NewValidationError("Spec ID is required (--spec-id).")
+			}
+
+			// Get goal from flags
+			goalText, _ := cmd.Flags().GetString("goal")
+			if goalText == "" {
 				return domain.NewValidationError("Feature goal is required (--goal).")
 			}
 
+			// Get optional fields from flags
+			featureName, _ := cmd.Flags().GetString("name")
+			if featureName == "" {
+				featureName = args[0]
+			}
+			
+			featureScope, _ := cmd.Flags().GetString("scope")
+			featurePriority, _ := cmd.Flags().GetString("priority")
+			dependsOnStr, _ := cmd.Flags().GetString("depends")
+
 			var dependsOnList []string
-			if dependsOn != "" {
-				dependsOnList = splitDependsOn(dependsOn)
+			if dependsOnStr != "" {
+				dependsOnList = splitDependsOn(dependsOnStr)
 			}
 
 			input := &domain.FeatureCreateInput{
-				ProjectID: projectID,
-				Name:      args[0],
-				Goal:      goal,
-				Scope:     scope,
-				Priority:  priority,
-				DependsOn: dependsOnList,
+				ProjectID:    projID,
+				CapabilityID: capID,
+				SpecID:       sID,
+				Name:         featureName,
+				Goal:         goalText,
+				Scope:        featureScope,
+				Priority:     featurePriority,
+				DependsOn:    dependsOnList,
 			}
 
 			if err := svc.ValidateCreateInput(input); err != nil {
@@ -67,13 +93,15 @@ func NewCreateCmd() *cobra.Command {
 			}
 
 			out := cmd.OutOrStdout()
-			fmt.Fprintf(out, "Feature created: %s\n", feature.ID)
-			fmt.Fprintf(out, "  Name:     %s\n", feature.Name)
-			fmt.Fprintf(out, "  Project:  %s\n", feature.ProjectID)
-			fmt.Fprintf(out, "  Goal:     %s\n", feature.Goal)
-			fmt.Fprintf(out, "  Scope:    %s\n", feature.Scope)
-			fmt.Fprintf(out, "  Priority: %s\n", feature.Priority)
-			fmt.Fprintf(out, "  Status:   %s\n", feature.Status)
+			fmt.Fprintf(out, "✓ Feature created: %s\n", feature.ID)
+			fmt.Fprintf(out, "  Name:      %s\n", feature.Name)
+			fmt.Fprintf(out, "  Project:   %s\n", feature.ProjectID)
+			fmt.Fprintf(out, "  Capability: %s\n", feature.CapabilityID)
+			fmt.Fprintf(out, "  Spec ID:   %s\n", feature.SpecID)
+			fmt.Fprintf(out, "  Goal:      %s\n", feature.Goal)
+			fmt.Fprintf(out, "  Scope:     %s\n", feature.Scope)
+			fmt.Fprintf(out, "  Priority:  %s\n", feature.Priority)
+			fmt.Fprintf(out, "  Status:    %s\n", feature.Status)
 
 			_, warning := util.GetGitUsernameWithWarning()
 			if warning != "" {
@@ -86,12 +114,18 @@ func NewCreateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&projectID, "project", "p", "", "Project ID (required, use -p or --project)")
-	cmd.Flags().StringVarP(&goal, "goal", "g", "", "Feature goal (required, min 300 chars, include technical user flow and complete requirements)")
-	cmd.Flags().StringVarP(&name, "name", "n", "", "Feature name (alternative to positional)")
-	cmd.Flags().StringVar(&scope, "scope", "", "Feature scope (frontend, backend, fullstack, cli, desktop, android, flutter, react-native, ios, swift)")
-	cmd.Flags().StringVar(&priority, "priority", "", "Priority (P0-P5, default from config)")
-	cmd.Flags().StringVar(&dependsOn, "depends", "", "Pipe-separated feature IDs this feature depends on")
+	cmd.Flags().StringP("project", "p", "", "Project ID (required, use -p or --project)")
+	cmd.Flags().String("capability", "", "Capability ID from Brief (required)")
+	cmd.Flags().String("spec-id", "", "Spec ID (required, ONE-TO-ONE immutable mapping)")
+	cmd.Flags().StringP("goal", "g", "", "Feature goal (required, min 300 chars, include technical user flow and complete requirements)")
+	cmd.Flags().StringP("name", "n", "", "Feature name (alternative to positional)")
+	cmd.Flags().String("scope", "", "Feature scope (frontend, backend, fullstack, cli, desktop, android, flutter, react-native, ios, swift)")
+	cmd.Flags().String("priority", "", "Priority (P0-P5, default from config)")
+	cmd.Flags().String("depends", "", "Pipe-separated feature IDs this feature depends on")
+
+	cmd.MarkFlagRequired("capability")
+	cmd.MarkFlagRequired("spec-id")
+	cmd.MarkFlagRequired("goal")
 
 	return cmd
 }

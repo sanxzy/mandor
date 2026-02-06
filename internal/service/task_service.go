@@ -99,6 +99,23 @@ func (s *TaskService) ValidateCreateInput(input *domain.TaskCreateInput) error {
 		return domain.NewValidationError("Cannot create task for completed feature.")
 	}
 
+	// Validate SpecID matches Feature's SpecID
+	if input.SpecID == "" {
+		return domain.NewValidationError("Spec ID is required (--spec-id).")
+	}
+	if input.SpecID != feature.SpecID {
+		return domain.NewValidationError(fmt.Sprintf("Spec ID mismatch. Task Spec ID (%s) must match Feature's Spec ID (%s).", input.SpecID, feature.SpecID))
+	}
+
+	// Validate IAE scenarios exist in the Spec
+	if len(input.IAEScenarios) == 0 {
+		return domain.NewValidationError("IAE scenarios are required (--iae-scenarios).")
+	}
+
+	if err := s.validateIAEScenariosExist(projectID, input.SpecID, input.IAEScenarios); err != nil {
+		return err
+	}
+
 	if strings.TrimSpace(input.Name) == "" {
 		return domain.NewValidationError("Task name is required.")
 	}
@@ -251,6 +268,33 @@ func (s *TaskService) validateNoDuplicateName(projectID, featureID, name string)
 	return nil
 }
 
+func (s *TaskService) validateIAEScenariosExist(projectID, specID string, iaeScenarios []string) error {
+	// Load the spec to validate scenarios exist
+	specService := NewSpecServiceWithPaths(s.paths)
+	spec, err := specService.ReadSpec(projectID, specID)
+	if err != nil {
+		return domain.NewValidationError(fmt.Sprintf("Spec not found: %s", specID))
+	}
+
+	// Build a map of available requirement:scenario combinations
+	validScenarios := make(map[string]bool)
+	for _, req := range spec.Requirements {
+		for _, scenario := range req.IAEScenarios {
+			key := fmt.Sprintf("%s:%s", req.ID, scenario.ID)
+			validScenarios[key] = true
+		}
+	}
+
+	// Validate all referenced scenarios exist
+	for _, iae := range iaeScenarios {
+		if !validScenarios[iae] {
+			return domain.NewValidationError(fmt.Sprintf("IAE scenario not found in spec: %s. Valid format: req-XXXX:scenario-YYYY", iae))
+		}
+	}
+
+	return nil
+}
+
 func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, error) {
 	creator := util.GetGitUsername()
 	now := time.Now().UTC()
@@ -270,15 +314,22 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 	task := &domain.Task{
 		ID:                  taskID,
 		FeatureID:           input.FeatureID,
+		SpecID:              input.SpecID,
 		ProjectID:           projectID,
 		Name:                input.Name,
 		Goal:                input.Goal,
 		Priority:            input.Priority,
 		Status:              domain.TaskStatusReady,
 		DependsOn:           input.DependsOn,
+		IAEScenarios:        input.IAEScenarios,
 		ImplementationSteps: input.ImplementationSteps,
 		TestCases:           input.TestCases,
 		LibraryNeeds:        input.LibraryNeeds,
+		ReadGates: domain.ReadGates{
+			IsReadBrief:         false,
+			IsReadSpec:          false,
+			IsReadSessionNotes:  false,
+		},
 		CreatedAt:           now,
 		UpdatedAt:           now,
 		CreatedBy:           creator,
@@ -688,6 +739,12 @@ func (s *TaskService) UpdateTask(input *domain.TaskUpdateInput) ([]string, error
 		if err := s.validateStatusTransition(task.Status, *input.Status); err != nil {
 			return nil, err
 		}
+		// Enforce gates before transitioning to in_progress
+		if *input.Status == domain.TaskStatusInProgress {
+			if err := s.checkGatesBeforeInProgress(task.ReadGates); err != nil {
+				return nil, err
+			}
+		}
 		task.Status = *input.Status
 		changes = append(changes, "status")
 	}
@@ -745,6 +802,33 @@ func (s *TaskService) validateStatusTransition(current, next string) error {
 	}
 
 	return domain.NewValidationError(fmt.Sprintf("Invalid status transition from %s to %s", current, next))
+}
+
+func (s *TaskService) checkGatesBeforeInProgress(gates domain.ReadGates) error {
+	unmetGates := []string{}
+	
+	if !gates.IsReadBrief {
+		unmetGates = append(unmetGates, "is-read-brief")
+	}
+	if !gates.IsReadSpec {
+		unmetGates = append(unmetGates, "is-read-spec")
+	}
+	if !gates.IsReadSessionNotes {
+		unmetGates = append(unmetGates, "is-read-session-notes")
+	}
+	
+	if len(unmetGates) > 0 {
+		solution := "Set all gates before transitioning to in_progress:\n"
+		for _, gate := range unmetGates {
+			solution += fmt.Sprintf("  mandor task set-gate <task-id> --%s\n", gate)
+		}
+		return domain.NewValidationError(fmt.Sprintf("Error: Cannot transition to in_progress - %d unmet gates: %s\nSolution: %s", 
+			len(unmetGates), 
+			strings.Join(unmetGates, ", "),
+			strings.TrimSuffix(solution, "\n")))
+	}
+	
+	return nil
 }
 
 func (s *TaskService) findDependents(projectID, taskID string) ([]string, error) {
@@ -906,4 +990,16 @@ func (s *TaskService) getTaskGoalMinLength() int {
 		return ws.Config.GoalLengths.Task
 	}
 	return domain.TaskGoalMinLength
+}
+
+// ReadTask reads a task by ID from filesystem
+func (s *TaskService) ReadTask(projectID, featureID, taskID string) (*domain.Task, error) {
+	return s.reader.ReadTask(projectID, taskID)
+}
+
+// SaveTask saves a task object directly to filesystem (used by gates commands)
+func (s *TaskService) SaveTask(projectID, featureID string, task *domain.Task) error {
+	task.UpdatedAt = time.Now().UTC()
+	task.UpdatedBy = util.GetGitUsername()
+	return s.writer.ReplaceTask(projectID, task)
 }
