@@ -6,9 +6,9 @@ This guide covers setting up the development environment, running tests, buildin
 
 ### Prerequisites
 
-- **Go 1.25+** - Download from [golang.org](https://golang.org/dl/)
+- **Go 1.21+** - Download from [golang.org](https://golang.org/dl/)
+- **Node.js 16+** - For npm package management and building
 - **Git** - For version control
-- **jq** - For JSON processing in scripts (optional but recommended)
 
 ### Setup
 
@@ -47,6 +47,12 @@ go test ./tests/unit/service/... -v
 
 # Command layer tests
 go test ./tests/unit/cmd/... -v
+
+# Domain validation tests
+go test ./tests/unit/domain/... -v
+
+# File I/O tests
+go test ./tests/unit/fs/... -v
 ```
 
 ### Test Coverage
@@ -81,6 +87,7 @@ GOOS=linux GOARCH=amd64 go build -o build/mandor-linux-amd64 ./cmd/mandor
 
 # macOS
 GOOS=darwin GOARCH=amd64 go build -o build/mandor-darwin-amd64 ./cmd/mandor
+GOOS=darwin GOARCH=arm64 go build -o build/mandor-darwin-arm64 ./cmd/mandor
 
 # Windows
 GOOS=windows GOARCH=amd64 go build -o build/mandor-windows-amd64.exe ./cmd/mandor
@@ -108,7 +115,7 @@ npm run build
 
 ## NPM Package Build Commands
 
-The NPM package (`@mandors/cli@0.4.4+`) wraps the Go binary for cross-platform distribution.
+The NPM package (`@mandors/cli`) wraps the Go binary for cross-platform distribution.
 
 ```bash
 # Build supported platforms (attempts all 6, only succeeds on compatible systems)
@@ -140,17 +147,6 @@ npm/
 │   └── resolve.js          # Version resolution
 └── scripts/
     └── build.js            # Cross-platform build script
-```
-
-### Programmatic Usage
-
-```javascript
-const mandor = require('@mandors/cli');
-
-const cli = new mandor.Mandor({ json: true, cwd: '/project/path' });
-await cli.init('My Project');
-await cli.projectCreate('api', { name: 'API Service' });
-const tasks = await cli.taskList({ project: 'api', status: 'pending' });
 ```
 
 ## Code Style
@@ -239,360 +235,218 @@ mandor/
 │   │   ├── root.go                    # Root command
 │   │   ├── completion.go              # Shell completion
 │   │   ├── populate.go                # Populate reference data
-│   │   ├── summary.go                 # Legacy summary command
+│   │   ├── track.go                   # Track workspace/projects/features/tasks
 │   │   ├── version.go                 # Version command
-│   │   ├── ai/                        # AI commands
-│   │   │   ├── root.go
-│   │   │   ├── agents.go
-│   │   │   └── claude.go
-│   │   ├── workspace/                 # Workspace commands
-│   │   │   ├── init.go
-│   │   │   ├── status.go
-│   │   │   └── config.go
-│   │   ├── project/                   # Project commands
-│   │   │   ├── project.go
-│   │   │   ├── create.go
-│   │   │   ├── list.go
-│   │   │   ├── detail.go
-│   │   │   ├── update.go
-│   │   │   ├── delete.go
-│   │   │   └── reopen.go
+│   │   ├── brief/                     # Brief commands
+│   │   │   └── create.go
+│   │   ├── blueprint/                 # Blueprint commands
+│   │   │   └── create.go
 │   │   ├── feature/                   # Feature commands
-│   │   │   ├── feature.go
 │   │   │   ├── create.go
-│   │   │   ├── list.go
-│   │   │   ├── detail.go
 │   │   │   └── update.go
-│   │   ├── task/                      # Task commands
-│   │   │   ├── task.go
-│   │   │   ├── create.go
-│   │   │   ├── list.go
-│   │   │   ├── ready.go
-│   │   │   ├── blocked.go
-│   │   │   ├── detail.go
-│   │   │   ├── update.go
-│   │   │   └── summary.go
 │   │   ├── issue/                     # Issue commands
-│   │   │   ├── issue.go
 │   │   │   ├── create.go
-│   │   │   ├── list.go
 │   │   │   ├── ready.go
-│   │   │   ├── blocked.go
-│   │   │   ├── detail.go
+│   │   │   └── blocked.go
+│   │   ├── project/                   # Project commands
+│   │   │   └── create.go
+│   │   ├── session/                   # Session commands
+│   │   │   └── note.go
+│   │   ├── spec/                      # Spec commands
+│   │   │   └── create.go
+│   │   ├── task/                      # Task commands
+│   │   │   ├── create.go
 │   │   │   ├── update.go
-│   │   │   └── summary.go
-│   │   └── track/                     # Unified tracking command
-│   │       ├── track.go
-│   │       ├── handlers.go
-│   │       ├── output.go
-│   │       └── types.go
-│   ├── service/                       # Business logic layer
-│   │   ├── workspace_service.go
-│   │   ├── status_service.go
-│   │   ├── project_service.go
-│   │   ├── feature_service.go
-│   │   ├── task_service.go
-│   │   └── issue_service.go
-│   ├── domain/                        # Data models & validation
-│   │   ├── errors.go
-│   │   ├── workspace.go
-│   │   ├── project.go
+│   │   │   └── set_gate.go
+│   │   └── workspace/                 # Workspace commands
+│   │       └── init.go
+│   ├── domain/                        # Domain entities
+│   │   ├── brief.go
+│   │   ├── blueprint.go
 │   │   ├── feature.go
+│   │   ├── issue.go
+│   │   ├── project.go
+│   │   ├── spec.go
 │   │   ├── task.go
-│   │   └── issue.go
-│   ├── fs/                            # Filesystem I/O
+│   │   ├── workspace.go
+│   │   └── validation.go
+│   ├── fs/                            # File I/O (NDJSON reading/writing)
+│   │   ├── io.go
 │   │   ├── paths.go
-│   │   └── io.go
+│   │   └── errors.go
+│   ├── service/                       # Business logic layer
+│   │   ├── brief_service.go
+│   │   ├── blueprint_service.go
+│   │   ├── feature_service.go
+│   │   ├── issue_service.go
+│   │   ├── project_service.go
+│   │   ├── spec_service.go
+│   │   ├── task_service.go
+│   │   ├── workspace_service.go
+│   │   └── dependency_resolver.go
 │   └── util/                          # Utilities
-│       ├── id.go
-│       └── git.go
+│       ├── idgen.go                   # ID generation (nanoid)
+│       ├── priority.go                # Priority parsing/comparison
+│       └── errors.go
 ├── tests/
-│   └── unit/                          # Unit tests
-│       ├── cmd/
-│       │   ├── workspace/
-│       │   ├── project/
-│       │   ├── feature/
-│       │   ├── task/
-│       │   ├── issue/
-│       │   ├── populate_test.go
-│       │   └── completion_test.go
-│       └── service/
-│           ├── workspace_service_test.go
-│           ├── status_service_test.go
-│           ├── project_service_test.go
-│           ├── feature_service_test.go
-│           ├── task_service_test.go
-│           └── issue_service_test.go
+│   ├── unit/                          # Unit tests
+│   │   ├── cmd/                       # Command tests
+│   │   ├── domain/                    # Domain entity tests
+│   │   ├── fs/                        # File I/O tests
+│   │   └── service/                   # Service layer tests
+│   └── cli/                           # CLI integration tests
 ├── npm/                               # NPM package wrapper
-│   ├── bin/
-│   │   └── mandor                     # CLI wrapper script
-│   ├── lib/
-│   │   ├── index.js
-│   │   ├── install.js
-│   │   ├── config.js
-│   │   └── build.js
-│   └── package.json
-├── binaries/                          # Cross-platform binaries
-│   ├── darwin-amd64/
-│   ├── darwin-arm64/
-│   ├── linux-amd64/
-│   ├── linux-arm64/
-│   ├── windows-amd64/
-│   ├── windows-arm64/
-│   ├── *.tar.gz                       # Compressed archives
-│   └── mandor                         # Current platform binary
+│   ├── bin/                           # CLI executable wrapper
+│   ├── lib/                           # Node.js package code
+│   └── scripts/                       # Build scripts
 ├── docs/                              # Documentation
 │   ├── DEVELOPMENT_GUIDE.md           # This file
-│   ├── README.md                      # Command reference
-│   ├── rules/
-│   │   ├── dependency-rules.md
-│   │   └── status-type-reference.md
-│   ├── test/
-│   │   └── integration_test.md
-│   └── bugs/
-│       └── test_complex.md              # Comprehensive test report (61 scenarios)
-├── scripts/
-│   └── build.sh                         # Build script
-├── .mandor/                             # Workspace data (local development)
-├── CHANGELOG.md                         # Version history
-├── README.md                            # Main command documentation
-├── AGENTS.md                            # Agent workflow guide
-├── package.json                         # NPM package metadata
-├── go.mod                               # Go module definition
-├── go.sum                               # Go module checksums
-├── .pre-commit-config.yaml              # Pre-commit hooks
-├── .gitignore                           # Git ignore rules
-└── .npmignore                           # NPM ignore rules
+│   ├── RELEASE.md                     # Release process
+│   └── background/                    # Additional documentation
+└── scripts/                           # Utility scripts
 ```
 
-## Architecture
+### Key Components
 
-### Layer Diagram
+**Command Layer (internal/cmd/)**
+- Routes CLI arguments to service layer via Cobra
+- Handles input validation and flag parsing
+- Formats and outputs results to stdout
+
+**Service Layer (internal/service/)**
+- Implements business logic and validation rules
+- Manages task dependencies and status transitions
+- Enforces gate requirements (brief read, spec read, session notes)
+- Handles cross-project dependencies
+
+**Domain Layer (internal/domain/)**
+- Defines core entities: Workspace, Project, Brief, Spec, Blueprint, Feature, Task, Issue
+- Specifies validation rules and constraints
+- Entity lifecycle: creation, updates, status transitions
+
+**File I/O Layer (internal/fs/)**
+- Reads/writes NDJSON files for persistent storage
+- Streaming parser for large workspaces (no memory bloat)
+- Path management for .mandor/ directory structure
+
+**Utility Packages (internal/util/)**
+- Nanoid ID generation for entity IDs
+- Priority parsing (P0-P5)
+- Custom error types for validation and system errors
+
+## Core Architecture
+
+### Data Model
+
+Entities are stored in `.mandor/projects/<project-id>/` using NDJSON format:
 
 ```
-┌─────────────────┐
-│   CLI (Cobra)   │  Command handlers - Parse flags, call services
-├─────────────────┤
-│    Service      │  Business logic - Validation, status transitions
-├─────────────────┤
-│     Domain      │  Types - Structs, constants, validation functions
-├─────────────────┤
-│   Filesystem    │  JSONL I/O - Read/write NDJSON files
-├─────────────────┤
-│     Util        │  ID generation, git integration
-└─────────────────┘
+.mandor/
+├── workspace.json            # Workspace metadata
+├── config.json               # Configuration
+├── session-notes.jsonl       # AI session progress (NDJSON)
+└── projects/
+    └── <project-id>/
+        ├── project.json      # Project metadata
+        ├── briefs/
+        │   └── <brief-id>.md # Brief document (markdown)
+        ├── specs/
+        │   └── <spec-id>.md  # Spec document (markdown)
+        ├── blueprints.jsonl  # Blueprint records (NDJSON)
+        ├── features.jsonl    # Feature records (NDJSON)
+        ├── tasks.jsonl       # Task records (NDJSON)
+        └── issues.jsonl      # Issue records (NDJSON)
 ```
 
-### Key Design Decisions
+### Workflow Pipeline
 
-1. **NDJSON Format**: Append-only events, replace for current state
-   - `events.jsonl`: Append-only audit trail
-   - `features.jsonl`, `tasks.jsonl`, `issues.jsonl`: Current state (replace)
+```
+Brief (Intent & Capabilities)
+  ↓
+Spec (Requirements with IAE Scenarios)
+  ↓
+Blueprint (Architecture Decisions)
+  ↓
+Feature (Maps to Spec)
+  ↓
+Task (Implementation Work)
+```
 
-2. **No Delete**: Soft delete via status, preserve audit trail
-   - Cancelled features/tasks/issues remain in files
-   - Filtered out by default in list commands
+### Task Status Lifecycle
 
-3. **Atomic Writes**: Write to temp file, then rename
-   - Prevents data corruption on interruption
-   - Uses `os.Rename` for atomic replacement
+- **ready**: Awaiting work (all gates must be set before transition)
+- **blocked**: Waiting for dependencies to complete (auto-transition to ready when dependencies done)
+- **in_progress**: Active work
+- **done**: Completed (immutable, no further transitions)
+- **cancelled**: Abandoned (soft-delete with full data preservation)
 
-4. **Event Sourcing**: Current state computed from events
-   - Every change emits an event
-   - `events.jsonl` is the source of truth
+### Dependency Resolution
 
-5. **DFS Cycle Detection**: Linear time complexity
-   - Validates no circular dependencies
-   - Uses depth-first search algorithm
+- Tasks can depend on other tasks (same or different projects)
+- Multiple dependencies use pipe-separated format: `--depends-on "id1|id2|id3"`
+- ALL dependencies must be done before dependent task can progress
+- Auto-transition from blocked → ready when ALL dependencies complete
+- Cascading transitions: Task A done → unblocks Task B → auto-transitions B to ready
 
-## Adding New Commands
+### Gate Enforcement
 
-### 1. Create Command File
+Every task has three read gates that must all be true before ready → in_progress:
+- **IsReadBrief**: Have you read the Brief?
+- **IsReadSpec**: Have you read the Spec?
+- **IsReadSessionNotes**: Have you read session notes?
 
-Create `internal/cmd/<entity>/<command>.go`:
+## Adding New Features
+
+### 1. Add Domain Entity
+
+Create `internal/domain/entity.go`:
 
 ```go
-package entity
-
-import (
-	"github.com/spf13/cobra"
-	"mandor/internal/domain"
-	"mandor/internal/service"
-)
-
-var (
-	flag1 string
-	flag2 bool
-)
-
-func NewCommandCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "command <args>",
-		Short: "Short description",
-		Long:  "Long description",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			svc, err := service.NewEntityService()
-			if err != nil {
-				return err
-			}
-
-			if !svc.WorkspaceInitialized() {
-				return domain.NewValidationError("Workspace not initialized")
-			}
-
-			// Business logic here
-
-			return nil
-		},
-	}
-
-	cmd.Flags().StringVarP(&flag1, "flag", "f", "", "Description")
-	cmd.Flags().BoolVar(&flag2, "flag2", false, "Description")
-
-	return cmd
-}
-```
-
-### 2. Register Command
-
-Add to `internal/cmd/<entity>/<entity>.go`:
-
-```go
-func NewEntityCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "entity",
-		Short: "Entity commands",
-	}
-
-	cmd.AddCommand(NewCreateCmd())
-	cmd.AddCommand(NewListCmd())
-	cmd.AddCommand(NewDetailCmd())
-	cmd.AddCommand(NewUpdateCmd())
-	cmd.AddCommand(NewCommandCmd())  // Add here
-
-	return cmd
-}
-```
-
-Add to `internal/cmd/root.go`:
-
-```go
-import "mandor/internal/cmd/entity"
-
-// In NewRootCmd():
-rootCmd.AddCommand(entity.NewEntityCmd())
-```
-
-### 3. Add Tests
-
-Create `tests/unit/cmd/entity/command_test.go`:
-
-```go
-package entity_test
-
-import (
-	"testing"
-	"mandor/internal/cmd/entity"
-)
-
-func TestNewCommandCmd(t *testing.T) {
-	cmd := entity.NewCommandCmd()
-	if cmd == nil {
-		t.Fatal("Expected command, got nil")
-	}
-}
-```
-
-## Adding New Entity Types
-
-### 1. Define Domain Types
-
-Create `internal/domain/<entity>.go`:
-
-```go
-package domain
-
-import "time"
-
-const (
-	EntityStatusActive = "active"
-	// ... more statuses
-)
-
 type Entity struct {
 	ID        string    `json:"id"`
+	ProjectID string    `json:"project_id"`
 	Name      string    `json:"name"`
-	Status    string    `json:"status"`
+	Status    string    `json:"status"` // ready, in_progress, done
 	CreatedAt time.Time `json:"created_at"`
-	// ... more fields
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// Input types for service methods
-type EntityCreateInput struct {
-	Name   string
-	Status string
-	// ... more fields
-}
-
-// Output types for display
-type EntityOutput struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Status string `json:"status"`
+// Validation
+func (e *Entity) Validate() error {
+	if e.Name == "" {
+		return NewValidationError("Name required")
+	}
+	return nil
 }
 ```
 
-### 2. Implement Service
+### 2. Add Service Methods
 
-Create `internal/service/<entity>_service.go`:
+Create `internal/service/entity_service.go`:
 
 ```go
-package service
-
 type EntityService struct {
 	reader *fs.Reader
 	writer *fs.Writer
-	paths  *fs.Paths
 }
 
-func NewEntityService() (*EntityService, error) {
-	paths, err := fs.NewPaths()
-	if err != nil {
-		return nil, err
-	}
-	return &EntityService{
-		reader: fs.NewReader(paths),
-		writer: fs.NewWriter(paths),
-		paths:  paths,
-	}, nil
-}
-
-func (s *EntityService) CreateEntity(input *domain.EntityCreateInput) (*domain.Entity, error) {
+func (s *EntityService) CreateEntity(ctx context.Context, input EntityInput) (*Entity, error) {
 	// Validation
-	if input.Name == "" {
-		return nil, domain.NewValidationError("Name is required")
-	}
-
 	// Business logic
 	// File I/O
-
 	return entity, nil
-}
-
-// List, Detail, Update methods...
 }
 ```
 
-### 3. Add Filesystem Methods
+### 3. Add File I/O Methods
 
 Extend `internal/fs/io.go`:
 
 ```go
-func (r *Reader) ReadEntity(projectID, entityID string) (*domain.Entity, error) {
-	var entity *domain.Entity
+func (r *Reader) ReadEntity(projectID, entityID string) (*Entity, error) {
+	var entity *Entity
 	err := r.ReadNDJSON(r.paths.ProjectEntitiesPath(projectID), func(raw []byte) error {
-		var e domain.Entity
+		var e Entity
 		if err := json.Unmarshal(raw, &e); err != nil {
 			return err
 		}
@@ -605,13 +459,52 @@ func (r *Reader) ReadEntity(projectID, entityID string) (*domain.Entity, error) 
 		return nil, err
 	}
 	if entity == nil {
-		return nil, domain.NewValidationError("Entity not found: " + entityID)
+		return nil, NewValidationError("Entity not found: " + entityID)
 	}
 	return entity, nil
 }
 
-func (w *Writer) WriteEntity(projectID string, entity *domain.Entity) error {
+func (w *Writer) WriteEntity(projectID string, entity *Entity) error {
 	return w.AppendNDJSON(w.paths.ProjectEntitiesPath(projectID), entity)
+}
+```
+
+### 4. Add Command Handler
+
+Create `internal/cmd/entity/create.go`:
+
+```go
+var createCmd = &cobra.Command{
+	Use:   "create",
+	Short: "Create entity",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		svc := service.NewEntityService(workspace)
+		entity, err := svc.CreateEntity(ctx, input)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "%s\n", entity.ID)
+		return nil
+	},
+}
+```
+
+### 5. Add Tests
+
+Create `tests/unit/service/entity_service_test.go`:
+
+```go
+func TestEntityCreate(t *testing.T) {
+	tmpDir := t.TempDir()
+	svc := setupTestService(t, tmpDir)
+	
+	entity, err := svc.CreateEntity(ctx, validInput)
+	if err != nil {
+		t.Fatalf("CreateEntity failed: %v", err)
+	}
+	if entity.ID == "" {
+		t.Error("Entity ID not generated")
+	}
 }
 ```
 
@@ -621,44 +514,52 @@ func (w *Writer) WriteEntity(projectID string, entity *domain.Entity) error {
 
 Location: `tests/unit/`
 
-```go
-func TestEntityCreate(t *testing.T) {
-	// Setup test environment
-	tmpDir := t.TempDir()
-	// ...
-
-	// Test validation
-	err := svc.ValidateCreateInput(invalidInput)
-	if err == nil {
-		t.Error("Expected validation error")
-	}
-
-	// Test success case
-	entity, err := svc.CreateEntity(validInput)
-	if err != nil {
-		t.Errorf("Expected no error, got: %v", err)
-	}
-}
+Run all unit tests:
+```bash
+go test ./tests/unit/... -v
 ```
 
-### Integration Tests
+Run specific test layer:
+```bash
+go test ./tests/unit/service/... -v    # Service layer tests
+go test ./tests/unit/cmd/... -v        # Command handler tests
+go test ./tests/unit/domain/... -v     # Domain validation tests
+go test ./tests/unit/fs/... -v         # File I/O tests
+```
 
-See `docs/test/integration_test.md` for comprehensive integration test scenarios.
+### CLI Integration Tests
+
+Location: `tests/cli/`
+
+Tests full end-to-end workflows with actual CLI commands.
+
+### Test Coverage
+
+```bash
+# Generate coverage report
+go test ./... -coverprofile=coverage.out
+go tool cover -func=coverage.out
+
+# HTML coverage report
+go test ./... -coverprofile=coverage.out
+go tool cover -html=coverage.out -o coverage.html
+```
 
 ### Test Helpers
 
 ```go
-// tests/unit/service/helpers_test.go
-func setupTestService(t *testing.T) (*Service, string) {
-	tmpDir, err := os.MkdirTemp("", "mandor-test-*")
+// tests/unit/helpers_test.go - Common setup for tests
+func setupTestWorkspace(t *testing.T) (string, *WorkspaceService) {
+	tmpDir := t.TempDir()
+	
+	// Initialize workspace
+	ws := NewWorkspaceService(tmpDir)
+	err := ws.Init("Test Workspace")
 	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
+		t.Fatalf("Failed to initialize workspace: %v", err)
 	}
-
-	// Create minimal workspace structure
-	// ...
-
-	return svc, tmpDir
+	
+	return tmpDir, ws
 }
 ```
 
@@ -670,7 +571,7 @@ func setupTestService(t *testing.T) (*Service, string) {
 # Build with debug flags
 go build -gcflags="all=-N -l" -o build/mandor-debug ./cmd/mandor
 
-# Use delve or gdb
+# Use delve for debugging
 dlv debug ./cmd/mandor -- args...
 ```
 
@@ -687,15 +588,16 @@ mandor command 2>&1 | tee debug.log
 
 ### Large Workspaces
 
-- **Batch operations**: Use list commands with filters
-- **JSONL reading**: Uses streaming (no loading entire file)
-- **Cycle detection**: O(n) DFS complexity
+- **Batch operations**: Use track command with filters
+- **NDJSON reading**: Uses streaming (no loading entire file into memory)
+- **Dependency resolution**: O(n) depth-first search for cycle detection
+- **Status transitions**: O(n) to find affected tasks when dependency completes
 
 ### Memory Usage
 
-- Streaming JSONL parser (no large memory allocation)
-- Efficient NDJSON line-by-line processing
-- Temp file writes prevent memory bloat
+- Streaming NDJSON parser (no large memory allocation)
+- Efficient line-by-line processing for large files
+- Temp file writes for atomic updates prevent memory bloat
 
 ## Contributing
 
@@ -724,8 +626,9 @@ Examples:
 
 - All code must have tests
 - Follow existing patterns and conventions
-- Document complex logic
+- Document complex logic (especially dependency resolution)
 - Keep PRs focused and small
+- Ensure gate enforcement is preserved in task transitions
 
 ## Release Process
 
@@ -734,8 +637,8 @@ Examples:
 1. Update version in `package.json`
 2. Update `CHANGELOG.md` with new features/fixes
 3. Build binaries: `npm run build`
-4. Create GitHub release: `gh release create v0.4.4 -t "Title" -F CHANGELOG.md`
-5. Upload binaries: `gh release upload v0.4.4 binaries/*.tar.gz`
+4. Create GitHub release: `gh release create vX.Y.Z -t "Title" -F CHANGELOG.md`
+5. Upload binaries: `gh release upload vX.Y.Z binaries/*.tar.gz`
 6. Commit changes: `git add package.json CHANGELOG.md && git commit -m "vX.Y.Z: description"`
 7. Push to origin: `git push`
 8. Publish to npm: `npm publish --access public`
@@ -773,14 +676,14 @@ npm info @mandors/cli | grep -A5 dist-tags
 
 **"Workspace not initialized"**
 ```bash
-# Initialize first
+# Initialize workspace first
 mandor init "My Project"
 ```
 
 **"Project not found"**
 ```bash
 # Check project exists
-mandor project list
+mandor track
 ```
 
 **"Permission denied"**
@@ -789,12 +692,24 @@ mandor project list
 ls -la .mandor/
 ```
 
+**"Gates not set" error on task transition**
+```bash
+# Check which gates are false
+mandor track task <task-id>
+
+# Set all three gates
+mandor task set-gate <task-id> --is-read-brief
+mandor task set-gate <task-id> --is-read-spec
+mandor task set-gate <task-id> --is-read-session-notes
+```
+
 ### Getting Help
 
 - Check existing issues: https://github.com/sanxzy/mandor/issues
 - Review documentation: `/docs` directory
 - Run with `--help` for command options
 - See [README.md](../README.md) for command reference
+- Run `mandor populate` for complete usage guide
 
 ---
 
@@ -802,25 +717,11 @@ ls -la .mandor/
 
 | Resource | Description |
 |----------|-------------|
-| [README.md](../README.md) | Comprehensive CLI documentation and command reference |
-| [Dependency Rules](rules/dependency-rules.md) | Dependency validation rules |
-| [Status Reference](rules/status-type-reference.md) | Status transitions and valid values |
-| [Testing](test/integration_test.md) | Integration test scenarios (61+ scenarios documented) |
-| [CHANGELOG.md](../CHANGELOG.md) | Version history and releases |
-
-## Comprehensive Testing
-
-As of v0.4.4, Mandor has passed **61 integration test scenarios** across 16 test suites covering:
-
-- **Dependency Resolution**: Linear chains, fan-in, fan-out, diamond patterns, deep chains (5+ levels)
-- **Cross-Project Coordination**: Multi-project dependency chains and cross-project task coordination
-- **Status Transitions**: Task/feature/issue state flows with dependent unblocking cascades
-- **Real-World Workflows**: Feature releases, bug fixes, security tracking
-- **Data Persistence**: Soft-delete with recovery, metadata preservation
-- **Error Handling**: Validation, circular dependency detection, invalid transitions
-
-See [test_complex.md](../docs/bugs/test_complex.md) for complete test report.
+| [README.md](../README.md) | Complete user guide with workflow examples |
+| [CHANGELOG.md](../CHANGELOG.md) | Version history and release notes |
+| [RELEASE.md](RELEASE.md) | Detailed release process documentation |
+| [AGENTS.md](../AGENTS.md) | Essential commands for AI agents |
 
 ---
 
-**Happy Coding! 🚀**
+**Last Updated**: February 2026

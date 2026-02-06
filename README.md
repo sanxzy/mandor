@@ -41,18 +41,6 @@ Mandor brings **deterministic task management** to AI agent workflows:
 
 ---
 
-## Alternatives
-
-Mandor is one approach to deterministic task management. Other tools exist in this space:
-
-- **Beads**: Git-backed issue tracker focusing on rapid iteration with minimal overhead
-  - GitHub: https://github.com/steveyegge/beads
-
-- **OpenSpec**: Fluid, iterative specs with AI tool integration (Claude Code, Cursor, Copilot)
-  - GitHub: https://github.com/Fission-AI/OpenSpec
-
----
-
 ## Installation
 
 ### Build from Source
@@ -612,6 +600,39 @@ go test ./...
 ✓ **CLI-Native**: Terminal, scripts, CI/CD pipelines
 ✓ **Deterministic**: Single source of truth in JSONL files
 ✓ **Auditable**: Full change history
+
+---
+
+## Alternatives
+
+Mandor is one approach to deterministic task management. Other tools exist in this space:
+
+### Beads
+**Git-backed issue tracker focusing on rapid iteration with minimal overhead**
+- GitHub: https://github.com/steveyegge/beads
+- Approach: Rapid iteration with lightweight YAML-based tasks
+- Best for: Teams that prefer minimal ceremony and direct git integration
+
+### OpenSpec
+**Fluid, iterative specs with AI tool integration**
+- GitHub: https://github.com/Fission-AI/OpenSpec
+- Approach: Living specifications that evolve with implementation
+- Supports: Claude Code, Cursor, Copilot
+- Best for: Spec-first teams using popular AI editors
+
+### Kiro
+**Agentic AI IDE and CLI for spec-driven development (AWS)**
+- Website: https://kiro.dev/
+- Approach: Two modes (Vibe for exploration, Spec for production)
+- Features: Built-in IDE (VS Code), Agent Hooks, Custom Agents, MCP support
+- Best for: Teams wanting integrated IDE + CLI + autonomous agent experience
+
+### Speckit
+**GitHub Spec Kit - Structured toolkit for spec-driven development**
+- GitHub: https://github.com/github/spec-kit
+- Approach: 7-phase workflow (Constitution → Specify → Clarify → Plan → Analyze → Tasks → Implement)
+- Supports: 15+ AI coding assistants
+- Best for: GitHub-native projects needing comprehensive spec-driven methodology
 
 ---
 
