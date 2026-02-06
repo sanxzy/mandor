@@ -19,7 +19,6 @@
 <p align="center">
   <a href="#quick-start">Quick Start</a> •
   <a href="#why-mandor">Why Mandor</a> •
-  <a href="#comparison-with-other-tools">Comparison</a> •
   <a href="#workflow">Workflow</a> •
   <a href="#commands">Commands</a> •
   <a href="#best-practices">Best Practices</a>
@@ -42,72 +41,12 @@ Mandor brings **deterministic task management** to AI agent workflows:
 
 ---
 
-## Comparison with Other Tools
+## Alternatives
 
-Mandor exists in an ecosystem of planning and task-tracking tools. Here's how it compares:
+Mandor is one approach to deterministic task management. Other tools exist in this space:
 
-### Mandor vs. Beads (Git-Backed Issue Tracker)
-
-| Feature | Mandor | Beads |
-|---------|--------|-------|
-| **Workflow Structure** | Brief → Spec → Blueprint → Feature → Task (5-phase) | Beads → Molecules → Gates (3-tier) |
-| **Planning Upfront** | Enforces planning: brief & spec before tasks | Ad-hoc: beads created as-needed |
-| **Gate Enforcement** | 3 read gates (brief, spec, session notes) required before work | No gates; status changes are manual |
-| **Schema-Driven** | Specs define requirements, IAE scenarios, implementation steps | Beads have acceptance criteria only |
-| **Dependency Resolution** | Auto-blocking & auto-unblocking with cascading transitions | Manual dependency tracking with `bd depends` |
-| **Session Notes** | Built-in session note system per workspace | Manual implementation notes in beads |
-| **File Format** | Markdown specs + JSONL records (deterministic, auditable) | YAML beads + JSONL index |
-| **Data Storage** | Centralized `.mandor/` directory with projects | Distributed `beads/` directory |
-| **Best For** | Teams requiring upfront planning, structured workflows | Solo AI agents, rapid prototyping |
-
-**Key Difference**: Mandor enforces planning discipline before work starts; Beads emphasizes rapid iteration with minimal overhead.
-
-### Mandor vs. OpenSpec (Spec-Driven Development)
-
-| Feature | Mandor | OpenSpec |
-|---------|--------|----------|
-| **Workflow** | Brief → Spec → Blueprint → Feature → Task (5-phase with planning layers) | Proposal → Definition → Apply → Archive (4-phase, command-driven) |
-| **Planning Approach** | Enforced sequential planning upfront | Iterative refinement; specs evolve during work |
-| **Spec Format** | Structured YAML with requirement IDs, IAE scenarios, test cases | Markdown with YAML frontmatter, simpler format |
-| **Planning Layers** | 5-tier: Brief (intent) → Spec (requirements) → Blueprint (architecture) | Single spec file with all information (fluid, not rigid) |
-| **Dependency Management** | Built-in cross-feature dependency tracking with auto-resolution | Manual tracking; integrations with AI tools (Claude Code, Cursor, Copilot) |
-| **Gate Enforcement** | Task-level read gates enforce process discipline | No gates; status changes driven by `/opsx:` commands |
-| **Workflow Execution** | CLI-native with `mandor` binary | Command-driven with `/opsx:proposal`, `/opsx:apply`, `/opsx:archive` |
-| **Session Tracking** | AI session notes in workspace for context recovery | Implementation notes updated during `/opsx:apply` |
-| **File Storage** | Centralized `.mandor/` directory with JSONL records | Distributed `openspec/` directory (specs/ + changes/) |
-| **Philosophy** | Strict, deterministic, pre-planned | Fluid, iterative, brownfield-friendly |
-| **Audience** | Teams requiring structured planning and dependency management | Developers preferring quick iteration with AI integration |
-
-**Key Difference**: Mandor enforces upfront planning with strict gates and auto-resolving dependencies; OpenSpec embraces iterative fluid specs with tight AI tool integration and minimal ceremony.
-
-### Quick Comparison Matrix
-
-| Aspect | Mandor | Beads | OpenSpec |
-|--------|--------|-------|----------|
-| **Planning Upfront** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ |
-| **Gate Enforcement** | ⭐⭐⭐⭐⭐ | ⭐ | ⭐ |
-| **Auto Dependency Resolution** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ |
-| **AI-Native** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
-| **CLI-First** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ |
-| **Schema-Driven** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ |
-
-### When to Use Mandor
-
-**Choose Mandor if you need:**
-
-- **Enforced Planning Discipline**: Brief → Spec → Blueprint before any code
-- **Gate-Enforced Workflows**: Task-level gates prevent immature starts
-- **Cross-Feature Dependencies**: Tasks spanning multiple features with auto-resolution
-- **Session Context Recovery**: AI agents resume work with full context between sessions
-- **Schema-Driven Development**: Upfront definition of implementation steps, test cases, requirements
-- **Multi-Project Coordination**: Centralized workspace managing dependencies across projects
-- **Deterministic Execution**: Structured workflow with auditable, reproducible task progression
-
-**Mandor is optimal for:**
-- Teams that value upfront planning and structured workflows
-- AI-assisted development with session-based progress tracking
-- Complex features requiring multi-layer specification (intent → requirements → architecture → implementation)
-- Projects where dependency management is critical
+- **Beads**: Git-backed issue tracker focusing on rapid iteration with minimal overhead
+- **OpenSpec**: Fluid, iterative specs with AI tool integration (Claude Code, Cursor, Copilot)
 
 ---
 
