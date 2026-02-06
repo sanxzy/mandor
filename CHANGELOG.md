@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-02-06
+
+### Added
+- Simplified README with focus on core workflow
+- Alternatives section mentioning Beads and OpenSpec tools
+- GitHub links for alternative task management tools
+
+### Changed
+- Updated README navigation to highlight essential sections
+- Streamlined documentation for clarity
+
 ## [0.5.0] - 2026-02-06
 
 ### Changed
