@@ -263,8 +263,8 @@ NEW APPROACH:
     -y, --yes           Skip confirmation
   
   Example:
-    mandor feature update api-feature-xxx --project api --status active
-    mandor feature update api-feature-xxx --project api --cancel --reason "Out of scope"
+    mandor feature update api-feature-xxxx --project api --status active
+    mandor feature update api-feature-xxxx --project api --cancel --reason "Out of scope"
 
 ════════════════════════════════════════════════════════════════════════
  4. CONFIGURATION
@@ -343,7 +343,7 @@ ISSUE STATUS FLOW:
     -y, --yes                   Skip confirmation
   
   Example:
-    mandor task create api-feature-xxx "JWT Parser" \
+    mandor task create api-feature-xxxx "JWT Parser" \
       --goal "Parse and validate JWT tokens in requests" \
       --implementation-steps "Setup crypto|Add validation|Handle expiry" \
       --test-cases "Valid accepted|Expired rejected|Invalid rejected" \
@@ -360,7 +360,7 @@ ISSUE STATUS FLOW:
     --include-deleted Include cancelled tasks
   
   Example:
-    mandor task detail api-feature-xxx-task-001 --json
+    mandor task detail api-feature-xxxx-task-xxxx --json
 
 ▶ mandor task update <id> [FLAGS]
   Update task or change status
@@ -385,9 +385,9 @@ ISSUE STATUS FLOW:
     -y, --yes                          Skip confirmation
   
   Examples:
-    mandor task update api-feature-xxx-task-001 --status in_progress
-    mandor task update api-feature-xxx-task-001 --status done
-    mandor task update api-feature-xxx-task-001 --cancel --reason "Superseded by task Y"
+    mandor task update api-feature-xxxx-task-xxxx --status in_progress
+    mandor task update api-feature-xxxx-task-xxxx --status done
+    mandor task update api-feature-xxxx-task-xxxx --cancel --reason "Superseded by task Y"
 
 ════════════════════════════════════════════════════════════════════════
  7. ISSUE MANAGEMENT
@@ -480,7 +480,6 @@ ISSUE STATUS FLOW:
     --tree          Tree visualization
     --graph         ASCII graph
     --verbose       Show all fields with details
-    --summary       Show aggregated counts only
     --group-by <f>  Group by status or priority
   
   Example:
@@ -502,7 +501,6 @@ ISSUE STATUS FLOW:
     --tree          Tree visualization
     --graph         ASCII graph
     --verbose       Show all fields
-    --summary       Counts only
     --group-by <f>  Group by status or priority
   
   Example:
@@ -517,7 +515,6 @@ ISSUE STATUS FLOW:
     --tree          Tree visualization
     --graph         ASCII graph
     --verbose       Show all fields
-    --summary       Counts only
     --group-by <f>  Group by status or priority
   
   Example:
