@@ -432,9 +432,9 @@ func (s *TaskService) ListTasks(input *domain.TaskListInput) (*domain.TaskListOu
 		switch sortBy {
 		case "priority":
 			if orderDesc {
-				return comparePriority(tasks[i].Priority, tasks[j].Priority) > 0
+				return ComparePriority(tasks[i].Priority, tasks[j].Priority) > 0
 			}
-			return comparePriority(tasks[i].Priority, tasks[j].Priority) < 0
+			return ComparePriority(tasks[i].Priority, tasks[j].Priority) < 0
 		case "created_at":
 			if orderDesc {
 				return tasks[i].CreatedAt > tasks[j].CreatedAt
@@ -457,14 +457,21 @@ func (s *TaskService) ListTasks(input *domain.TaskListInput) (*domain.TaskListOu
 	}, nil
 }
 
-func comparePriority(p1, p2 string) int {
+// ComparePriority compares two priority levels and returns negative if p1 > p2, positive if p1 < p2, 0 if equal
+func ComparePriority(p1, p2 string) int {
 	levels := []string{"P0", "P1", "P2", "P3", "P4", "P5"}
 	for i, level := range levels {
 		if p1 == level {
-			return i
+			p1Index := i
+			for j, l := range levels {
+				if p2 == l {
+					return p1Index - j
+				}
+			}
+			return -1
 		}
 	}
-	return 3
+	return 1
 }
 
 func (s *TaskService) GetTaskDetail(input *domain.TaskDetailInput) (*domain.TaskDetailOutput, error) {

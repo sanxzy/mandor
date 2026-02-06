@@ -30,7 +30,6 @@ For more information, visit: https://github.com/budisantoso/mandor`,
 
 	// Add workspace commands
 	rootCmd.AddCommand(workspace.NewInitCmd())
-	rootCmd.AddCommand(workspace.NewStatusCmd())
 	rootCmd.AddCommand(workspace.NewConfigCmd())
 
 	// Add project commands

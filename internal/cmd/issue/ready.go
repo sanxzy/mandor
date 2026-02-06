@@ -78,7 +78,7 @@ func NewReadyCmd() *cobra.Command {
 
 			// Sort by priority (P0 first)
 			sort.Slice(issues, func(i, j int) bool {
-				return comparePriority(issues[i].Priority, issues[j].Priority) < 0
+				return service.ComparePriority(issues[i].Priority, issues[j].Priority) < 0
 			})
 
 			out := cmd.OutOrStdout()

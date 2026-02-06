@@ -91,17 +91,19 @@ NEW APPROACH:
   Example:
     mandor init "My Project" -y
 
-▶ mandor status [--project <id>] [--summary] [--json]
-  Display workspace and project status
-  
-  Flags:
-    --project, -p <id>    Show specific project
-    --summary, -s         Show count summary only
-    --json, -j            Machine-readable output
-    --include-deleted     Include deleted projects
-  
-  Example:
-    mandor status --project api --json
+▶ mandor track [scope] [id] [FLAGS]
+   View workspace, project, feature, task, or issue status (see section 8)
+   
+   Scopes:
+     (none or workspace)    Workspace overview
+     project <id>           Project issues
+     feature <id>           Feature with tasks
+     task <id>              Single task details
+     issue <id>             Single issue details
+   
+   Example:
+     mandor track --json
+     mandor track project api
 
 ▶ mandor config [get|set|list|reset] [key] [value]
   Manage workspace configuration
@@ -157,16 +159,12 @@ NEW APPROACH:
   Example:
     mandor project detail api --json
 
-▶ mandor project list [FLAGS]
-  List all projects
-  
-  Flags:
-    --json              Machine-readable output
-    --include-deleted   Include deleted projects
-    --include-goal      Show goal text
-  
-  Example:
-    mandor project list --json --include-goal
+▶ mandor track [workspace]
+   List all projects (use track for visibility, see section 8)
+   
+   Example:
+     mandor track
+     mandor track --json
 
 ▶ mandor project update <id> [FLAGS]
   Update project metadata
@@ -233,16 +231,11 @@ NEW APPROACH:
   Example:
     mandor feature detail api-feature-xxxx --project api --json
 
-▶ mandor feature list --project <id> [FLAGS]
-  List features in project
-  
-  Flags:
-    --project, -p <id>  Project ID (required)
-    --scope <scope>     Filter by scope
-    --json              Machine-readable output
-  
-  Example:
-    mandor feature list --project api --scope backend
+▶ mandor track project <id>
+   List features in project (use track for visibility, see section 8)
+   
+   Example:
+     mandor track project api --json
 
 ▶ mandor feature update <id> --project <id> [FLAGS]
   Update feature or change status
