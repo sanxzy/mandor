@@ -46,7 +46,10 @@ Mandor brings **deterministic task management** to AI agent workflows:
 Mandor is one approach to deterministic task management. Other tools exist in this space:
 
 - **Beads**: Git-backed issue tracker focusing on rapid iteration with minimal overhead
+  - GitHub: https://github.com/steveyegge/beads
+
 - **OpenSpec**: Fluid, iterative specs with AI tool integration (Claude Code, Cursor, Copilot)
+  - GitHub: https://github.com/Fission-AI/OpenSpec
 
 ---
 
