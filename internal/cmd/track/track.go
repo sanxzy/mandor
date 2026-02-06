@@ -28,7 +28,6 @@ Output formats (mutually exclusive):
 
 Additional options:
   --verbose                                      # Show all fields with details
-  --summary                                      # Show aggregated counts only
   --group-by <field>                            # Group by status or priority`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Default to workspace if no scope provided
@@ -79,7 +78,6 @@ Additional options:
 	cmd.Flags().BoolVar(&globalFlags.Tree, "tree", false, "Output as tree")
 	cmd.Flags().BoolVar(&globalFlags.Graph, "graph", false, "Output as ASCII graph")
 	cmd.Flags().BoolVar(&globalFlags.Verbose, "verbose", false, "Show all fields with details")
-	cmd.Flags().BoolVar(&globalFlags.Summary, "summary", false, "Show aggregated counts only")
 	cmd.Flags().StringVar(&globalFlags.GroupBy, "group-by", "", "Group by field (status or priority)")
 
 	return cmd

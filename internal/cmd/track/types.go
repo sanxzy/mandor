@@ -12,7 +12,6 @@ var globalFlags = struct {
 	Tree    bool
 	Graph   bool
 	Verbose bool
-	Summary bool
 	GroupBy string
 }{}
 

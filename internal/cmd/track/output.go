@@ -45,10 +45,6 @@ func outputResponse(cmd *cobra.Command, response *TrackResponse) error {
 
 // outputTable outputs human-readable table format
 func outputTable(out io.Writer, response *TrackResponse) error {
-	if globalFlags.Summary {
-		return outputTableSummary(out, response)
-	}
-
 	switch response.Scope {
 	case "workspace":
 		return outputWorkspaceTable(out, response)
@@ -195,12 +191,6 @@ func outputIssueTable(out io.Writer, response *TrackResponse) error {
 	fmt.Fprintf(out, "\n")
 	outputRecommendedCommands(out, response)
 
-	return nil
-}
-
-func outputTableSummary(out io.Writer, response *TrackResponse) error {
-	fmt.Fprintf(out, "Summary for %s\n", response.Scope)
-	outputSummaryStats(out, response.Summary)
 	return nil
 }
 
