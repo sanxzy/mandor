@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-02-06
+
+### Changed
+- Removed `mandor status` command - replaced by unified `mandor track` command
+- Removed all list commands: `mandor project list`, `mandor feature list`, `mandor task list`, `mandor issue list`
+- All visibility queries now use `mandor track` with various scopes and output formats
+
+### Removed
+- `mandor status` workspace and project status command (now use `mandor track` or `mandor track project <id>`)
+- `mandor project list` command (use `mandor track` for workspace overview)
+- `mandor feature list` command (use `mandor track project <id>` for project features)
+- `mandor task list` command (use `mandor track feature <id>` for feature tasks)
+- `mandor issue list` command (use `mandor track` or `mandor issue ready`/`mandor issue blocked`)
+
+### Technical Changes
+- Exported `ComparePriority` function from service package for issue ready/blocked commands
+- Updated populate documentation to direct users to track command for visibility
+
+### Migration Guide
+- `mandor status` → `mandor track` (workspace) or `mandor track project <id>` (project)
+- `mandor project list` → `mandor track`
+- `mandor feature list --project <id>` → `mandor track project <id>`
+- `mandor task list --feature <id>` → `mandor track feature <id>`
+- `mandor issue list` → `mandor track project <id>` or `mandor issue ready`
+
 ## [0.4.8] - 2026-02-06
 
 ### Fixed
