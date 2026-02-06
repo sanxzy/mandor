@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.8] - 2026-02-06
+
+### Fixed
+- Removed remaining old format placeholder IDs from README examples (api-feature-xxx → api-feature-xxxx)
+- Removed outdated --derivable-files references from documentation examples
+
 ## [0.4.7] - 2026-02-06
 
 ### Changed
