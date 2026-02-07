@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.1] - 2026-02-07
+
+### Added
+- Comprehensive test coverage for FS layer (74.2% coverage, improved from 13.4%)
+- 38+ new tests for Reader and Writer operations
+- Tests for ReadWorkspace, ReadBacklogMetadata, ReadBacklogSchema, ReadNDJSON
+- Tests for entity operations (Feature, Task, Issue read/write/replace)
+- Batch replace operations tests (ReplaceTasks, ReplaceFeatures, ReplaceIssues)
+
+### Changed
+- Migrated from project-based to backlog-based architecture
+- FS layer refactored with improved path management
+- Overall test coverage improved from 22.9% to 27.0%
+
+### Technical
+- New backlog service tests
+- Backlog domain tests
+- Updated TESTING.md with coverage roadmap
+
 ## [0.5.0] - 2026-02-06
 
 ### Changed
