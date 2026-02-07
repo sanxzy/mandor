@@ -1,10 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 #
 # install.sh - Install Mandor CLI
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh
-#   curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | sh -s -- --help
+#   curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh | bash -s -- --help
+#   sh -c "$(curl -fsSL https://raw.githubusercontent.com/sanxzy/mandor/main/scripts/install.sh)"
 #
 # Options:
 #   --prefix DIR     Install prefix (default: $HOME/.local)
@@ -14,9 +14,6 @@
 #
 
 set -e
-
-# Change to temp directory to avoid cwd issues
-cd /tmp 2>/dev/null || cd / 2>/dev/null || true
 
 REPO="sanxzy/mandor"
 INSTALL_DIR="${HOME}/.local/bin"
