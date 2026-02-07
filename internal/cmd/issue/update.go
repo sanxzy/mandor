@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	updateProjectID     string
+	updateBacklogID     string
 	updateName          string
 	updateGoal          string
 	updateType          string
@@ -51,21 +51,21 @@ func NewUpdateCmd() *cobra.Command {
 
 			issueID := args[0]
 
-			projectID := updateProjectID
-			if projectID == "" {
+			backlogID := updateBacklogID
+			if backlogID == "" {
 				parts := strings.Split(issueID, "-issue-")
 				if len(parts) < 2 {
-					return domain.NewValidationError("Invalid issue ID format. Expected: <project_id>-issue-<nanoid>")
+					return domain.NewValidationError("Invalid issue ID format. Expected: <backlog_id>-issue-<nanoid>")
 				}
-				projectID = parts[0]
+				backlogID = parts[0]
 			}
 
-			if !svc.ProjectExists(projectID) {
-				return domain.NewValidationError("Project not found: " + projectID)
+			if !svc.BacklogExists(backlogID) {
+				return domain.NewValidationError("Backlog not found: " + backlogID)
 			}
 
 			input := &domain.IssueUpdateInput{
-				ProjectID: projectID,
+				BacklogID: backlogID,
 				IssueID:   issueID,
 			}
 
@@ -166,7 +166,7 @@ func NewUpdateCmd() *cobra.Command {
 			if input.Status == nil || *input.Status != domain.IssueStatusResolved {
 				fmt.Fprintln(out)
 				detailInput := &domain.IssueDetailInput{
-					ProjectID:      projectID,
+					BacklogID:      backlogID,
 					IssueID:        issueID,
 					JSON:           false,
 					IncludeDeleted: false,
@@ -187,7 +187,7 @@ func NewUpdateCmd() *cobra.Command {
 					fmt.Fprintf(out, "  Type:        %s\n", detailOutput.IssueType)
 					fmt.Fprintf(out, "  Priority:    %s\n", detailOutput.Priority)
 					fmt.Fprintf(out, "  Status:      %s\n", detailOutput.Status)
-					fmt.Fprintf(out, "  Project:     %s\n", detailOutput.ProjectID)
+					fmt.Fprintf(out, "  Backlog:    %s\n", detailOutput.BacklogID)
 
 					if detailOutput.Goal != "" {
 						fmt.Fprintf(out, "\n  Goal:        %s\n", detailOutput.Goal)
@@ -195,7 +195,7 @@ func NewUpdateCmd() *cobra.Command {
 
 					fmt.Fprintf(out, "\n  Depends on:  %d issue(s)\n", len(detailOutput.DependsOn))
 					for _, depID := range detailOutput.DependsOn {
-						dep, err := svc.ReadDependency(projectID, depID)
+						dep, err := svc.ReadDependency(backlogID, depID)
 						statusIcon := "○"
 						if err == nil {
 							switch dep.Status {
@@ -243,7 +243,7 @@ func NewUpdateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&updateProjectID, "project", "p", "", "Project ID (optional, extracted from issue ID)")
+	cmd.Flags().StringVarP(&updateBacklogID, "backlog", "b", "", "Backlog ID (optional, extracted from issue ID)")
 	cmd.Flags().StringVar(&updateName, "name", "", "Update issue name")
 	cmd.Flags().StringVar(&updateGoal, "goal", "", "Update issue goal")
 	cmd.Flags().StringVar(&updateType, "type", "", "Update issue type (bug/improvement/debt/security/performance)")

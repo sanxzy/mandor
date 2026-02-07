@@ -21,7 +21,7 @@ func NewInitCmd() *cobra.Command {
 		Short: "Initialize a new Mandor workspace",
 		Long: `Initialize a new Mandor workspace in the current directory.
 
-Creates a .mandor/ directory with workspace metadata and project storage.`,
+Creates a .mandor/ directory with workspace metadata and backlog storage.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewWorkspaceService()
 			if err != nil {
@@ -48,7 +48,7 @@ Creates a .mandor/ directory with workspace metadata and project storage.`,
 			}
 
 			fmt.Printf("\nNext steps:\n")
-			fmt.Printf("  1. Create a project: mandor project create <project_id> --name \"Project Name\"\n")
+			fmt.Printf("  1. Create a backlog: mandor backlog create <backlog_id> --name \"Backlog Name\"\n")
 			fmt.Printf("  2. View status: mandor status\n")
 			fmt.Printf("  3. Check config: mandor config get\n")
 

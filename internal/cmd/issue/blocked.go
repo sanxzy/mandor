@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	blockedProjectID string
+	blockedBacklogID string
 	blockedType      string
 	blockedPriority  string
 	blockedJSON      bool
@@ -20,10 +20,10 @@ var (
 
 func NewBlockedCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:        "blocked [--project <id>] [--type <type>] [--priority <priority>] [--json]",
+		Use:        "blocked [--backlog <id>] [--type <type>] [--priority <priority>] [--json]",
 		Short:      "List blocked issues",
-		Deprecated: "Use 'mandor track project <id> --tree' or '--graph' to see blocking relationships.",
-		Long:       "List all issues with status='blocked' that are waiting for dependencies to complete.\n\nDEPRECATED: Use 'mandor track project <id>' with '--tree' or '--graph' flag to visualize blocking relationships.",
+		Deprecated: "Use 'mandor track backlog <id> --tree' or '--graph' to see blocking relationships.",
+		Long:       "List all issues with status='blocked' that are waiting for dependencies to complete.\n\nDEPRECATED: Use 'mandor track backlog <id>' with '--tree' or '--graph' flag to visualize blocking relationships.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewIssueService()
 			if err != nil {
@@ -34,20 +34,20 @@ func NewBlockedCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			projectID := blockedProjectID
-			if projectID == "" {
+			backlogID := blockedBacklogID
+			if backlogID == "" {
 				ws, err := svc.GetWorkspace()
 				if err != nil {
-					return domain.NewValidationError("No project specified and no default project set.")
+					return domain.NewValidationError("No backlog specified and no default backlog set.")
 				}
-				projectID = ws.Config.DefaultProject
-				if projectID == "" {
-					return domain.NewValidationError("No project specified and no default project set.")
+				backlogID = ws.Config.DefaultBacklog
+				if backlogID == "" {
+					return domain.NewValidationError("No backlog specified and no default backlog set.")
 				}
 			}
 
-			if !svc.ProjectExists(projectID) {
-				return domain.NewValidationError("Project not found: " + projectID)
+			if !svc.BacklogExists(backlogID) {
+				return domain.NewValidationError("Backlog not found: " + backlogID)
 			}
 
 			if blockedType != "" && !domain.ValidateIssueType(blockedType) {
@@ -59,7 +59,7 @@ func NewBlockedCmd() *cobra.Command {
 			}
 
 			input := &domain.IssueListInput{
-				ProjectID:      projectID,
+				BacklogID:      backlogID,
 				IssueType:      blockedType,
 				Status:         domain.IssueStatusBlocked,
 				Priority:       blockedPriority,
@@ -103,9 +103,9 @@ func NewBlockedCmd() *cobra.Command {
 			}
 
 			if blockedType != "" {
-				fmt.Fprintf(out, "Blocked issues of type '%s' in project %s:\n", blockedType, projectID)
+				fmt.Fprintf(out, "Blocked issues of type '%s' in backlog %s:\n", blockedType, backlogID)
 			} else {
-				fmt.Fprintf(out, "Blocked issues in project %s:\n", projectID)
+				fmt.Fprintf(out, "Blocked issues in backlog %s:\n", backlogID)
 			}
 
 			fmt.Fprintf(out, "%-24s %-14s %-8s %s\n", "ID", "TYPE", "PRIORITY", "NAME")
@@ -125,7 +125,7 @@ func NewBlockedCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&blockedProjectID, "project", "p", "", "Project ID filter")
+	cmd.Flags().StringVarP(&blockedBacklogID, "backlog", "b", "", "Backlog ID filter")
 	cmd.Flags().StringVar(&blockedType, "type", "", "Filter by issue type (bug, improvement, debt, security, performance)")
 	cmd.Flags().StringVar(&blockedPriority, "priority", "", "Filter by priority (P0-P5)")
 	cmd.Flags().BoolVar(&blockedJSON, "json", false, "Output as JSON")

@@ -9,13 +9,11 @@ import (
 	"mandor/internal/util"
 )
 
-
-
 func NewCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create <name> [--project <id>] --capability <cap-id> --spec-id <spec-id> --goal <text>",
+		Use:   "create <name> [--backlog <id>] --capability <cap-id> --spec-id <spec-id> --goal <text>",
 		Short: "Create a new feature",
-		Long:  "Create a new feature in the specified project with ONE-TO-ONE Spec mapping (immutable)",
+		Long:  "Create a new feature in the specified backlog with ONE-TO-ONE Spec mapping (immutable)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewFeatureService()
@@ -27,16 +25,16 @@ func NewCreateCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			// Get project ID from flags or parent commands
-			var projID string
+			// Get backlog ID from flags or parent commands
+			var backlogID string
 			for p := cmd; p != nil; p = p.Parent() {
-				if val, err := p.Flags().GetString("project"); err == nil && val != "" {
-					projID = val
+				if val, err := p.Flags().GetString("backlog"); err == nil && val != "" {
+					backlogID = val
 					break
 				}
 			}
-			if projID == "" {
-				return domain.NewValidationError("Project ID is required (--project).")
+			if backlogID == "" {
+				return domain.NewValidationError("Backlog ID is required (--backlog).")
 			}
 
 			// Get capability ID from flags
@@ -62,7 +60,7 @@ func NewCreateCmd() *cobra.Command {
 			if featureName == "" {
 				featureName = args[0]
 			}
-			
+
 			featureScope, _ := cmd.Flags().GetString("scope")
 			featurePriority, _ := cmd.Flags().GetString("priority")
 			dependsOnStr, _ := cmd.Flags().GetString("depends")
@@ -73,7 +71,7 @@ func NewCreateCmd() *cobra.Command {
 			}
 
 			input := &domain.FeatureCreateInput{
-				ProjectID:    projID,
+				BacklogID:    backlogID,
 				CapabilityID: capID,
 				SpecID:       sID,
 				Name:         featureName,
@@ -95,13 +93,22 @@ func NewCreateCmd() *cobra.Command {
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "✓ Feature created: %s\n", feature.ID)
 			fmt.Fprintf(out, "  Name:      %s\n", feature.Name)
-			fmt.Fprintf(out, "  Project:   %s\n", feature.ProjectID)
+			fmt.Fprintf(out, "  Backlog:  %s\n", feature.BacklogID)
 			fmt.Fprintf(out, "  Capability: %s\n", feature.CapabilityID)
 			fmt.Fprintf(out, "  Spec ID:   %s\n", feature.SpecID)
 			fmt.Fprintf(out, "  Goal:      %s\n", feature.Goal)
 			fmt.Fprintf(out, "  Scope:     %s\n", feature.Scope)
 			fmt.Fprintf(out, "  Priority:  %s\n", feature.Priority)
 			fmt.Fprintf(out, "  Status:    %s\n", feature.Status)
+
+			// AI-friendly next steps
+			fmt.Fprintln(out)
+			fmt.Fprintln(out, "  ─────────────────────────────────────────────────────────")
+			fmt.Fprintln(out, "  NEXT STEPS:")
+			fmt.Fprintln(out, "  ─────────────────────────────────────────────────────────")
+			fmt.Fprintf(out, "  • Create tasks: mandor task create %s <task-name> --spec-id %s --iae-scenarios <req:scenario> ...\n", feature.ID, feature.SpecID)
+			fmt.Fprintf(out, "  • View feature details: mandor feature detail %s --backlog %s\n", feature.ID, backlogID)
+			fmt.Fprintf(out, "  • List all features: mandor feature list --backlog %s\n", backlogID)
 
 			_, warning := util.GetGitUsernameWithWarning()
 			if warning != "" {
@@ -114,7 +121,7 @@ func NewCreateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringP("project", "p", "", "Project ID (required, use -p or --project)")
+	cmd.Flags().StringP("backlog", "b", "", "Backlog ID (required, use -b or --backlog)")
 	cmd.Flags().String("capability", "", "Capability ID from Brief (required)")
 	cmd.Flags().String("spec-id", "", "Spec ID (required, ONE-TO-ONE immutable mapping)")
 	cmd.Flags().StringP("goal", "g", "", "Feature goal (required, min 300 chars, include technical user flow and complete requirements)")

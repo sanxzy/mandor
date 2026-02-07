@@ -30,21 +30,21 @@ func NewStatusService() (*StatusService, error) {
 // WorkspaceStatus represents the overall workspace status
 type WorkspaceStatus struct {
 	Workspace    *domain.Workspace `json:"workspace"`
-	Projects     []ProjectSummary  `json:"projects"`
+	Backlogs     []BacklogSummary  `json:"backlogs"`
 	Dependencies DependencySummary `json:"dependencies"`
 	Totals       TotalStats        `json:"totals"`
 }
 
-// ProjectSummary represents a project in status output
-type ProjectSummary struct {
+// BacklogSummary represents a backlog in status output
+type BacklogSummary struct {
 	ID    string              `json:"id"`
 	Name  string              `json:"name,omitempty"`
-	Stats domain.ProjectStats `json:"stats"`
+	Stats domain.BacklogStats `json:"stats"`
 }
 
 // DependencySummary represents dependency statistics
 type DependencySummary struct {
-	CrossProjectCount int      `json:"cross_project_count"`
+	CrossBacklogCount int      `json:"cross_backlog_count"`
 	CircularDeps      int      `json:"circular_dependencies"`
 	BlockingItems     []string `json:"blocking_items"`
 }
@@ -59,7 +59,7 @@ type TotalStats struct {
 }
 
 // GetWorkspaceStatus retrieves the complete workspace status
-func (s *StatusService) GetWorkspaceStatus(projectID string) (*WorkspaceStatus, error) {
+func (s *StatusService) GetWorkspaceStatus(backlogID string) (*WorkspaceStatus, error) {
 	ws, err := s.reader.ReadWorkspace()
 	if err != nil {
 		return nil, err
@@ -67,60 +67,60 @@ func (s *StatusService) GetWorkspaceStatus(projectID string) (*WorkspaceStatus, 
 
 	status := &WorkspaceStatus{
 		Workspace:    ws,
-		Projects:     []ProjectSummary{},
+		Backlogs:     []BacklogSummary{},
 		Dependencies: DependencySummary{},
 		Totals:       TotalStats{},
 	}
 
-	// Get projects to analyze
-	var projectIDs []string
-	if projectID != "" {
-		// Single project
-		if !s.reader.ProjectExists(projectID) {
-			return nil, domain.NewValidationError(fmt.Sprintf("Project not found: %s", projectID))
+	// Get backlogs to analyze
+	var backlogIDs []string
+	if backlogID != "" {
+		// Single backlog
+		if !s.reader.BacklogExists(backlogID) {
+			return nil, domain.NewValidationError(fmt.Sprintf("Backlog not found: %s", backlogID))
 		}
-		projectIDs = []string{projectID}
+		backlogIDs = []string{backlogID}
 	} else {
-		// All projects
-		projects, err := s.reader.ListProjects(false)
+		// All backlogs
+		backlogs, err := s.reader.ListBacklogs(false)
 		if err != nil {
 			return nil, err
 		}
-		projectIDs = projects
+		backlogIDs = backlogs
 	}
 
-	// Calculate stats for each project
-	for _, pid := range projectIDs {
-		projectStatus, err := s.GetProjectStatus(pid)
+	// Calculate stats for each backlog
+	for _, bid := range backlogIDs {
+		backlogStatus, err := s.GetBacklogStatus(bid)
 		if err != nil {
-			// Skip projects that can't be read
+			// Skip backlogs that can't be read
 			continue
 		}
 
-		status.Projects = append(status.Projects, *projectStatus)
+		status.Backlogs = append(status.Backlogs, *backlogStatus)
 
 		// Accumulate totals
-		status.Totals.Features += projectStatus.Stats.Features.Total
-		status.Totals.Tasks += projectStatus.Stats.Tasks.Total
-		status.Totals.Issues += projectStatus.Stats.Issues.Total
-		status.Totals.Blocked += projectStatus.Stats.Tasks.BlockedCount
+		status.Totals.Features += backlogStatus.Stats.Features.Total
+		status.Totals.Tasks += backlogStatus.Stats.Tasks.Total
+		status.Totals.Issues += backlogStatus.Stats.Issues.Total
+		status.Totals.Blocked += backlogStatus.Stats.Tasks.BlockedCount
 	}
 
 	return status, nil
 }
 
-// GetProjectStatus retrieves detailed status for a single project
-func (s *StatusService) GetProjectStatus(projectID string) (*ProjectSummary, error) {
-	if !s.reader.ProjectExists(projectID) {
-		return nil, domain.NewValidationError(fmt.Sprintf("Project not found: %s", projectID))
+// GetBacklogStatus retrieves detailed status for a single backlog
+func (s *StatusService) GetBacklogStatus(backlogID string) (*BacklogSummary, error) {
+	if !s.reader.BacklogExists(backlogID) {
+		return nil, domain.NewValidationError(fmt.Sprintf("Backlog not found: %s", backlogID))
 	}
 
-	metadata, err := s.reader.ReadProjectMetadata(projectID)
+	metadata, err := s.reader.ReadBacklogMetadata(backlogID)
 	if err != nil {
 		return nil, err
 	}
 
-	stats := domain.ProjectStats{
+	stats := domain.BacklogStats{
 		Features: domain.EntityStats{
 			ByStatus: make(map[string]int),
 		},
@@ -138,7 +138,7 @@ func (s *StatusService) GetProjectStatus(projectID string) (*ProjectSummary, err
 	}
 
 	// Read features
-	s.reader.ReadNDJSON(s.paths.ProjectFeaturesPath(projectID), func(raw []byte) error {
+	s.reader.ReadNDJSON(s.paths.BacklogFeaturesPath(backlogID), func(raw []byte) error {
 		var feature map[string]interface{}
 		if err := json.Unmarshal(raw, &feature); err != nil {
 			return nil
@@ -154,7 +154,7 @@ func (s *StatusService) GetProjectStatus(projectID string) (*ProjectSummary, err
 	})
 
 	// Read tasks
-	s.reader.ReadNDJSON(s.paths.ProjectTasksPath(projectID), func(raw []byte) error {
+	s.reader.ReadNDJSON(s.paths.BacklogTasksPath(backlogID), func(raw []byte) error {
 		var task map[string]interface{}
 		if err := json.Unmarshal(raw, &task); err != nil {
 			return nil
@@ -173,7 +173,7 @@ func (s *StatusService) GetProjectStatus(projectID string) (*ProjectSummary, err
 	})
 
 	// Read issues
-	s.reader.ReadNDJSON(s.paths.ProjectIssuesPath(projectID), func(raw []byte) error {
+	s.reader.ReadNDJSON(s.paths.BacklogIssuesPath(backlogID), func(raw []byte) error {
 		var issue map[string]interface{}
 		if err := json.Unmarshal(raw, &issue); err != nil {
 			return nil
@@ -191,8 +191,8 @@ func (s *StatusService) GetProjectStatus(projectID string) (*ProjectSummary, err
 		return nil
 	})
 
-	return &ProjectSummary{
-		ID:    projectID,
+	return &BacklogSummary{
+		ID:    backlogID,
 		Name:  metadata.Name,
 		Stats: stats,
 	}, nil

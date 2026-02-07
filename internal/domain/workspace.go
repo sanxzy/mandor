@@ -18,13 +18,13 @@ type Workspace struct {
 type WorkspaceConfig struct {
 	DefaultPriority string      `json:"default_priority"`
 	StrictMode      bool        `json:"strict_mode"`
-	DefaultProject  string      `json:"default_project,omitempty"`
+	DefaultBacklog  string      `json:"default_backlog,omitempty"`
 	GoalLengths     GoalLengths `json:"goal_lengths"`
 }
 
 // GoalLengths holds configurable minimum goal lengths per entity
 type GoalLengths struct {
-	Project int `json:"project,omitempty"`
+	Backlog int `json:"backlog,omitempty"`
 	Feature int `json:"feature,omitempty"`
 	Task    int `json:"task,omitempty"`
 	Issue   int `json:"issue,omitempty"`
@@ -33,7 +33,7 @@ type GoalLengths struct {
 // DefaultGoalLengths returns the default minimum goal lengths
 func DefaultGoalLengths() GoalLengths {
 	return GoalLengths{
-		Project: 500,
+		Backlog: 500,
 		Feature: 300,
 		Task:    500,
 		Issue:   200,

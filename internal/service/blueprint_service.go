@@ -42,8 +42,8 @@ func (s *BlueprintService) WorkspaceInitialized() bool {
 }
 
 func (s *BlueprintService) ValidateCreateInput(input *domain.BlueprintCreateInput) error {
-	if !s.reader.ProjectExists(input.ProjectID) {
-		return domain.NewValidationError("Project not found: " + input.ProjectID)
+	if !s.reader.BacklogExists(input.BacklogID) {
+		return domain.NewValidationError("Backlog not found: " + input.BacklogID)
 	}
 
 	if strings.TrimSpace(input.BriefID) == "" {
@@ -51,18 +51,18 @@ func (s *BlueprintService) ValidateCreateInput(input *domain.BlueprintCreateInpu
 	}
 
 	// Load and validate Brief exists
-	brief, err := s.loadBrief(input.ProjectID)
+	brief, err := s.loadBrief(input.BacklogID)
 	if err != nil {
 		return domain.NewValidationError("Brief not found. Create a Brief first.")
 	}
 
 	// Verify all Brief capabilities have corresponding Specs
-	if err := s.verifyAllSpecsExist(input.ProjectID, brief); err != nil {
+	if err := s.verifyAllSpecsExist(input.BacklogID, brief); err != nil {
 		return err
 	}
 
 	// Verify each Spec is valid
-	if err := s.verifyAllSpecsValid(input.ProjectID, brief); err != nil {
+	if err := s.verifyAllSpecsValid(input.BacklogID, brief); err != nil {
 		return err
 	}
 
@@ -95,18 +95,18 @@ func (s *BlueprintService) CreateBlueprint(input *domain.BlueprintCreateInput) (
 	creator := util.GetGitUsername()
 	now := time.Now().UTC()
 
-	// Generate blueprint ID as {project-id}-blueprint
-	blueprintID := util.ToSlug(input.ProjectID) + "-blueprint"
+	// Generate blueprint ID as {backlog-id}-blueprint
+	blueprintID := util.ToSlug(input.BacklogID) + "-blueprint"
 
 	// Process architecture decisions
 	decisions := []domain.ArchitectureDecision{}
 	for _, decInput := range input.ArchitectureDecisions {
 		decID := util.NextSequential("decision", []string{})
 		decisions = append(decisions, domain.ArchitectureDecision{
-			ID:                   decID,
-			Title:                decInput.Title,
-			Decision:             decInput.Decision,
-			Rationale:            decInput.Rationale,
+			ID:                     decID,
+			Title:                  decInput.Title,
+			Decision:               decInput.Decision,
+			Rationale:              decInput.Rationale,
 			AlternativesConsidered: decInput.AlternativesConsidered,
 		})
 	}
@@ -124,23 +124,23 @@ func (s *BlueprintService) CreateBlueprint(input *domain.BlueprintCreateInput) (
 
 	// Create Blueprint
 	blueprint := &domain.Blueprint{
-		ID:                    blueprintID,
-		BriefID:               input.BriefID,
-		ProjectID:             input.ProjectID,
-		Status:                domain.BlueprintStatusDraft,
-		Version:               "1.0",
-		ProblemStatement:      input.ProblemStatement,
-		Constraints:           input.Constraints,
-		UserTypes:             input.UserTypes,
-		Goals:                 *input.Goals,
-		ArchitectureDecisions: decisions,
-		DataModels:            input.DataModels,
+		ID:                     blueprintID,
+		BriefID:                input.BriefID,
+		BacklogID:              input.BacklogID,
+		Status:                 domain.BlueprintStatusDraft,
+		Version:                "1.0",
+		ProblemStatement:       input.ProblemStatement,
+		Constraints:            input.Constraints,
+		UserTypes:              input.UserTypes,
+		Goals:                  *input.Goals,
+		ArchitectureDecisions:  decisions,
+		DataModels:             input.DataModels,
 		ImplementationStrategy: input.ImplementationStrategy,
-		Risks:                 risks,
-		CreatedAt:             now,
-		UpdatedAt:             now,
-		CreatedBy:             creator,
-		UpdatedBy:             creator,
+		Risks:                  risks,
+		CreatedAt:              now,
+		UpdatedAt:              now,
+		CreatedBy:              creator,
+		UpdatedBy:              creator,
 	}
 
 	// Validate blueprint structure
@@ -149,18 +149,18 @@ func (s *BlueprintService) CreateBlueprint(input *domain.BlueprintCreateInput) (
 	}
 
 	// Save Blueprint
-	if err := s.saveBlueprint(input.ProjectID, blueprint); err != nil {
+	if err := s.saveBlueprint(input.BacklogID, blueprint); err != nil {
 		return nil, err
 	}
 
 	return blueprint, nil
 }
 
-func (s *BlueprintService) ReadBlueprint(projectID string) (*domain.Blueprint, error) {
-	blueprintPath := s.paths.BlueprintPath(projectID)
+func (s *BlueprintService) ReadBlueprint(backlogID string) (*domain.Blueprint, error) {
+	blueprintPath := s.paths.BlueprintPath(backlogID)
 
 	if !s.blueprintFileExists(blueprintPath) {
-		return nil, domain.NewValidationError("Blueprint not found for project: " + projectID)
+		return nil, domain.NewValidationError("Blueprint not found for backlog: " + backlogID)
 	}
 
 	blueprint, err := s.loadBlueprint(blueprintPath)
@@ -171,8 +171,8 @@ func (s *BlueprintService) ReadBlueprint(projectID string) (*domain.Blueprint, e
 	return blueprint, nil
 }
 
-func (s *BlueprintService) saveBlueprint(projectID string, blueprint *domain.Blueprint) error {
-	blueprintPath := s.paths.BlueprintPath(projectID)
+func (s *BlueprintService) saveBlueprint(backlogID string, blueprint *domain.Blueprint) error {
+	blueprintPath := s.paths.BlueprintPath(backlogID)
 
 	// Build markdown representation
 	content := s.blueprintToMarkdown(blueprint)
@@ -330,18 +330,18 @@ func (s *BlueprintService) markdownToBlueprint(content string) (*domain.Blueprin
 	return &bp, nil
 }
 
-func (s *BlueprintService) loadBrief(projectID string) (*domain.Brief, error) {
+func (s *BlueprintService) loadBrief(backlogID string) (*domain.Brief, error) {
 	briefService := NewBriefServiceWithPaths(s.paths)
-	return briefService.ReadBrief(projectID)
+	return briefService.ReadBrief(backlogID)
 }
 
-func (s *BlueprintService) verifyAllSpecsExist(projectID string, brief *domain.Brief) error {
+func (s *BlueprintService) verifyAllSpecsExist(backlogID string, brief *domain.Brief) error {
 	specService := NewSpecServiceWithPaths(s.paths)
 
 	allCapabilities := append(brief.NewCapabilities, brief.ModifiedCapabilities...)
 	for _, cap := range allCapabilities {
 		specID := cap.ID + "-spec"
-		_, err := specService.ReadSpec(projectID, specID)
+		_, err := specService.ReadSpec(backlogID, specID)
 		if err != nil {
 			return domain.NewValidationError(fmt.Sprintf("Error: Capability '%s' does not have a valid Spec\nSolution: create a Spec for this capability first using 'mandor spec create'", cap.ID))
 		}
@@ -349,13 +349,13 @@ func (s *BlueprintService) verifyAllSpecsExist(projectID string, brief *domain.B
 	return nil
 }
 
-func (s *BlueprintService) verifyAllSpecsValid(projectID string, brief *domain.Brief) error {
+func (s *BlueprintService) verifyAllSpecsValid(backlogID string, brief *domain.Brief) error {
 	specService := NewSpecServiceWithPaths(s.paths)
 
 	allCapabilities := append(brief.NewCapabilities, brief.ModifiedCapabilities...)
 	for _, cap := range allCapabilities {
 		specID := cap.ID + "-spec"
-		spec, err := specService.ReadSpec(projectID, specID)
+		spec, err := specService.ReadSpec(backlogID, specID)
 		if err != nil {
 			return err
 		}
@@ -366,4 +366,19 @@ func (s *BlueprintService) verifyAllSpecsValid(projectID string, brief *domain.B
 		}
 	}
 	return nil
+}
+
+func (s *BlueprintService) UpdateBlueprint(backlogID string, blueprint *domain.Blueprint) error {
+	updater := util.GetGitUsername()
+	now := time.Now().UTC()
+
+	blueprint.UpdatedAt = now
+	blueprint.UpdatedBy = updater
+
+	return s.saveBlueprint(backlogID, blueprint)
+}
+
+func (s *BlueprintService) DeleteBlueprint(backlogID string) error {
+	blueprintPath := s.paths.BlueprintPath(backlogID)
+	return s.writer.DeleteFile(blueprintPath)
 }

@@ -20,7 +20,7 @@ type TrackResponse struct {
 	Scope                   string             `json:"scope"`
 	ID                      string             `json:"id,omitempty"`
 	Name                    string             `json:"name,omitempty"`
-	Projects                []ProjectTrackItem `json:"projects,omitempty"`
+	Backlogs                []BacklogTrackItem `json:"backlogs,omitempty"`
 	Features                []FeatureTrackItem `json:"features,omitempty"`
 	Tasks                   []TaskTrackItem    `json:"tasks,omitempty"`
 	Issues                  []IssueTrackItem   `json:"issues,omitempty"`
@@ -28,8 +28,8 @@ type TrackResponse struct {
 	RecommendedNextCommands []string           `json:"recommendedNextCommands"`
 }
 
-// ProjectTrackItem represents a project in track output
-type ProjectTrackItem struct {
+// BacklogTrackItem represents a backlog in track output
+type BacklogTrackItem struct {
 	ID           string         `json:"id"`
 	Name         string         `json:"name"`
 	Status       string         `json:"status"`
@@ -90,7 +90,7 @@ type IssueTrackItem struct {
 	Type        string   `json:"type"`
 	Status      string   `json:"status"`
 	Priority    string   `json:"priority"`
-	ProjectID   string   `json:"project_id"`
+	BacklogID   string   `json:"backlog_id"`
 	CreatedAt   string   `json:"created_at"`
 	UpdatedAt   string   `json:"updated_at"`
 	Description string   `json:"description,omitempty"`
@@ -112,7 +112,7 @@ type TreeNode struct {
 	Name      string
 	Status    string
 	Priority  string
-	Type      string // "task", "issue", "feature", "project"
+	Type      string // "task", "issue", "feature", "backlog"
 	Children  []*TreeNode
 	BlockedBy []string
 	Blocks    []string

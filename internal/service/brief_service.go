@@ -42,8 +42,8 @@ func (s *BriefService) WorkspaceInitialized() bool {
 }
 
 func (s *BriefService) ValidateCreateInput(input *domain.BriefCreateInput) error {
-	if !s.reader.ProjectExists(input.ProjectID) {
-		return domain.NewValidationError("Project not found: " + input.ProjectID)
+	if !s.reader.BacklogExists(input.BacklogID) {
+		return domain.NewValidationError("Backlog not found: " + input.BacklogID)
 	}
 
 	if strings.TrimSpace(input.Name) == "" {
@@ -56,10 +56,10 @@ func (s *BriefService) ValidateCreateInput(input *domain.BriefCreateInput) error
 		return domain.NewValidationError(fmt.Sprintf("Error: Invalid Brief name '%s'\nSolution: use alphanumeric characters and hyphens only", input.Name))
 	}
 
-	// Check if brief already exists for this project
-	briefPath := s.paths.BriefPath(input.ProjectID)
+	// Check if brief already exists for this backlog
+	briefPath := s.paths.BriefPath(input.BacklogID)
 	if s.briefFileExists(briefPath) {
-		return domain.NewValidationError("A Brief already exists for this project. Update or delete the existing Brief first.")
+		return domain.NewValidationError("A Brief already exists for this backlog. Update or delete the existing Brief first.")
 	}
 
 	// Validate Why section
@@ -117,7 +117,7 @@ func (s *BriefService) CreateBrief(input *domain.BriefCreateInput) (*domain.Brie
 	// Create Brief
 	brief := &domain.Brief{
 		ID:                   briefID,
-		ProjectID:            input.ProjectID,
+		BacklogID:            input.BacklogID,
 		Status:               domain.BriefStatusDraft,
 		Why:                  input.Why,
 		Impact:               *input.Impact,
@@ -135,18 +135,18 @@ func (s *BriefService) CreateBrief(input *domain.BriefCreateInput) (*domain.Brie
 	}
 
 	// Save Brief
-	if err := s.saveBrief(input.ProjectID, brief); err != nil {
+	if err := s.saveBrief(input.BacklogID, brief); err != nil {
 		return nil, err
 	}
 
 	return brief, nil
 }
 
-func (s *BriefService) ReadBrief(projectID string) (*domain.Brief, error) {
-	briefPath := s.paths.BriefPath(projectID)
+func (s *BriefService) ReadBrief(backlogID string) (*domain.Brief, error) {
+	briefPath := s.paths.BriefPath(backlogID)
 
 	if !s.briefFileExists(briefPath) {
-		return nil, domain.NewValidationError("Brief not found for project: " + projectID)
+		return nil, domain.NewValidationError("Brief not found for backlog: " + backlogID)
 	}
 
 	brief, err := s.loadBrief(briefPath)
@@ -157,11 +157,11 @@ func (s *BriefService) ReadBrief(projectID string) (*domain.Brief, error) {
 	return brief, nil
 }
 
-func (s *BriefService) saveBrief(projectID string, brief *domain.Brief) error {
-	briefPath := s.paths.BriefPath(projectID)
+func (s *BriefService) saveBrief(backlogID string, brief *domain.Brief) error {
+	briefPath := s.paths.BriefPath(backlogID)
 
 	// Create specs directory if it doesn't exist
-	specsDir := s.paths.SpecsDirPath(projectID)
+	specsDir := s.paths.SpecsDirPath(backlogID)
 	if err := s.writer.CreateDirectory(specsDir); err != nil {
 		return err
 	}
@@ -287,4 +287,19 @@ func (s *BriefService) markdownToBrief(content string) (*domain.Brief, error) {
 	}
 
 	return &brief, nil
+}
+
+func (s *BriefService) UpdateBrief(backlogID string, brief *domain.Brief) error {
+	updater := util.GetGitUsername()
+	now := time.Now().UTC()
+
+	brief.UpdatedAt = now
+	brief.UpdatedBy = updater
+
+	return s.saveBrief(backlogID, brief)
+}
+
+func (s *BriefService) DeleteBrief(backlogID string) error {
+	briefPath := s.paths.BriefPath(backlogID)
+	return s.writer.DeleteFile(briefPath)
 }

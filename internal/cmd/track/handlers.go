@@ -11,64 +11,64 @@ import (
 
 // handleWorkspace handles workspace-level tracking
 func handleWorkspace(cmd *cobra.Command, _ string) error {
-	projectSvc, err := service.NewProjectService()
+	backlogSvc, err := service.NewBacklogService()
 	if err != nil {
 		return err
 	}
 
-	if !projectSvc.WorkspaceInitialized() {
+	if !backlogSvc.WorkspaceInitialized() {
 		return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 	}
 
-	// Get all projects
-	output, err := projectSvc.ListProjects(false, true)
+	// Get all backlogs
+	output, err := backlogSvc.ListBacklogs(false, true)
 	if err != nil {
 		return err
 	}
 
 	response := &TrackResponse{
 		Scope:    "workspace",
-		Projects: []ProjectTrackItem{},
+		Backlogs: []BacklogTrackItem{},
 		Summary:  SummaryStats{ByStatus: make(map[string]int)},
 	}
 
-	// Build project items
-	for _, proj := range output.Projects {
-		projItem := ProjectTrackItem{
-			ID:        proj.ID,
-			Name:      proj.Name,
-			Status:    proj.Status,
-			CreatedAt: proj.CreatedAt,
-			UpdatedAt: proj.UpdatedAt,
-			Features:  proj.Features,
-			Tasks:     proj.Tasks,
-			Issues:    proj.Issues,
+	// Build backlog items
+	for _, backlog := range output.Backlogs {
+		backlogItem := BacklogTrackItem{
+			ID:        backlog.ID,
+			Name:      backlog.Name,
+			Status:    backlog.Status,
+			CreatedAt: backlog.CreatedAt,
+			UpdatedAt: backlog.UpdatedAt,
+			Features:  backlog.Features,
+			Tasks:     backlog.Tasks,
+			Issues:    backlog.Issues,
 		}
 
 		if globalFlags.Verbose {
-			projItem.Description = proj.Goal
+			backlogItem.Description = backlog.Goal
 		}
 
-		response.Projects = append(response.Projects, projItem)
+		response.Backlogs = append(response.Backlogs, backlogItem)
 		response.Summary.Total++
 	}
 
 	return outputResponse(cmd, response)
 }
 
-// handleProject handles project-level tracking
-func handleProject(cmd *cobra.Command, projectID string) error {
-	projectSvc, err := service.NewProjectService()
+// handleBacklog handles backlog-level tracking
+func handleBacklog(cmd *cobra.Command, backlogID string) error {
+	backlogSvc, err := service.NewBacklogService()
 	if err != nil {
 		return err
 	}
 
-	if !projectSvc.WorkspaceInitialized() {
+	if !backlogSvc.WorkspaceInitialized() {
 		return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 	}
 
-	// Get project
-	proj, err := projectSvc.GetProject(projectID)
+	// Get backlog
+	backlog, err := backlogSvc.GetBacklog(backlogID)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func handleProject(cmd *cobra.Command, projectID string) error {
 	}
 
 	input := &domain.IssueListInput{
-		ProjectID: projectID,
+		BacklogID: backlogID,
 	}
 
 	issuesOutput, err := issueSvc.ListIssues(input)
@@ -89,9 +89,9 @@ func handleProject(cmd *cobra.Command, projectID string) error {
 	}
 
 	response := &TrackResponse{
-		Scope:   "project",
-		ID:      proj.ID,
-		Name:    proj.Name,
+		Scope:   "backlog",
+		ID:      backlog.ID,
+		Name:    backlog.Name,
 		Issues:  []IssueTrackItem{},
 		Summary: SummaryStats{ByStatus: make(map[string]int)},
 	}
@@ -106,7 +106,7 @@ func handleProject(cmd *cobra.Command, projectID string) error {
 			Type:      issue.IssueType,
 			Status:    issue.Status,
 			Priority:  issue.Priority,
-			ProjectID: issue.ProjectID,
+			BacklogID: issue.BacklogID,
 			CreatedAt: issue.CreatedAt,
 			UpdatedAt: issue.LastUpdatedAt,
 		}
@@ -122,7 +122,7 @@ func handleProject(cmd *cobra.Command, projectID string) error {
 	if response.Summary.Total > 0 {
 		response.RecommendedNextCommands = []string{
 			fmt.Sprintf("mandor track issue <issue_id>    # View specific issue details"),
-			fmt.Sprintf("mandor track project %s --verbose  # See blockers and relationships", projectID),
+			fmt.Sprintf("mandor track backlog %s --verbose  # See blockers and relationships", backlogID),
 		}
 	}
 
@@ -140,16 +140,16 @@ func handleFeature(cmd *cobra.Command, featureID string) error {
 		return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 	}
 
-	// Parse feature ID to get project
+	// Parse feature ID to get backlog
 	parts := strings.Split(featureID, "-feature-")
 	if len(parts) != 2 {
 		return domain.NewValidationError(fmt.Sprintf("Invalid feature ID format: %s", featureID))
 	}
-	projectID := parts[0]
+	backlogID := parts[0]
 
 	// Get feature detail
 	input := &domain.FeatureDetailInput{
-		ProjectID: projectID,
+		BacklogID: backlogID,
 		FeatureID: featureID,
 	}
 
@@ -166,7 +166,7 @@ func handleFeature(cmd *cobra.Command, featureID string) error {
 
 	taskListInput := &domain.TaskListInput{
 		FeatureID: featureID,
-		ProjectID: projectID,
+		BacklogID: backlogID,
 	}
 
 	tasksOutput, err := taskSvc.ListTasks(taskListInput)
@@ -216,7 +216,7 @@ func handleFeature(cmd *cobra.Command, featureID string) error {
 		response.RecommendedNextCommands = []string{
 			fmt.Sprintf("mandor track task <task_id>      # View specific task details"),
 			fmt.Sprintf("mandor track feature %s --verbose # See task blockers", featureID),
-			fmt.Sprintf("mandor track project %s           # View parent project", projectID),
+			fmt.Sprintf("mandor track backlog %s           # View parent backlog", backlogID),
 		}
 	}
 
@@ -235,7 +235,7 @@ func handleTask(cmd *cobra.Command, taskID string) error {
 	}
 
 	// Parse task ID
-	projectID, featureID, err := taskSvc.ParseTaskID(taskID)
+	backlogID, featureID, err := taskSvc.ParseTaskID(taskID)
 	if err != nil {
 		return err
 	}
@@ -279,7 +279,7 @@ func handleTask(cmd *cobra.Command, taskID string) error {
 	// Build recommendations
 	response.RecommendedNextCommands = []string{
 		fmt.Sprintf("mandor track feature %s          # View all tasks in feature", featureID),
-		fmt.Sprintf("mandor track project %s          # View parent project", projectID),
+		fmt.Sprintf("mandor track backlog %s          # View parent backlog", backlogID),
 	}
 
 	if len(task.DependsOn) > 0 {
@@ -301,16 +301,16 @@ func handleIssue(cmd *cobra.Command, issueID string) error {
 		return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 	}
 
-	// Parse issue ID to get project
+	// Parse issue ID to get backlog
 	parts := strings.Split(issueID, "-issue-")
 	if len(parts) != 2 {
 		return domain.NewValidationError(fmt.Sprintf("Invalid issue ID format: %s", issueID))
 	}
-	projectID := parts[0]
+	backlogID := parts[0]
 
 	// Get issue detail
 	input := &domain.IssueDetailInput{
-		ProjectID: projectID,
+		BacklogID: backlogID,
 		IssueID:   issueID,
 	}
 
@@ -330,7 +330,7 @@ func handleIssue(cmd *cobra.Command, issueID string) error {
 				Type:        issue.IssueType,
 				Status:      issue.Status,
 				Priority:    issue.Priority,
-				ProjectID:   issue.ProjectID,
+				BacklogID:   issue.BacklogID,
 				CreatedAt:   issue.CreatedAt,
 				UpdatedAt:   issue.LastUpdatedAt,
 				Description: issue.Goal,
@@ -345,7 +345,7 @@ func handleIssue(cmd *cobra.Command, issueID string) error {
 
 	// Build recommendations
 	response.RecommendedNextCommands = []string{
-		fmt.Sprintf("mandor track project %s           # View parent project", projectID),
+		fmt.Sprintf("mandor track backlog %s           # View parent backlog", backlogID),
 		fmt.Sprintf("mandor track issue %s --verbose  # See all relationships", issueID),
 	}
 
@@ -369,8 +369,8 @@ func handleAutoScope(cmd *cobra.Command, id string) error {
 	if strings.HasPrefix(id, "feature-") || strings.HasPrefix(id, "f-") {
 		return handleFeature(cmd, id)
 	}
-	if strings.HasPrefix(id, "project-") || strings.HasPrefix(id, "p-") {
-		return handleProject(cmd, id)
+	if strings.HasPrefix(id, "backlog-") || strings.HasPrefix(id, "b-") {
+		return handleBacklog(cmd, id)
 	}
 
 	// Try to resolve from data store
@@ -392,13 +392,13 @@ func handleAutoScope(cmd *cobra.Command, id string) error {
 		return handleFeature(cmd, id)
 	}
 
-	projectSvc, _ := service.NewProjectService()
-	if projectSvc != nil {
-		_, err := projectSvc.GetProject(id)
+	backlogSvc, _ := service.NewBacklogService()
+	if backlogSvc != nil {
+		_, err := backlogSvc.GetBacklog(id)
 		if err == nil {
-			return handleProject(cmd, id)
+			return handleBacklog(cmd, id)
 		}
 	}
 
-	return domain.NewValidationError(fmt.Sprintf("ID '%s' not found. Checked: tasks, issues, features, projects", id))
+	return domain.NewValidationError(fmt.Sprintf("ID '%s' not found. Checked: tasks, issues, features, backlogs", id))
 }

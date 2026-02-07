@@ -141,7 +141,7 @@ func (s *WorkspaceService) UpdateWorkspaceConfig(key string, value interface{}) 
 		}
 		ws.Config.StrictMode = boolValue
 
-	case "goal.lengths.project", "goal.lengths.feature", "goal.lengths.task", "goal.lengths.issue":
+	case "goal.lengths.backlog", "goal.lengths.feature", "goal.lengths.task", "goal.lengths.issue":
 		intValue, ok := value.(int)
 		if !ok {
 			return domain.NewValidationError(fmt.Sprintf("%s must be an integer", key))
@@ -154,7 +154,7 @@ func (s *WorkspaceService) UpdateWorkspaceConfig(key string, value interface{}) 
 
 	default:
 		return domain.NewValidationError(
-			fmt.Sprintf("Unknown configuration key: %s\n\nAvailable keys:\n  - default_priority\n  - strict_mode\n  - goal.lengths.project\n  - goal.lengths.feature\n  - goal.lengths.task\n  - goal.lengths.issue", key),
+			fmt.Sprintf("Unknown configuration key: %s\n\nAvailable keys:\n  - default_priority\n  - strict_mode\n  - goal.lengths.backlog\n  - goal.lengths.feature\n  - goal.lengths.task\n  - goal.lengths.issue", key),
 		)
 	}
 
@@ -177,8 +177,8 @@ func (s *WorkspaceService) GetConfigValue(key string) (interface{}, error) {
 		return ws.Config.DefaultPriority, nil
 	case "strict_mode":
 		return ws.Config.StrictMode, nil
-	case "goal.lengths.project":
-		return ws.Config.GoalLengths.Project, nil
+	case "goal.lengths.backlog":
+		return ws.Config.GoalLengths.Backlog, nil
 	case "goal.lengths.feature":
 		return ws.Config.GoalLengths.Feature, nil
 	case "goal.lengths.task":
@@ -200,8 +200,8 @@ func (s *WorkspaceService) GetGoalLength(entity string) int {
 	}
 
 	switch entity {
-	case "project":
-		return ws.Config.GoalLengths.Project
+	case "backlog":
+		return ws.Config.GoalLengths.Backlog
 	case "feature":
 		return ws.Config.GoalLengths.Feature
 	case "task":
@@ -221,8 +221,8 @@ func (s *WorkspaceService) SetGoalLength(entity string, length int) error {
 	}
 
 	switch entity {
-	case "project":
-		ws.Config.GoalLengths.Project = length
+	case "backlog":
+		ws.Config.GoalLengths.Backlog = length
 	case "feature":
 		ws.Config.GoalLengths.Feature = length
 	case "task":
@@ -231,7 +231,7 @@ func (s *WorkspaceService) SetGoalLength(entity string, length int) error {
 		ws.Config.GoalLengths.Issue = length
 	default:
 		return domain.NewValidationError(
-			fmt.Sprintf("Unknown entity: %s (use: project, feature, task, issue)", entity),
+			fmt.Sprintf("Unknown entity: %s (use: backlog, feature, task, issue)", entity),
 		)
 	}
 
@@ -249,8 +249,8 @@ func (s *WorkspaceService) ResetGoalLength(entity string) error {
 	}
 
 	switch entity {
-	case "project":
-		ws.Config.GoalLengths.Project = defaults.Project
+	case "backlog":
+		ws.Config.GoalLengths.Backlog = defaults.Backlog
 	case "feature":
 		ws.Config.GoalLengths.Feature = defaults.Feature
 	case "task":
@@ -259,7 +259,7 @@ func (s *WorkspaceService) ResetGoalLength(entity string) error {
 		ws.Config.GoalLengths.Issue = defaults.Issue
 	default:
 		return domain.NewValidationError(
-			fmt.Sprintf("Unknown entity: %s (use: project, feature, task, issue)", entity),
+			fmt.Sprintf("Unknown entity: %s (use: backlog, feature, task, issue)", entity),
 		)
 	}
 

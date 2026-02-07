@@ -7,7 +7,7 @@ import (
 
 const (
 	MandorDir     = ".mandor"
-	ProjectsDir   = "projects"
+	BacklogsDir   = "backlogs"
 	WorkspaceFile = "workspace.json"
 )
 
@@ -40,39 +40,39 @@ func (p *Paths) WorkspacePath() string {
 	return filepath.Join(p.MandorDirPath(), WorkspaceFile)
 }
 
-// ProjectsDirPath returns the path to projects directory
-func (p *Paths) ProjectsDirPath() string {
-	return filepath.Join(p.MandorDirPath(), ProjectsDir)
+// BacklogsDirPath returns the path to backlogs directory
+func (p *Paths) BacklogsDirPath() string {
+	return filepath.Join(p.MandorDirPath(), BacklogsDir)
 }
 
-// ProjectDirPath returns the path to a specific project directory
-func (p *Paths) ProjectDirPath(projectID string) string {
-	return filepath.Join(p.ProjectsDirPath(), projectID)
+// BacklogDirPath returns the path to a specific backlog directory
+func (p *Paths) BacklogDirPath(backlogID string) string {
+	return filepath.Join(p.BacklogsDirPath(), backlogID)
 }
 
-// ProjectMetadataPath returns the path to project.jsonl
-func (p *Paths) ProjectMetadataPath(projectID string) string {
-	return filepath.Join(p.ProjectDirPath(projectID), "project.jsonl")
+// BacklogMetadataPath returns the path to backlog.jsonl
+func (p *Paths) BacklogMetadataPath(backlogID string) string {
+	return filepath.Join(p.BacklogDirPath(backlogID), "backlog.jsonl")
 }
 
-// ProjectSchemaPath returns the path to schema.json
-func (p *Paths) ProjectSchemaPath(projectID string) string {
-	return filepath.Join(p.ProjectDirPath(projectID), "schema.json")
+// BacklogSchemaPath returns the path to schema.json
+func (p *Paths) BacklogSchemaPath(backlogID string) string {
+	return filepath.Join(p.BacklogDirPath(backlogID), "schema.json")
 }
 
-// ProjectFeaturesPath returns the path to features.jsonl
-func (p *Paths) ProjectFeaturesPath(projectID string) string {
-	return filepath.Join(p.ProjectDirPath(projectID), "features.jsonl")
+// BacklogFeaturesPath returns the path to features.jsonl
+func (p *Paths) BacklogFeaturesPath(backlogID string) string {
+	return filepath.Join(p.BacklogDirPath(backlogID), "features.jsonl")
 }
 
-// ProjectTasksPath returns the path to tasks.jsonl
-func (p *Paths) ProjectTasksPath(projectID string) string {
-	return filepath.Join(p.ProjectDirPath(projectID), "tasks.jsonl")
+// BacklogTasksPath returns the path to tasks.jsonl
+func (p *Paths) BacklogTasksPath(backlogID string) string {
+	return filepath.Join(p.BacklogDirPath(backlogID), "tasks.jsonl")
 }
 
-// ProjectIssuesPath returns the path to issues.jsonl
-func (p *Paths) ProjectIssuesPath(projectID string) string {
-	return filepath.Join(p.ProjectDirPath(projectID), "issues.jsonl")
+// BacklogIssuesPath returns the path to issues.jsonl
+func (p *Paths) BacklogIssuesPath(backlogID string) string {
+	return filepath.Join(p.BacklogDirPath(backlogID), "issues.jsonl")
 }
 
 // SessionNotesPath returns the path to session-notes.jsonl
@@ -80,28 +80,28 @@ func (p *Paths) SessionNotesPath() string {
 	return filepath.Join(p.MandorDirPath(), "session-notes.jsonl")
 }
 
-// ProjectDirExists checks if a project directory exists
-func (p *Paths) ProjectDirExists(projectID string) bool {
-	_, err := os.Stat(p.ProjectDirPath(projectID))
+// BacklogDirExists checks if a backlog directory exists
+func (p *Paths) BacklogDirExists(backlogID string) bool {
+	_, err := os.Stat(p.BacklogDirPath(backlogID))
 	return err == nil
 }
 
 // BriefPath returns the path to brief.md
-func (p *Paths) BriefPath(projectID string) string {
-	return filepath.Join(p.ProjectDirPath(projectID), "brief.md")
+func (p *Paths) BriefPath(backlogID string) string {
+	return filepath.Join(p.BacklogDirPath(backlogID), "brief.md")
 }
 
 // SpecsDirPath returns the path to specs directory
-func (p *Paths) SpecsDirPath(projectID string) string {
-	return filepath.Join(p.ProjectDirPath(projectID), "specs")
+func (p *Paths) SpecsDirPath(backlogID string) string {
+	return filepath.Join(p.BacklogDirPath(backlogID), "specs")
 }
 
 // SpecPath returns the path to a specific spec file
-func (p *Paths) SpecPath(projectID, specID string) string {
-	return filepath.Join(p.SpecsDirPath(projectID), specID+".md")
+func (p *Paths) SpecPath(backlogID, specID string) string {
+	return filepath.Join(p.SpecsDirPath(backlogID), specID+".md")
 }
 
 // BlueprintPath returns the path to blueprint.md
-func (p *Paths) BlueprintPath(projectID string) string {
-	return filepath.Join(p.ProjectDirPath(projectID), "blueprint.md")
+func (p *Paths) BlueprintPath(backlogID string) string {
+	return filepath.Join(p.BacklogDirPath(backlogID), "blueprint.md")
 }

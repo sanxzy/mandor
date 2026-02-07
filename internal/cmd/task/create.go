@@ -10,8 +10,6 @@ import (
 	"mandor/internal/util"
 )
 
-
-
 func NewCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create <feature_id> <name> --spec-id <spec-id> --iae-scenarios <req-XXXX:scenario-YYYY>|<...> --goal <text> --implementation-steps <steps> --test-cases <cases> [--library-needs <libs>] [--priority <P0-P5>] [--depends-on <ids>] [-y]",
@@ -114,6 +112,16 @@ func NewCreateCmd() *cobra.Command {
 			if len(task.DependsOn) > 0 {
 				fmt.Fprintf(out, "  Depends on:           %d task(s)\n", len(task.DependsOn))
 			}
+
+			// AI-friendly next steps
+			fmt.Fprintln(out)
+			fmt.Fprintln(out, "  ─────────────────────────────────────────────────────────")
+			fmt.Fprintln(out, "  NEXT STEPS:")
+			fmt.Fprintln(out, "  ─────────────────────────────────────────────────────────")
+			fmt.Fprintf(out, "  • Mark gates as read: mandor task set-gate %s --brief --spec --notes\n", task.ID)
+			fmt.Fprintf(out, "  • Start working: mandor task update %s --status in_progress\n", task.ID)
+			fmt.Fprintf(out, "  • View task details: mandor task detail %s\n", task.ID)
+			fmt.Fprintf(out, "  • List all tasks: mandor task list --feature %s\n", featureID)
 
 			_, warning := util.GetGitUsernameWithWarning()
 			if warning != "" {

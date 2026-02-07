@@ -11,13 +11,13 @@ import (
 )
 
 func NewSummaryCmd() *cobra.Command {
-	var projectID string
+	var backlogID string
 
 	cmd := &cobra.Command{
-		Use:        "summary [--project <id>]",
+		Use:        "summary [--backlog <id>]",
 		Short:      "Display workspace summary",
-		Deprecated: "Use 'mandor track' instead for unified workspace/project/feature/task/issue tracking. See 'mandor track --help' for options.",
-		Long:       "Display a summary of all features grouped by priority with task counts and status overview.\n\nDEPRECATED: This command is superseded by 'mandor track'. For equivalent functionality use 'mandor track workspace' or 'mandor track project <id>'.",
+		Deprecated: "Use 'mandor track' instead for unified workspace/backlog/feature/task/issue tracking. See 'mandor track --help' for options.",
+		Long:       "Display a summary of all features grouped by priority with task counts and status overview.\n\nDEPRECATED: This command is superseded by 'mandor track'. For equivalent functionality use 'mandor track workspace' or 'mandor track backlog <id>'.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fsvc, err := service.NewFeatureService()
 			if err != nil {
@@ -28,39 +28,39 @@ func NewSummaryCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			// Find all projects in workspace
-			projectsDir := ".mandor/projects"
-			entries, err := os.ReadDir(projectsDir)
+			// Find all backlogs in workspace
+			backlogsDir := ".mandor/backlogs"
+			entries, err := os.ReadDir(backlogsDir)
 			if err != nil {
-				fmt.Fprintf(cmd.OutOrStdout(), "No projects in workspace.\n")
+				fmt.Fprintf(cmd.OutOrStdout(), "No backlogs in workspace.\n")
 				return nil
 			}
 
-			var projects []string
+			var backlogs []string
 			for _, entry := range entries {
 				if entry.IsDir() {
-					projects = append(projects, entry.Name())
+					backlogs = append(backlogs, entry.Name())
 				}
 			}
 
-			if len(projects) == 0 {
-				fmt.Fprintf(cmd.OutOrStdout(), "No projects in workspace.\n")
+			if len(backlogs) == 0 {
+				fmt.Fprintf(cmd.OutOrStdout(), "No backlogs in workspace.\n")
 				return nil
 			}
 
-			// Group features by priority across all projects
+			// Group features by priority across all backlogs
 			featuresByPriority := make(map[string][]domain.FeatureListItem)
 			priorityOrder := []string{"P0", "P1", "P2", "P3", "P4", "P5"}
 
-			// Iterate through each project and gather features
-			for _, pID := range projects {
-				// Skip if filtering by project and this isn't it
-				if projectID != "" && pID != projectID {
+			// Iterate through each backlog and gather features
+			for _, bID := range backlogs {
+				// Skip if filtering by backlog and this isn't it
+				if backlogID != "" && bID != backlogID {
 					continue
 				}
 
 				input := &domain.FeatureListInput{
-					ProjectID: pID,
+					BacklogID: bID,
 				}
 
 				output, err := fsvc.ListFeatures(input)
@@ -120,7 +120,7 @@ func NewSummaryCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&projectID, "project", "p", "", "Filter by project ID")
+	cmd.Flags().StringVarP(&backlogID, "backlog", "b", "", "Filter by backlog ID")
 
 	return cmd
 }

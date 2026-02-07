@@ -18,15 +18,15 @@ var createCmd = &cobra.Command{
 }
 
 var (
-	createBrief           string
-	createProblem         string
-	createDecisions       string
-	createConstraints     string
-	createUserTypes       string
-	createGoalsInScope    string
-	createGoalsOutScope   string
-	createImplementation  string
-	createRisks           string
+	createBrief          string
+	createProblem        string
+	createDecisions      string
+	createConstraints    string
+	createUserTypes      string
+	createGoalsInScope   string
+	createGoalsOutScope  string
+	createImplementation string
+	createRisks          string
 )
 
 func init() {
@@ -39,7 +39,7 @@ func init() {
 	createCmd.Flags().StringVar(&createGoalsOutScope, "goals-out-scope", "", "Out-of-scope goals (comma-separated)")
 	createCmd.Flags().StringVar(&createImplementation, "implementation", "", "Implementation strategy")
 	createCmd.Flags().StringVar(&createRisks, "risks", "", "Risks - format: 'description:mitigation|...'")
-	
+
 	createCmd.MarkFlagRequired("brief")
 	createCmd.MarkFlagRequired("problem")
 	createCmd.MarkFlagRequired("decisions")
@@ -55,15 +55,15 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 	}
 
-	var projID string
+	var backlogID string
 	for p := cmd; p != nil; p = p.Parent() {
-		if val, err := p.Flags().GetString("project"); err == nil && val != "" {
-			projID = val
+		if val, err := p.Flags().GetString("backlog"); err == nil && val != "" {
+			backlogID = val
 			break
 		}
 	}
-	if projID == "" {
-		return domain.NewValidationError("Project ID is required (--project).")
+	if backlogID == "" {
+		return domain.NewValidationError("Backlog ID is required (--backlog).")
 	}
 
 	// Parse architecture decisions (min 1 required)
@@ -88,19 +88,19 @@ func runCreate(cmd *cobra.Command, args []string) error {
 
 	// Create input
 	input := &domain.BlueprintCreateInput{
-		ProjectID:             projID,
-		BriefID:               createBrief,
-		ProblemStatement:      createProblem,
-		Constraints:           parseCSV(createConstraints),
-		UserTypes:             parseCSV(createUserTypes),
+		BacklogID:        backlogID,
+		BriefID:          createBrief,
+		ProblemStatement: createProblem,
+		Constraints:      parseCSV(createConstraints),
+		UserTypes:        parseCSV(createUserTypes),
 		Goals: &domain.BlueprintGoals{
 			InScope:  parseCSV(createGoalsInScope),
 			OutScope: parseCSV(createGoalsOutScope),
 		},
-		ArchitectureDecisions: decisions,
-		DataModels:            []domain.DataModel{},
+		ArchitectureDecisions:  decisions,
+		DataModels:             []domain.DataModel{},
 		ImplementationStrategy: createImplementation,
-		Risks:                 risks,
+		Risks:                  risks,
 	}
 
 	if err := svc.ValidateCreateInput(input); err != nil {
@@ -116,6 +116,15 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(out, "✓ Blueprint created: %s\n", blueprint.ID)
 	fmt.Fprintf(out, "  Brief: %s\n", createBrief)
 	fmt.Fprintf(out, "  Architecture Decisions: %d\n", len(blueprint.ArchitectureDecisions))
+
+	// AI-friendly next steps
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, "  ─────────────────────────────────────────────────────────")
+	fmt.Fprintln(out, "  NEXT STEPS:")
+	fmt.Fprintln(out, "  ─────────────────────────────────────────────────────────")
+	fmt.Fprintf(out, "  • Create features: mandor feature create <name> --backlog %s --capability <cap-id> --spec-id <spec-id> ...\n", backlogID)
+	fmt.Fprintf(out, "  • View blueprint details: mandor blueprint detail %s --backlog %s\n", blueprint.ID, backlogID)
+	fmt.Fprintf(out, "  • List all blueprints: mandor blueprint list --backlog %s\n", backlogID)
 
 	_, warning := util.GetGitUsernameWithWarning()
 	if warning != "" {

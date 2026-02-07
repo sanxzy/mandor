@@ -42,15 +42,15 @@ func (s *IssueService) WorkspaceInitialized() bool {
 }
 
 func (s *IssueService) ValidateCreateInput(input *domain.IssueCreateInput) error {
-	if !s.reader.ProjectExists(input.ProjectID) {
-		return domain.NewValidationError("Project not found: " + input.ProjectID)
+	if !s.reader.BacklogExists(input.BacklogID) {
+		return domain.NewValidationError("Backlog not found: " + input.BacklogID)
 	}
 
 	if strings.TrimSpace(input.Name) == "" {
 		return domain.NewValidationError("Issue name is required (--name).")
 	}
 
-	if err := s.validateNoDuplicateName(input.ProjectID, input.Name); err != nil {
+	if err := s.validateNoDuplicateName(input.BacklogID, input.Name); err != nil {
 		return err
 	}
 
@@ -98,38 +98,38 @@ func (s *IssueService) ValidateCreateInput(input *domain.IssueCreateInput) error
 		return domain.NewValidationError("Invalid priority. Valid options: P0, P1, P2, P3, P4, P5")
 	}
 
-	if err := s.validateDependencies(input.ProjectID, "", input.DependsOn); err != nil {
+	if err := s.validateDependencies(input.BacklogID, "", input.DependsOn); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *IssueService) validateDependencies(projectID, selfID string, dependsOn []string) error {
-	// Read schema to check if cross-project dependencies are allowed
-	schema, err := s.reader.ReadProjectSchema(projectID)
+func (s *IssueService) validateDependencies(backlogID, selfID string, dependsOn []string) error {
+	// Read schema to check if cross-backlog dependencies are allowed
+	schema, err := s.reader.ReadBacklogSchema(backlogID)
 	if err != nil {
-		return domain.NewSystemError("Cannot read project schema", err)
+		return domain.NewSystemError("Cannot read backlog schema", err)
 	}
-	allowCrossProject := schema.Rules.Issue.Dependency != "same_project_only" && schema.Rules.Issue.Dependency != "disabled"
+	allowCrossBacklog := schema.Rules.Issue.Dependency != "same_backlog_only" && schema.Rules.Issue.Dependency != "disabled"
 
 	for _, depID := range dependsOn {
 		if depID == selfID {
 			return domain.NewValidationError("Self-dependency detected. Issue cannot depend on itself.")
 		}
 
-		// Parse issue ID to get project
-		depProjectID := extractProjectIDFromIssueID(depID)
-		if depProjectID == "" {
+		// Parse issue ID to get backlog
+		depBacklogID := extractBacklogIDFromIssueID(depID)
+		if depBacklogID == "" {
 			return domain.NewValidationError("Invalid issue ID format: " + depID)
 		}
 
-		// Check if cross-project and not allowed
-		if depProjectID != projectID && !allowCrossProject {
-			return domain.NewValidationError(fmt.Sprintf("Cross-project dependency detected: %s -> %s. Cross-project dependencies are disabled.", selfID, depID))
+		// Check if cross-backlog and not allowed
+		if depBacklogID != backlogID && !allowCrossBacklog {
+			return domain.NewValidationError(fmt.Sprintf("Cross-backlog dependency detected: %s -> %s. Cross-backlog dependencies are disabled.", selfID, depID))
 		}
 
-		dep, err := s.reader.ReadIssue(depProjectID, depID)
+		dep, err := s.reader.ReadIssue(depBacklogID, depID)
 		if err != nil {
 			if _, ok := err.(*domain.MandorError); ok {
 				return domain.NewValidationError("Dependency not found: " + depID)
@@ -142,14 +142,14 @@ func (s *IssueService) validateDependencies(projectID, selfID string, dependsOn 
 		}
 	}
 
-	if err := s.validateNoCycle(projectID, selfID, dependsOn); err != nil {
+	if err := s.validateNoCycle(backlogID, selfID, dependsOn); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *IssueService) validateNoCycle(projectID, selfID string, dependsOn []string) error {
+func (s *IssueService) validateNoCycle(backlogID, selfID string, dependsOn []string) error {
 	visited := make(map[string]bool)
 	var dfs func(issueID string) bool
 
@@ -162,7 +162,7 @@ func (s *IssueService) validateNoCycle(projectID, selfID string, dependsOn []str
 		}
 		visited[issueID] = true
 
-		i, err := s.reader.ReadIssue(projectID, issueID)
+		i, err := s.reader.ReadIssue(backlogID, issueID)
 		if err != nil {
 			return false
 		}
@@ -185,9 +185,9 @@ func (s *IssueService) validateNoCycle(projectID, selfID string, dependsOn []str
 	return nil
 }
 
-func (s *IssueService) validateNoDuplicateName(projectID, name string) error {
+func (s *IssueService) validateNoDuplicateName(backlogID, name string) error {
 	var issues []domain.Issue
-	err := s.reader.ReadNDJSON(s.paths.ProjectIssuesPath(projectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogIssuesPath(backlogID), func(raw []byte) error {
 		var i domain.Issue
 		if err := json.Unmarshal(raw, &i); err != nil {
 			return err
@@ -200,7 +200,7 @@ func (s *IssueService) validateNoDuplicateName(projectID, name string) error {
 	}
 	for _, i := range issues {
 		if i.Name == name && i.Status != domain.IssueStatusCancelled {
-			return domain.NewValidationError("An issue with this name already exists in the project: " + name)
+			return domain.NewValidationError("An issue with this name already exists in the backlog: " + name)
 		}
 	}
 	return nil
@@ -215,11 +215,11 @@ func (s *IssueService) CreateIssue(input *domain.IssueCreateInput) (*domain.Issu
 		return nil, domain.NewSystemError("Failed to generate issue ID", err)
 	}
 
-	issueID := input.ProjectID + "-issue-" + nanoid
+	issueID := input.BacklogID + "-issue-" + nanoid
 
 	issue := &domain.Issue{
 		ID:                  issueID,
-		ProjectID:           input.ProjectID,
+		BacklogID:           input.BacklogID,
 		Name:                input.Name,
 		Goal:                input.Goal,
 		IssueType:           input.IssueType,
@@ -237,7 +237,7 @@ func (s *IssueService) CreateIssue(input *domain.IssueCreateInput) (*domain.Issu
 	}
 
 	if len(input.DependsOn) > 0 {
-		allResolved, err := s.checkDependenciesResolved(input.ProjectID, input.DependsOn)
+		allResolved, err := s.checkDependenciesResolved(input.BacklogID, input.DependsOn)
 		if err != nil {
 			return nil, err
 		}
@@ -250,7 +250,7 @@ func (s *IssueService) CreateIssue(input *domain.IssueCreateInput) (*domain.Issu
 		issue.Status = domain.IssueStatusReady
 	}
 
-	if err := s.writer.WriteIssue(input.ProjectID, issue); err != nil {
+	if err := s.writer.WriteIssue(input.BacklogID, issue); err != nil {
 		return nil, err
 	}
 
@@ -262,7 +262,7 @@ func (s *IssueService) CreateIssue(input *domain.IssueCreateInput) (*domain.Issu
 	// 	By:    creator,
 	// 	Ts:    now,
 	// }
-	// if err := s.writer.AppendIssueEvent(input.ProjectID, event); err != nil {
+	// if err := s.writer.AppendIssueEvent(input.BacklogID, event); err != nil {
 	// 	return nil, err
 	// }
 
@@ -274,7 +274,7 @@ func (s *IssueService) CreateIssue(input *domain.IssueCreateInput) (*domain.Issu
 	// 		By:    "system",
 	// 		Ts:    now,
 	// 	}
-	// 	if err := s.writer.AppendIssueEvent(input.ProjectID, readyEvent); err != nil {
+	// 	if err := s.writer.AppendIssueEvent(input.BacklogID, readyEvent); err != nil {
 	// 		return nil, err
 	// 	}
 	// }
@@ -287,7 +287,7 @@ func (s *IssueService) CreateIssue(input *domain.IssueCreateInput) (*domain.Issu
 	// 		By:    "system",
 	// 		Ts:    now,
 	// 	}
-	// 	if err := s.writer.AppendIssueEvent(input.ProjectID, blockedEvent); err != nil {
+	// 	if err := s.writer.AppendIssueEvent(input.BacklogID, blockedEvent); err != nil {
 	// 		return nil, err
 	// 	}
 	// }
@@ -295,9 +295,9 @@ func (s *IssueService) CreateIssue(input *domain.IssueCreateInput) (*domain.Issu
 	return issue, nil
 }
 
-func (s *IssueService) checkDependenciesResolved(projectID string, dependsOn []string) (bool, error) {
+func (s *IssueService) checkDependenciesResolved(backlogID string, dependsOn []string) (bool, error) {
 	for _, depID := range dependsOn {
-		dep, err := s.reader.ReadIssue(projectID, depID)
+		dep, err := s.reader.ReadIssue(backlogID, depID)
 		if err != nil {
 			return false, domain.NewValidationError("Dependency not found: " + depID)
 		}
@@ -309,14 +309,14 @@ func (s *IssueService) checkDependenciesResolved(projectID string, dependsOn []s
 }
 
 func (s *IssueService) ListIssues(input *domain.IssueListInput) (*domain.IssueListOutput, error) {
-	if !s.reader.ProjectExists(input.ProjectID) {
-		return nil, domain.NewValidationError("Project not found: " + input.ProjectID)
+	if !s.reader.BacklogExists(input.BacklogID) {
+		return nil, domain.NewValidationError("Backlog not found: " + input.BacklogID)
 	}
 
 	var issues []domain.IssueListItem
 	deletedCount := 0
 
-	err := s.reader.ReadNDJSON(s.paths.ProjectIssuesPath(input.ProjectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogIssuesPath(input.BacklogID), func(raw []byte) error {
 		var i domain.Issue
 		if err := json.Unmarshal(raw, &i); err != nil {
 			return err
@@ -343,7 +343,7 @@ func (s *IssueService) ListIssues(input *domain.IssueListInput) (*domain.IssueLi
 			IssueType:                i.IssueType,
 			Status:                   i.Status,
 			Priority:                 i.Priority,
-			ProjectID:                i.ProjectID,
+			BacklogID:                i.BacklogID,
 			DependsOnCount:           len(i.DependsOn),
 			AffectedFilesCount:       len(i.AffectedFiles),
 			AffectedTestsCount:       len(i.AffectedTests),
@@ -372,7 +372,7 @@ func (s *IssueService) ListIssues(input *domain.IssueListInput) (*domain.IssueLi
 }
 
 func (s *IssueService) GetIssueDetail(input *domain.IssueDetailInput) (*domain.IssueDetailOutput, error) {
-	issue, err := s.reader.ReadIssue(input.ProjectID, input.IssueID)
+	issue, err := s.reader.ReadIssue(input.BacklogID, input.IssueID)
 	if err != nil {
 		return nil, err
 	}
@@ -383,7 +383,7 @@ func (s *IssueService) GetIssueDetail(input *domain.IssueDetailInput) (*domain.I
 
 	return &domain.IssueDetailOutput{
 		ID:                  issue.ID,
-		ProjectID:           issue.ProjectID,
+		BacklogID:           issue.BacklogID,
 		Name:                issue.Name,
 		Goal:                issue.Goal,
 		IssueType:           issue.IssueType,
@@ -404,7 +404,7 @@ func (s *IssueService) GetIssueDetail(input *domain.IssueDetailInput) (*domain.I
 }
 
 func (s *IssueService) ValidateUpdateInput(input *domain.IssueUpdateInput) error {
-	issue, err := s.reader.ReadIssue(input.ProjectID, input.IssueID)
+	issue, err := s.reader.ReadIssue(input.BacklogID, input.IssueID)
 	if err != nil {
 		return err
 	}
@@ -434,7 +434,7 @@ func (s *IssueService) ValidateUpdateInput(input *domain.IssueUpdateInput) error
 	}
 
 	if input.DependsOn != nil {
-		if err := s.validateDependencies(input.ProjectID, input.IssueID, *input.DependsOn); err != nil {
+		if err := s.validateDependencies(input.BacklogID, input.IssueID, *input.DependsOn); err != nil {
 			return err
 		}
 	}
@@ -443,7 +443,7 @@ func (s *IssueService) ValidateUpdateInput(input *domain.IssueUpdateInput) error
 }
 
 func (s *IssueService) UpdateIssue(input *domain.IssueUpdateInput) ([]string, error) {
-	issue, err := s.reader.ReadIssue(input.ProjectID, input.IssueID)
+	issue, err := s.reader.ReadIssue(input.BacklogID, input.IssueID)
 	if err != nil {
 		return nil, err
 	}
@@ -567,7 +567,7 @@ func (s *IssueService) UpdateIssue(input *domain.IssueUpdateInput) ([]string, er
 	issue.LastUpdatedAt = now
 	issue.LastUpdatedBy = updater
 
-	if err := s.writer.ReplaceIssue(input.ProjectID, issue); err != nil {
+	if err := s.writer.ReplaceIssue(input.BacklogID, issue); err != nil {
 		return nil, err
 	}
 
@@ -575,7 +575,7 @@ func (s *IssueService) UpdateIssue(input *domain.IssueUpdateInput) ([]string, er
 		(input.Status != nil && (*input.Status == domain.IssueStatusResolved || *input.Status == domain.IssueStatusWontFix))
 
 	if isResolved {
-		unblocked, err := s.unblockDependents(input.ProjectID, issue.ID)
+		unblocked, err := s.unblockDependents(input.BacklogID, issue.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -593,7 +593,7 @@ func (s *IssueService) UpdateIssue(input *domain.IssueUpdateInput) ([]string, er
 	// 	Ts:      now,
 	// 	Changes: changes,
 	// }
-	// if err := s.writer.AppendIssueEvent(input.ProjectID, event); err != nil {
+	// if err := s.writer.AppendIssueEvent(input.BacklogID, event); err != nil {
 	// 	return nil, err
 	// }
 
@@ -622,9 +622,9 @@ func (s *IssueService) validateStatusTransition(current, next string) error {
 	return domain.NewValidationError(fmt.Sprintf("Invalid status transition from %s to %s", current, next))
 }
 
-func (s *IssueService) FindDependents(projectID, issueID string) ([]string, error) {
+func (s *IssueService) FindDependents(backlogID, issueID string) ([]string, error) {
 	var dependents []string
-	err := s.reader.ReadNDJSON(s.paths.ProjectIssuesPath(projectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogIssuesPath(backlogID), func(raw []byte) error {
 		var i domain.Issue
 		if err := json.Unmarshal(raw, &i); err != nil {
 			return err
@@ -643,21 +643,21 @@ func (s *IssueService) GetWorkspace() (*domain.Workspace, error) {
 	return s.reader.ReadWorkspace()
 }
 
-func (s *IssueService) ProjectExists(projectID string) bool {
-	return s.reader.ProjectExists(projectID)
+func (s *IssueService) BacklogExists(backlogID string) bool {
+	return s.reader.BacklogExists(backlogID)
 }
 
-func (s *IssueService) ReadDependency(projectID, issueID string) (*domain.Issue, error) {
-	return s.reader.ReadIssue(projectID, issueID)
+func (s *IssueService) ReadDependency(backlogID, issueID string) (*domain.Issue, error) {
+	return s.reader.ReadIssue(backlogID, issueID)
 }
 
-func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (bool, error) {
+func (s *IssueService) unblockDependents(backlogID, resolvedIssueID string) (bool, error) {
 	unblockedAny := false
 	now := time.Now().UTC()
 
 	// Load all issues into memory first
 	var allIssues []*domain.Issue
-	err := s.reader.ReadNDJSON(s.paths.ProjectIssuesPath(projectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogIssuesPath(backlogID), func(raw []byte) error {
 		var issue domain.Issue
 		if err := json.Unmarshal(raw, &issue); err != nil {
 			return err
@@ -684,12 +684,12 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 			if depID == resolvedIssueID {
 				hasResolved = true
 			}
-			// Parse the dependency ID to get the project it belongs to
-			depProjectID := extractProjectIDFromIssueID(depID)
-			if depProjectID == "" {
+			// Parse the dependency ID to get the backlog it belongs to
+			depBacklogID := extractBacklogIDFromIssueID(depID)
+			if depBacklogID == "" {
 				return false, domain.NewValidationError("Invalid issue ID format: " + depID)
 			}
-			dep, err := s.reader.ReadIssue(depProjectID, depID)
+			dep, err := s.reader.ReadIssue(depBacklogID, depID)
 			if err != nil {
 				return false, err
 			}
@@ -708,7 +708,7 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 
 	// If we have updates, write them
 	if unblockedAny {
-		if err := s.writer.ReplaceIssues(projectID, allIssues, issuesToWrite); err != nil {
+		if err := s.writer.ReplaceIssues(backlogID, allIssues, issuesToWrite); err != nil {
 			return false, err
 		}
 	}
@@ -716,9 +716,9 @@ func (s *IssueService) unblockDependents(projectID, resolvedIssueID string) (boo
 	return unblockedAny, nil
 }
 
-// extractProjectIDFromIssueID extracts the project ID from an issue ID
-// Issue ID format: <project>-issue-<nanoid>
-func extractProjectIDFromIssueID(issueID string) string {
+// extractBacklogIDFromIssueID extracts the backlog ID from an issue ID
+// Issue ID format: <backlog>-issue-<nanoid>
+func extractBacklogIDFromIssueID(issueID string) string {
 	parts := strings.Split(issueID, "-issue-")
 	if len(parts) != 2 {
 		return ""

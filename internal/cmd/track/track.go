@@ -8,14 +8,14 @@ import (
 func NewTrackCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "track [scope] [id]",
-		Short: "Track workspace, project, feature, task, or issue",
+		Short: "Track workspace, backlog, feature, task, or issue",
 		Long: `Track provides real-time visibility into task and issue status with unified filtering and output options.
 
 Usage:
   mandor track                                    # Workspace overview
   mandor track workspace                         # Workspace overview (explicit)
-  mandor track project <project_id>              # Project issues
-  mandor track feature <feature_id>              # Feature tasks
+  mandor track backlog <backlog_id>             # Backlog issues
+  mandor track feature <feature_id>             # Feature tasks
   mandor track task <task_id>                    # Single task details
   mandor track issue <issue_id>                  # Single issue details
 
@@ -45,11 +45,11 @@ Additional options:
 			switch scope {
 			case "workspace":
 				return handleWorkspace(cmd, id)
-			case "project":
+			case "backlog":
 				if id == "" {
 					return cmd.Help()
 				}
-				return handleProject(cmd, id)
+				return handleBacklog(cmd, id)
 			case "feature":
 				if id == "" {
 					return cmd.Help()

@@ -48,8 +48,8 @@ func outputTable(out io.Writer, response *TrackResponse) error {
 	switch response.Scope {
 	case "workspace":
 		return outputWorkspaceTable(out, response)
-	case "project":
-		return outputProjectTable(out, response)
+	case "backlog":
+		return outputBacklogTable(out, response)
 	case "feature":
 		return outputFeatureTable(out, response)
 	case "task":
@@ -63,12 +63,12 @@ func outputTable(out io.Writer, response *TrackResponse) error {
 
 func outputWorkspaceTable(out io.Writer, response *TrackResponse) error {
 	fmt.Fprintf(out, "Workspace Overview\n")
-	fmt.Fprintf(out, "%-20s %-30s %-10s %10s %10s %10s\n", "Project ID", "Project", "Status", "Features", "Tasks", "Issues")
+	fmt.Fprintf(out, "%-20s %-30s %-10s %10s %10s %10s\n", "Backlog ID", "Backlog", "Status", "Features", "Tasks", "Issues")
 	fmt.Fprintf(out, strings.Repeat("-", 100)+"\n")
 
-	for _, proj := range response.Projects {
+	for _, backlog := range response.Backlogs {
 		fmt.Fprintf(out, "%-20s %-30s %-10s %10d %10d %10d\n",
-			truncate(proj.ID, 20), truncate(proj.Name, 30), proj.Status, proj.Features, proj.Tasks, proj.Issues)
+			truncate(backlog.ID, 20), truncate(backlog.Name, 30), backlog.Status, backlog.Features, backlog.Tasks, backlog.Issues)
 	}
 
 	fmt.Fprintf(out, "\n")
@@ -79,8 +79,8 @@ func outputWorkspaceTable(out io.Writer, response *TrackResponse) error {
 	return nil
 }
 
-func outputProjectTable(out io.Writer, response *TrackResponse) error {
-	fmt.Fprintf(out, "Project: %s\n", response.Name)
+func outputBacklogTable(out io.Writer, response *TrackResponse) error {
+	fmt.Fprintf(out, "Backlog: %s\n", response.Name)
 	fmt.Fprintf(out, "\n")
 	fmt.Fprintf(out, "%-40s %-15s %-8s %s\n", "Issue ID", "Type", "Status", "Title")
 	fmt.Fprintf(out, strings.Repeat("-", 80)+"\n")
@@ -176,7 +176,7 @@ func outputIssueTable(out io.Writer, response *TrackResponse) error {
 	fmt.Fprintf(out, "Type:     %s\n", issue.Type)
 	fmt.Fprintf(out, "Status:   %s\n", issue.Status)
 	fmt.Fprintf(out, "Priority: %s\n", issue.Priority)
-	fmt.Fprintf(out, "Project:  %s\n", issue.ProjectID)
+	fmt.Fprintf(out, "Backlog: %s\n", issue.BacklogID)
 
 	if globalFlags.Verbose {
 		fmt.Fprintf(out, "Description: %s\n", issue.Description)
@@ -252,7 +252,7 @@ func outputCSV(out io.Writer, response *TrackResponse) error {
 				writer.Write([]string{task.ID, task.Name, task.Status, task.Priority, task.FeatureID})
 			}
 		}
-	case "project":
+	case "backlog":
 		if len(response.Issues) > 0 {
 			writer.Write([]string{"ID", "Title", "Type", "Status", "Priority"})
 			for _, issue := range response.Issues {
@@ -269,8 +269,8 @@ func outputTree(out io.Writer, response *TrackResponse) error {
 	switch response.Scope {
 	case "workspace":
 		return outputWorkspaceTree(out, response)
-	case "project":
-		return outputProjectTree(out, response)
+	case "backlog":
+		return outputBacklogTree(out, response)
 	case "feature":
 		return outputFeatureTree(out, response)
 	case "task":
@@ -281,26 +281,26 @@ func outputTree(out io.Writer, response *TrackResponse) error {
 	return nil
 }
 
-// outputWorkspaceTree shows workspace -> projects hierarchy
+// outputWorkspaceTree shows workspace -> backlogs hierarchy
 func outputWorkspaceTree(out io.Writer, response *TrackResponse) error {
 	fmt.Fprintf(out, "Workspace Overview\n")
-	for i, proj := range response.Projects {
-		isLast := i == len(response.Projects)-1
+	for i, backlog := range response.Backlogs {
+		isLast := i == len(response.Backlogs)-1
 		prefix := "├── "
 		if isLast {
 			prefix = "└── "
 		}
 		fmt.Fprintf(out, "%s%s (%s) [%d features, %d tasks, %d issues]\n",
-			prefix, proj.Name, proj.Status, proj.Features, proj.Tasks, proj.Issues)
+			prefix, backlog.Name, backlog.Status, backlog.Features, backlog.Tasks, backlog.Issues)
 	}
 	fmt.Fprintf(out, "\n")
 	outputRecommendedCommands(out, response)
 	return nil
 }
 
-// outputProjectTree shows project -> issues with blocking relationships
-func outputProjectTree(out io.Writer, response *TrackResponse) error {
-	fmt.Fprintf(out, "Project: %s\n", response.Name)
+// outputBacklogTree shows backlog -> issues with blocking relationships
+func outputBacklogTree(out io.Writer, response *TrackResponse) error {
+	fmt.Fprintf(out, "Backlog: %s\n", response.Name)
 	for i, issue := range response.Issues {
 		isLast := i == len(response.Issues)-1
 		prefix := "├── "
@@ -498,8 +498,8 @@ func outputGraph(out io.Writer, response *TrackResponse) error {
 	switch response.Scope {
 	case "workspace":
 		return outputWorkspaceGraph(out, response)
-	case "project":
-		return outputProjectGraph(out, response)
+	case "backlog":
+		return outputBacklogGraph(out, response)
 	case "feature":
 		return outputFeatureGraph(out, response)
 	case "task":
@@ -510,14 +510,14 @@ func outputGraph(out io.Writer, response *TrackResponse) error {
 	return nil
 }
 
-// outputWorkspaceGraph shows project status summary
+// outputWorkspaceGraph shows backlog status summary
 func outputWorkspaceGraph(out io.Writer, response *TrackResponse) error {
-	fmt.Fprintf(out, "Workspace Overview - Project Status\n\n")
+	fmt.Fprintf(out, "Workspace Overview - Backlog Status\n\n")
 
 	// Create a simple status distribution graph
 	statusCounts := make(map[string]int)
-	for _, proj := range response.Projects {
-		statusCounts[proj.Status]++
+	for _, backlog := range response.Backlogs {
+		statusCounts[backlog.Status]++
 	}
 
 	statusOrder := []string{"initial", "active", "release", "archived"}
@@ -533,9 +533,9 @@ func outputWorkspaceGraph(out io.Writer, response *TrackResponse) error {
 	return nil
 }
 
-// outputProjectGraph shows issue blocking graph
-func outputProjectGraph(out io.Writer, response *TrackResponse) error {
-	fmt.Fprintf(out, "Project: %s - Issue Blocking Graph\n\n", response.Name)
+// outputBacklogGraph shows issue blocking graph
+func outputBacklogGraph(out io.Writer, response *TrackResponse) error {
+	fmt.Fprintf(out, "Backlog: %s - Issue Blocking Graph\n\n", response.Name)
 
 	// Build a dependency map
 	blockedByMap := make(map[string][]string)

@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	projectID string
+	backlogID string
 )
 
 var specCmd = &cobra.Command{
@@ -15,8 +15,8 @@ var specCmd = &cobra.Command{
 }
 
 func init() {
-	specCmd.PersistentFlags().StringVarP(&projectID, "project", "p", "", "Project ID (required)")
-	
+	specCmd.PersistentFlags().StringVarP(&backlogID, "backlog", "b", "", "Backlog ID (required)")
+
 	specCmd.AddCommand(GetCreateCmd())
 	specCmd.AddCommand(GetDetailCmd())
 	specCmd.AddCommand(GetUpdateCmd())

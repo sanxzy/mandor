@@ -42,8 +42,8 @@ func (s *SpecService) WorkspaceInitialized() bool {
 }
 
 func (s *SpecService) ValidateCreateInput(input *domain.SpecCreateInput) error {
-	if !s.reader.ProjectExists(input.ProjectID) {
-		return domain.NewValidationError("Project not found: " + input.ProjectID)
+	if !s.reader.BacklogExists(input.BacklogID) {
+		return domain.NewValidationError("Backlog not found: " + input.BacklogID)
 	}
 
 	if strings.TrimSpace(input.CapabilityID) == "" {
@@ -56,9 +56,9 @@ func (s *SpecService) ValidateCreateInput(input *domain.SpecCreateInput) error {
 	}
 
 	// TODO: Verify capability exists in Brief
-	brief, err := s.loadBriefForProject(input.ProjectID)
+	brief, err := s.loadBriefForBacklog(input.BacklogID)
 	if err != nil {
-		return domain.NewValidationError("Brief not found for project. Create a Brief first with this capability.")
+		return domain.NewValidationError("Brief not found for backlog. Create a Brief first with this capability.")
 	}
 
 	if !s.capabilityExistsInBrief(brief, input.CapabilityID) {
@@ -124,11 +124,11 @@ func (s *SpecService) CreateSpec(input *domain.SpecCreateInput) (*domain.Spec, e
 		}
 
 		requirements = append(requirements, domain.Requirement{
-			ID:             reqID,
-			Summary:        reqInput.Summary,
-			Details:        reqInput.Details,
+			ID:                 reqID,
+			Summary:            reqInput.Summary,
+			Details:            reqInput.Details,
 			AcceptanceCriteria: reqInput.AcceptanceCriteria,
-			IAEScenarios:   scenarios,
+			IAEScenarios:       scenarios,
 		})
 	}
 
@@ -136,7 +136,7 @@ func (s *SpecService) CreateSpec(input *domain.SpecCreateInput) (*domain.Spec, e
 	spec := &domain.Spec{
 		ID:           specID,
 		CapabilityID: input.CapabilityID,
-		ProjectID:    input.ProjectID,
+		BacklogID:    input.BacklogID,
 		Status:       domain.SpecStatusDraft,
 		Summary:      input.Summary,
 		Requirements: requirements,
@@ -152,15 +152,15 @@ func (s *SpecService) CreateSpec(input *domain.SpecCreateInput) (*domain.Spec, e
 	}
 
 	// Save Spec
-	if err := s.saveSpec(input.ProjectID, spec); err != nil {
+	if err := s.saveSpec(input.BacklogID, spec); err != nil {
 		return nil, err
 	}
 
 	return spec, nil
 }
 
-func (s *SpecService) ReadSpec(projectID, specID string) (*domain.Spec, error) {
-	specPath := s.paths.SpecPath(projectID, specID)
+func (s *SpecService) ReadSpec(backlogID, specID string) (*domain.Spec, error) {
+	specPath := s.paths.SpecPath(backlogID, specID)
 
 	if !s.specFileExists(specPath) {
 		return nil, domain.NewValidationError("Spec not found: " + specID)
@@ -174,8 +174,8 @@ func (s *SpecService) ReadSpec(projectID, specID string) (*domain.Spec, error) {
 	return spec, nil
 }
 
-func (s *SpecService) saveSpec(projectID string, spec *domain.Spec) error {
-	specPath := s.paths.SpecPath(projectID, spec.ID)
+func (s *SpecService) saveSpec(backlogID string, spec *domain.Spec) error {
+	specPath := s.paths.SpecPath(backlogID, spec.ID)
 
 	// Build markdown representation
 	content := s.specToMarkdown(spec)
@@ -278,9 +278,9 @@ func (s *SpecService) markdownToSpec(content string) (*domain.Spec, error) {
 	return &spec, nil
 }
 
-func (s *SpecService) loadBriefForProject(projectID string) (*domain.Brief, error) {
+func (s *SpecService) loadBriefForBacklog(backlogID string) (*domain.Brief, error) {
 	briefService := NewBriefServiceWithPaths(s.paths)
-	return briefService.ReadBrief(projectID)
+	return briefService.ReadBrief(backlogID)
 }
 
 func (s *SpecService) capabilityExistsInBrief(brief *domain.Brief, capabilityID string) bool {
@@ -295,4 +295,19 @@ func (s *SpecService) capabilityExistsInBrief(brief *domain.Brief, capabilityID 
 		}
 	}
 	return false
+}
+
+func (s *SpecService) UpdateSpec(backlogID string, spec *domain.Spec) error {
+	updater := util.GetGitUsername()
+	now := time.Now().UTC()
+
+	spec.UpdatedAt = now
+	spec.UpdatedBy = updater
+
+	return s.saveSpec(backlogID, spec)
+}
+
+func (s *SpecService) DeleteSpec(backlogID, specID string) error {
+	specPath := s.paths.SpecPath(backlogID, specID)
+	return s.writer.DeleteFile(specPath)
 }

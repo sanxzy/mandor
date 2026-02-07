@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	detailProjectID      string
+	detailBacklogID      string
 	detailJSON           bool
 	detailIncludeDeleted bool
 	detailEvents         bool
@@ -20,7 +20,7 @@ var (
 
 func NewDetailCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "detail <issue_id> [--project <id>] [--json] [--include-deleted] [--events]",
+		Use:   "detail <issue_id> [--backlog <id>] [--json] [--include-deleted] [--events]",
 		Short: "Show issue details",
 		Long:  "Show detailed information about an issue.",
 		Args:  cobra.ExactArgs(1),
@@ -36,21 +36,21 @@ func NewDetailCmd() *cobra.Command {
 
 			issueID := args[0]
 
-			projectID := detailProjectID
-			if projectID == "" {
+			backlogID := detailBacklogID
+			if backlogID == "" {
 				parts := strings.Split(issueID, "-issue-")
 				if len(parts) < 2 {
-					return domain.NewValidationError("Invalid issue ID format. Expected: <project_id>-issue-<nanoid>")
+					return domain.NewValidationError("Invalid issue ID format. Expected: <backlog_id>-issue-<nanoid>")
 				}
-				projectID = parts[0]
+				backlogID = parts[0]
 			}
 
-			if !svc.ProjectExists(projectID) {
-				return domain.NewValidationError("Project not found: " + projectID)
+			if !svc.BacklogExists(backlogID) {
+				return domain.NewValidationError("Backlog not found: " + backlogID)
 			}
 
 			input := &domain.IssueDetailInput{
-				ProjectID:      projectID,
+				BacklogID:      backlogID,
 				IssueID:        issueID,
 				JSON:           detailJSON,
 				IncludeDeleted: detailIncludeDeleted,
@@ -85,7 +85,7 @@ func NewDetailCmd() *cobra.Command {
 			fmt.Fprintf(out, "  Type:        %s\n", output.IssueType)
 			fmt.Fprintf(out, "  Priority:    %s\n", output.Priority)
 			fmt.Fprintf(out, "  Status:      %s\n", output.Status)
-			fmt.Fprintf(out, "  Project:     %s\n", output.ProjectID)
+			fmt.Fprintf(out, "  Backlog:    %s\n", output.BacklogID)
 
 			if output.Goal != "" {
 				fmt.Fprintf(out, "\n  Goal:        %s\n", output.Goal)
@@ -93,7 +93,7 @@ func NewDetailCmd() *cobra.Command {
 
 			fmt.Fprintf(out, "\n  Depends on:  %d issue(s)\n", len(output.DependsOn))
 			for _, depID := range output.DependsOn {
-				dep, err := svc.ReadDependency(projectID, depID)
+				dep, err := svc.ReadDependency(backlogID, depID)
 				statusIcon := "○"
 				if err == nil {
 					switch dep.Status {
@@ -139,7 +139,7 @@ func NewDetailCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&detailProjectID, "project", "p", "", "Project ID (optional, extracted from issue ID)")
+	cmd.Flags().StringVarP(&detailBacklogID, "backlog", "b", "", "Backlog ID (optional, extracted from issue ID)")
 	cmd.Flags().BoolVar(&detailJSON, "json", false, "Output as JSON")
 	cmd.Flags().BoolVar(&detailIncludeDeleted, "include-deleted", false, "Include cancelled issues")
 	cmd.Flags().BoolVar(&detailEvents, "events", false, "Show event history")

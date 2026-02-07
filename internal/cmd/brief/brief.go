@@ -5,18 +5,18 @@ import (
 )
 
 var (
-	projectID string
+	backlogID string
 )
 
 var briefCmd = &cobra.Command{
 	Use:   "brief",
-	Short: "Manage Briefs (project intent documents)",
-	Long:  "Create, read, update, and manage Briefs - the root specification documents for projects",
+	Short: "Manage Briefs (backlog intent documents)",
+	Long:  "Create, read, update, and manage Briefs - the root specification documents for backlogs",
 }
 
 func init() {
-	briefCmd.PersistentFlags().StringVarP(&projectID, "project", "p", "", "Project ID (required)")
-	
+	briefCmd.PersistentFlags().StringVarP(&backlogID, "backlog", "b", "", "Backlog ID (required)")
+
 	briefCmd.AddCommand(GetCreateCmd())
 	briefCmd.AddCommand(GetReadCmd())
 	briefCmd.AddCommand(GetUpdateCmd())

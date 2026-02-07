@@ -43,69 +43,69 @@ func (r *Reader) ReadWorkspace() (*domain.Workspace, error) {
 	return &ws, nil
 }
 
-// ProjectExists checks if a project directory exists
-func (r *Reader) ProjectExists(projectID string) bool {
-	_, err := os.Stat(r.paths.ProjectDirPath(projectID))
+// BacklogExists checks if a backlog directory exists
+func (r *Reader) BacklogExists(backlogID string) bool {
+	_, err := os.Stat(r.paths.BacklogDirPath(backlogID))
 	return err == nil
 }
 
-// ListProjects lists all project directories
-func (r *Reader) ListProjects(includeDeleted bool) ([]string, error) {
-	projectsDir := r.paths.ProjectsDirPath()
+// ListBacklogs lists all backlog directories
+func (r *Reader) ListBacklogs(includeDeleted bool) ([]string, error) {
+	backlogsDir := r.paths.BacklogsDirPath()
 
-	// Check if projects directory exists
-	_, err := os.Stat(projectsDir)
+	// Check if backlogs directory exists
+	_, err := os.Stat(backlogsDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return []string{}, nil // Empty workspace
 		}
-		return nil, domain.NewSystemError("Cannot read projects directory", err)
+		return nil, domain.NewSystemError("Cannot read backlogs directory", err)
 	}
 
-	entries, err := os.ReadDir(projectsDir)
+	entries, err := os.ReadDir(backlogsDir)
 	if err != nil {
-		return nil, domain.NewSystemError("Cannot list projects", err)
+		return nil, domain.NewSystemError("Cannot list backlogs", err)
 	}
 
-	var projects []string
+	var backlogs []string
 	for _, entry := range entries {
 		if entry.IsDir() {
-			projects = append(projects, entry.Name())
+			backlogs = append(backlogs, entry.Name())
 		}
 	}
-	return projects, nil
+	return backlogs, nil
 }
 
-// ReadProjectMetadata reads project metadata from project.jsonl
-func (r *Reader) ReadProjectMetadata(projectID string) (*domain.Project, error) {
-	data, err := os.ReadFile(r.paths.ProjectMetadataPath(projectID))
+// ReadBacklogMetadata reads backlog metadata from backlog.jsonl
+func (r *Reader) ReadBacklogMetadata(backlogID string) (*domain.Backlog, error) {
+	data, err := os.ReadFile(r.paths.BacklogMetadataPath(backlogID))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, domain.NewValidationError(fmt.Sprintf("Project not found: %s", projectID))
+			return nil, domain.NewValidationError(fmt.Sprintf("Backlog not found: %s", backlogID))
 		}
-		return nil, domain.NewSystemError("Cannot read project metadata", err)
+		return nil, domain.NewSystemError("Cannot read backlog metadata", err)
 	}
 
-	var project domain.Project
-	if err := json.Unmarshal(data, &project); err != nil {
-		return nil, domain.NewSystemError("Cannot parse project metadata", err)
+	var backlog domain.Backlog
+	if err := json.Unmarshal(data, &backlog); err != nil {
+		return nil, domain.NewSystemError("Cannot parse backlog metadata", err)
 	}
-	return &project, nil
+	return &backlog, nil
 }
 
-// ReadProjectSchema reads the schema.json file for a project
-func (r *Reader) ReadProjectSchema(projectID string) (*domain.ProjectSchema, error) {
-	data, err := os.ReadFile(r.paths.ProjectSchemaPath(projectID))
+// ReadBacklogSchema reads the schema.json file for a backlog
+func (r *Reader) ReadBacklogSchema(backlogID string) (*domain.BacklogSchema, error) {
+	data, err := os.ReadFile(r.paths.BacklogSchemaPath(backlogID))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, domain.NewValidationError(fmt.Sprintf("Project schema not found: %s", projectID))
+			return nil, domain.NewValidationError(fmt.Sprintf("Backlog schema not found: %s", backlogID))
 		}
-		return nil, domain.NewSystemError("Cannot read project schema", err)
+		return nil, domain.NewSystemError("Cannot read backlog schema", err)
 	}
 
-	var schema domain.ProjectSchema
+	var schema domain.BacklogSchema
 	if err := json.Unmarshal(data, &schema); err != nil {
-		return nil, domain.NewSystemError("Cannot parse project schema", err)
+		return nil, domain.NewSystemError("Cannot parse backlog schema", err)
 	}
 	return &schema, nil
 }
@@ -219,12 +219,12 @@ func (w *Writer) CreateMandorDir() error {
 		return domain.NewSystemError("Cannot create .mandor directory", err)
 	}
 
-	projectsDir := w.paths.ProjectsDirPath()
-	if err := os.MkdirAll(projectsDir, 0755); err != nil {
+	backlogsDir := w.paths.BacklogsDirPath()
+	if err := os.MkdirAll(backlogsDir, 0755); err != nil {
 		if os.IsPermission(err) {
-			return domain.NewPermissionError("Permission denied. Cannot create projects directory.")
+			return domain.NewPermissionError("Permission denied. Cannot create backlogs directory.")
 		}
-		return domain.NewSystemError("Cannot create projects directory", err)
+		return domain.NewSystemError("Cannot create backlogs directory", err)
 	}
 
 	return nil
@@ -321,19 +321,19 @@ func (w *Writer) MandorDirExists() bool {
 	return err == nil
 }
 
-// CreateProjectDir creates the project directory structure
-func (w *Writer) CreateProjectDir(projectID string) error {
-	projectDir := w.paths.ProjectDirPath(projectID)
-	if err := os.MkdirAll(projectDir, 0755); err != nil {
+// CreateBacklogDir creates the backlog directory structure
+func (w *Writer) CreateBacklogDir(backlogID string) error {
+	backlogDir := w.paths.BacklogDirPath(backlogID)
+	if err := os.MkdirAll(backlogDir, 0755); err != nil {
 		if os.IsPermission(err) {
-			return domain.NewPermissionError("Permission denied. Cannot create project directory.")
+			return domain.NewPermissionError("Permission denied. Cannot create backlog directory.")
 		}
-		return domain.NewSystemError("Cannot create project directory", err)
+		return domain.NewSystemError("Cannot create backlog directory", err)
 	}
 
 	entityFiles := []string{"events.jsonl", "features.jsonl", "tasks.jsonl", "issues.jsonl"}
 	for _, file := range entityFiles {
-		filePath := filepath.Join(projectDir, file)
+		filePath := filepath.Join(backlogDir, file)
 		if err := os.WriteFile(filePath, []byte(""), 0644); err != nil {
 			if os.IsPermission(err) {
 				return domain.NewPermissionError(fmt.Sprintf("Permission denied. Cannot create %s.", file))
@@ -345,52 +345,52 @@ func (w *Writer) CreateProjectDir(projectID string) error {
 	return nil
 }
 
-// WriteProjectMetadata writes project metadata to project.jsonl (atomic)
-func (w *Writer) WriteProjectMetadata(projectID string, project *domain.Project) error {
-	data, err := json.MarshalIndent(project, "", "  ")
+// WriteBacklogMetadata writes backlog metadata to backlog.jsonl (atomic)
+func (w *Writer) WriteBacklogMetadata(backlogID string, backlog *domain.Backlog) error {
+	data, err := json.MarshalIndent(backlog, "", "  ")
 	if err != nil {
-		return domain.NewSystemError("Cannot marshal project metadata", err)
+		return domain.NewSystemError("Cannot marshal backlog metadata", err)
 	}
 
-	path := w.paths.ProjectMetadataPath(projectID)
+	path := w.paths.BacklogMetadataPath(backlogID)
 
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		if os.IsPermission(err) {
-			return domain.NewPermissionError("Permission denied. Cannot create project directory.")
+			return domain.NewPermissionError("Permission denied. Cannot create backlog directory.")
 		}
-		return domain.NewSystemError("Cannot create project directory", err)
+		return domain.NewSystemError("Cannot create backlog directory", err)
 	}
 
 	tmpPath := path + ".tmp"
 	if err := os.WriteFile(tmpPath, data, 0644); err != nil {
 		if os.IsPermission(err) {
-			return domain.NewPermissionError("Permission denied. Cannot write to project.jsonl.")
+			return domain.NewPermissionError("Permission denied. Cannot write to backlog.jsonl.")
 		}
-		return domain.NewSystemError("Cannot write project file", err)
+		return domain.NewSystemError("Cannot write backlog file", err)
 	}
 
 	if err := os.Rename(tmpPath, path); err != nil {
 		os.Remove(tmpPath)
-		return domain.NewSystemError("Cannot save project file", err)
+		return domain.NewSystemError("Cannot save backlog file", err)
 	}
 
 	return nil
 }
 
-// WriteProjectSchema writes schema.json for a project
-func (w *Writer) WriteProjectSchema(projectID string, schema *domain.ProjectSchema) error {
-	return w.WriteJSON(w.paths.ProjectSchemaPath(projectID), schema)
+// WriteBacklogSchema writes schema.json for a backlog
+func (w *Writer) WriteBacklogSchema(backlogID string, schema *domain.BacklogSchema) error {
+	return w.WriteJSON(w.paths.BacklogSchemaPath(backlogID), schema)
 }
 
-// DeleteProjectDir removes the project directory and all contents
-func (w *Writer) DeleteProjectDir(projectID string) error {
-	projectDir := w.paths.ProjectDirPath(projectID)
-	if err := os.RemoveAll(projectDir); err != nil {
+// DeleteBacklogDir removes the backlog directory and all contents
+func (w *Writer) DeleteBacklogDir(backlogID string) error {
+	backlogDir := w.paths.BacklogDirPath(backlogID)
+	if err := os.RemoveAll(backlogDir); err != nil {
 		if os.IsPermission(err) {
-			return domain.NewPermissionError("Permission denied. Cannot delete project directory.")
+			return domain.NewPermissionError("Permission denied. Cannot delete backlog directory.")
 		}
-		return domain.NewSystemError("Cannot delete project directory", err)
+		return domain.NewSystemError("Cannot delete backlog directory", err)
 	}
 	return nil
 }
@@ -404,23 +404,23 @@ func (w *Writer) IsDirWritable(dirPath string) bool {
 	return err == nil
 }
 
-// CheckProjectWritable checks if project files are writable
-func (w *Writer) CheckProjectWritable(projectID string) bool {
-	testFile := filepath.Join(w.paths.ProjectDirPath(projectID), ".write_test")
+// CheckBacklogWritable checks if backlog files are writable
+func (w *Writer) CheckBacklogWritable(backlogID string) bool {
+	testFile := filepath.Join(w.paths.BacklogDirPath(backlogID), ".write_test")
 	defer os.Remove(testFile)
 
 	err := os.WriteFile(testFile, []byte("test"), 0644)
 	return err == nil
 }
 
-// ProjectsDirWritable checks if projects directory is writable
-func (w *Writer) ProjectsDirWritable() bool {
-	return w.IsDirWritable(w.paths.ProjectsDirPath())
+// BacklogsDirWritable checks if backlogs directory is writable
+func (w *Writer) BacklogsDirWritable() bool {
+	return w.IsDirWritable(w.paths.BacklogsDirPath())
 }
 
-func (r *Reader) ReadFeature(projectID, featureID string) (*domain.Feature, error) {
+func (r *Reader) ReadFeature(backlogID, featureID string) (*domain.Feature, error) {
 	var feature *domain.Feature
-	err := r.ReadNDJSON(r.paths.ProjectFeaturesPath(projectID), func(raw []byte) error {
+	err := r.ReadNDJSON(r.paths.BacklogFeaturesPath(backlogID), func(raw []byte) error {
 		var f domain.Feature
 		if err := json.Unmarshal(raw, &f); err != nil {
 			return err
@@ -439,12 +439,12 @@ func (r *Reader) ReadFeature(projectID, featureID string) (*domain.Feature, erro
 	return feature, nil
 }
 
-func (w *Writer) WriteFeature(projectID string, feature *domain.Feature) error {
-	return w.AppendNDJSON(w.paths.ProjectFeaturesPath(projectID), feature)
+func (w *Writer) WriteFeature(backlogID string, feature *domain.Feature) error {
+	return w.AppendNDJSON(w.paths.BacklogFeaturesPath(backlogID), feature)
 }
 
-func (w *Writer) ReplaceFeature(projectID string, feature *domain.Feature) error {
-	featuresPath := w.paths.ProjectFeaturesPath(projectID)
+func (w *Writer) ReplaceFeature(backlogID string, feature *domain.Feature) error {
+	featuresPath := w.paths.BacklogFeaturesPath(backlogID)
 
 	var features []*domain.Feature
 	reader := NewReader(w.paths)
@@ -480,9 +480,9 @@ func (w *Writer) ReplaceFeature(projectID string, feature *domain.Feature) error
 	return nil
 }
 
-func (r *Reader) ReadTask(projectID, taskID string) (*domain.Task, error) {
+func (r *Reader) ReadTask(backlogID, taskID string) (*domain.Task, error) {
 	var task *domain.Task
-	err := r.ReadNDJSON(r.paths.ProjectTasksPath(projectID), func(raw []byte) error {
+	err := r.ReadNDJSON(r.paths.BacklogTasksPath(backlogID), func(raw []byte) error {
 		var t domain.Task
 		if err := json.Unmarshal(raw, &t); err != nil {
 			return err
@@ -501,12 +501,12 @@ func (r *Reader) ReadTask(projectID, taskID string) (*domain.Task, error) {
 	return task, nil
 }
 
-func (w *Writer) WriteTask(projectID string, task *domain.Task) error {
-	return w.AppendNDJSON(w.paths.ProjectTasksPath(projectID), task)
+func (w *Writer) WriteTask(backlogID string, task *domain.Task) error {
+	return w.AppendNDJSON(w.paths.BacklogTasksPath(backlogID), task)
 }
 
-func (w *Writer) ReplaceTask(projectID string, task *domain.Task) error {
-	tasksPath := w.paths.ProjectTasksPath(projectID)
+func (w *Writer) ReplaceTask(backlogID string, task *domain.Task) error {
+	tasksPath := w.paths.BacklogTasksPath(backlogID)
 
 	var tasks []*domain.Task
 	reader := NewReader(w.paths)
@@ -544,8 +544,8 @@ func (w *Writer) ReplaceTask(projectID string, task *domain.Task) error {
 
 // ReplaceTasks updates multiple tasks atomically. allTasks is all tasks from file,
 // tasksToUpdate is a map of task IDs to updated task objects.
-func (w *Writer) ReplaceTasks(projectID string, allTasks []*domain.Task, tasksToUpdate map[string]*domain.Task) error {
-	tasksPath := w.paths.ProjectTasksPath(projectID)
+func (w *Writer) ReplaceTasks(backlogID string, allTasks []*domain.Task, tasksToUpdate map[string]*domain.Task) error {
+	tasksPath := w.paths.BacklogTasksPath(backlogID)
 
 	// Build final task list with updates applied
 	var finalTasks []*domain.Task
@@ -576,8 +576,8 @@ func (w *Writer) ReplaceTasks(projectID string, allTasks []*domain.Task, tasksTo
 
 // ReplaceFeatures updates multiple features atomically. allFeatures is all features from file,
 // featuresToUpdate is a map of feature IDs to updated feature objects.
-func (w *Writer) ReplaceFeatures(projectID string, allFeatures []*domain.Feature, featuresToUpdate map[string]*domain.Feature) error {
-	featuresPath := w.paths.ProjectFeaturesPath(projectID)
+func (w *Writer) ReplaceFeatures(backlogID string, allFeatures []*domain.Feature, featuresToUpdate map[string]*domain.Feature) error {
+	featuresPath := w.paths.BacklogFeaturesPath(backlogID)
 
 	// Build final feature list with updates applied
 	var finalFeatures []*domain.Feature
@@ -606,8 +606,8 @@ func (w *Writer) ReplaceFeatures(projectID string, allFeatures []*domain.Feature
 	return nil
 }
 
-func (w *Writer) ReplaceIssues(projectID string, allIssues []*domain.Issue, issuesToUpdate map[string]*domain.Issue) error {
-	issuesPath := w.paths.ProjectIssuesPath(projectID)
+func (w *Writer) ReplaceIssues(backlogID string, allIssues []*domain.Issue, issuesToUpdate map[string]*domain.Issue) error {
+	issuesPath := w.paths.BacklogIssuesPath(backlogID)
 
 	// Build final issues list with updates applied
 	var finalIssues []*domain.Issue
@@ -636,9 +636,9 @@ func (w *Writer) ReplaceIssues(projectID string, allIssues []*domain.Issue, issu
 	return nil
 }
 
-func (r *Reader) ReadIssue(projectID, issueID string) (*domain.Issue, error) {
+func (r *Reader) ReadIssue(backlogID, issueID string) (*domain.Issue, error) {
 	var issue *domain.Issue
-	err := r.ReadNDJSON(r.paths.ProjectIssuesPath(projectID), func(raw []byte) error {
+	err := r.ReadNDJSON(r.paths.BacklogIssuesPath(backlogID), func(raw []byte) error {
 		var i domain.Issue
 		if err := json.Unmarshal(raw, &i); err != nil {
 			return err
@@ -657,12 +657,12 @@ func (r *Reader) ReadIssue(projectID, issueID string) (*domain.Issue, error) {
 	return issue, nil
 }
 
-func (w *Writer) WriteIssue(projectID string, issue *domain.Issue) error {
-	return w.AppendNDJSON(w.paths.ProjectIssuesPath(projectID), issue)
+func (w *Writer) WriteIssue(backlogID string, issue *domain.Issue) error {
+	return w.AppendNDJSON(w.paths.BacklogIssuesPath(backlogID), issue)
 }
 
-func (w *Writer) ReplaceIssue(projectID string, issue *domain.Issue) error {
-	issuesPath := w.paths.ProjectIssuesPath(projectID)
+func (w *Writer) ReplaceIssue(backlogID string, issue *domain.Issue) error {
+	issuesPath := w.paths.BacklogIssuesPath(backlogID)
 
 	var issues []*domain.Issue
 	reader := NewReader(w.paths)
@@ -745,5 +745,19 @@ func (w *Writer) WriteFile(filePath string, content string) error {
 		return domain.NewSystemError("Cannot save file", err)
 	}
 
+	return nil
+}
+
+// DeleteFile removes a file
+func (w *Writer) DeleteFile(filePath string) error {
+	if err := os.Remove(filePath); err != nil {
+		if os.IsNotExist(err) {
+			return domain.NewValidationError("File not found: " + filePath)
+		}
+		if os.IsPermission(err) {
+			return domain.NewPermissionError("Permission denied. Cannot delete file.")
+		}
+		return domain.NewSystemError("Cannot delete file", err)
+	}
 	return nil
 }

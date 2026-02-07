@@ -18,12 +18,12 @@ var createCmd = &cobra.Command{
 }
 
 var (
-	createName         string
-	createWhy          string
-	createCapabilities string
-	createImpactStack  string
+	createName          string
+	createWhy           string
+	createCapabilities  string
+	createImpactStack   string
 	createImpactSystems string
-	createDependencies string
+	createDependencies  string
 )
 
 func init() {
@@ -33,7 +33,7 @@ func init() {
 	createCmd.Flags().StringVar(&createImpactStack, "tech-stack", "", "Technical stack choices (comma-separated)")
 	createCmd.Flags().StringVar(&createImpactSystems, "affected-systems", "", "Affected systems (comma-separated)")
 	createCmd.Flags().StringVar(&createDependencies, "dependencies", "", "External dependencies (comma-separated)")
-	
+
 	createCmd.MarkFlagRequired("name")
 	createCmd.MarkFlagRequired("why")
 	createCmd.MarkFlagRequired("capabilities")
@@ -49,15 +49,15 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 	}
 
-	var projID string
+	var backlogID string
 	for p := cmd; p != nil; p = p.Parent() {
-		if val, err := p.Flags().GetString("project"); err == nil && val != "" {
-			projID = val
+		if val, err := p.Flags().GetString("backlog"); err == nil && val != "" {
+			backlogID = val
 			break
 		}
 	}
-	if projID == "" {
-		return domain.NewValidationError("Project ID is required (--project).")
+	if backlogID == "" {
+		return domain.NewValidationError("Backlog ID is required (--backlog).")
 	}
 
 	// Parse capabilities
@@ -78,7 +78,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	input := &domain.BriefCreateInput{
-		ProjectID:    projID,
+		BacklogID:    backlogID,
 		Name:         createName,
 		Why:          createWhy,
 		Capabilities: capabilities,
@@ -100,6 +100,15 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(out, "  Status: %s\n", brief.Status)
 	fmt.Fprintf(out, "  Capabilities: %d\n", len(brief.NewCapabilities))
 
+	// AI-friendly next steps
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, "  ─────────────────────────────────────────────────────────")
+	fmt.Fprintln(out, "  NEXT STEPS:")
+	fmt.Fprintln(out, "  ─────────────────────────────────────────────────────────")
+	fmt.Fprintf(out, "  • Create specs for capabilities: mandor spec create --backlog %s --capability <cap-id> ...\n", backlogID)
+	fmt.Fprintf(out, "  • View brief details: mandor brief read %s --backlog %s\n", brief.ID, backlogID)
+	fmt.Fprintf(out, "  • List all briefs: mandor brief list --backlog %s\n", backlogID)
+
 	_, warning := util.GetGitUsernameWithWarning()
 	if warning != "" {
 		fmt.Fprintln(out)
@@ -113,33 +122,33 @@ func runCreate(cmd *cobra.Command, args []string) error {
 // parseCapabilities parses "name:desc|name:desc" format into CapabilityInput
 func parseCapabilities(input string) ([]domain.CapabilityInput, error) {
 	var capabilities []domain.CapabilityInput
-	
+
 	caps := strings.Split(input, "|")
 	for _, cap := range caps {
 		parts := strings.SplitN(cap, ":", 2)
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("Error: Invalid capability format '%s'\nSolution: use 'name:description' or 'name1:desc1|name2:desc2'", cap)
 		}
-		
+
 		name := strings.TrimSpace(parts[0])
 		desc := strings.TrimSpace(parts[1])
-		
+
 		if name == "" || desc == "" {
 			return nil, fmt.Errorf("Error: capability name and description cannot be empty\nSolution: ensure format is 'name:description'")
 		}
-		
+
 		capID := util.ToSlug(name)
 		if !domain.ValidateCapabilityID(capID) {
 			return nil, fmt.Errorf("Error: Invalid capability name '%s'\nSolution: use alphanumeric characters and hyphens only", name)
 		}
-		
+
 		capabilities = append(capabilities, domain.CapabilityInput{
 			Name:        name,
 			Description: desc,
 			Modified:    false,
 		})
 	}
-	
+
 	return capabilities, nil
 }
 
@@ -148,7 +157,7 @@ func parseCSV(input string) []string {
 	if input == "" {
 		return []string{}
 	}
-	
+
 	var result []string
 	parts := strings.Split(input, ",")
 	for _, part := range parts {

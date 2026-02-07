@@ -11,13 +11,13 @@ import (
 
 func NewSummaryCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:        "summary <project_id>",
-		Short:      "Display issue summary for a project",
-		Deprecated: "Use 'mandor track project <id>' instead. Use '--summary' flag for aggregated counts only.",
-		Long:       "Display a summary of issues in a project grouped by status with priority and type information.\n\nDEPRECATED: Use 'mandor track project <id>' instead, optionally with '--summary' flag for count-only output.",
+		Use:        "summary <backlog_id>",
+		Short:      "Display issue summary for a backlog",
+		Deprecated: "Use 'mandor track backlog <id>' instead. Use '--summary' flag for aggregated counts only.",
+		Long:       "Display a summary of issues in a backlog grouped by status with priority and type information.\n\nDEPRECATED: Use 'mandor track backlog <id>' instead, optionally with '--summary' flag for count-only output.",
 		Args:       cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectID := args[0]
+			backlogID := args[0]
 
 			svc, err := service.NewIssueService()
 			if err != nil {
@@ -41,7 +41,7 @@ func NewSummaryCmd() *cobra.Command {
 			}
 
 			input := &domain.IssueListInput{
-				ProjectID: projectID,
+				BacklogID: backlogID,
 			}
 
 			output, err := svc.ListIssues(input)
@@ -50,7 +50,7 @@ func NewSummaryCmd() *cobra.Command {
 			}
 
 			if output == nil || output.Total == 0 {
-				fmt.Fprintf(cmd.OutOrStdout(), "No issues in project %s.\n", projectID)
+				fmt.Fprintf(cmd.OutOrStdout(), "No issues in backlog %s.\n", backlogID)
 				return nil
 			}
 
@@ -60,7 +60,7 @@ func NewSummaryCmd() *cobra.Command {
 			}
 
 			out := cmd.OutOrStdout()
-			fmt.Fprintf(out, "Issues in %s:\n\n", projectID)
+			fmt.Fprintf(out, "Issues in %s:\n\n", backlogID)
 
 			// Print by status
 			for _, status := range statusOrder {

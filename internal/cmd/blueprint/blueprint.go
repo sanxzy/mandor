@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	projectID string
+	backlogID string
 )
 
 var blueprintCmd = &cobra.Command{
@@ -15,8 +15,8 @@ var blueprintCmd = &cobra.Command{
 }
 
 func init() {
-	blueprintCmd.PersistentFlags().StringVarP(&projectID, "project", "p", "", "Project ID (required)")
-	
+	blueprintCmd.PersistentFlags().StringVarP(&backlogID, "backlog", "b", "", "Backlog ID (required)")
+
 	blueprintCmd.AddCommand(GetCreateCmd())
 	blueprintCmd.AddCommand(GetDetailCmd())
 	blueprintCmd.AddCommand(GetUpdateCmd())

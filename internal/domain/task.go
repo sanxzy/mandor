@@ -15,27 +15,27 @@ const TaskGoalMinLength = 500
 
 // ReadGates represent execution gates that must be satisfied before task can transition to in_progress
 type ReadGates struct {
-	IsReadBrief         bool `json:"is_read_brief"`         // Must read Brief before starting task
-	IsReadSpec          bool `json:"is_read_spec"`          // Must read Spec before starting task
-	IsReadSessionNotes  bool `json:"is_read_session_notes"` // Must read session notes before starting task
+	IsReadBrief        bool `json:"is_read_brief"`         // Must read Brief before starting task
+	IsReadSpec         bool `json:"is_read_spec"`          // Must read Spec before starting task
+	IsReadSessionNotes bool `json:"is_read_session_notes"` // Must read session notes before starting task
 }
 
 type Task struct {
 	ID                  string    `json:"id"`
 	FeatureID           string    `json:"feature_id"`
-	SpecID              string    `json:"spec_id"`            // Reference to Spec (must match Feature's spec_id)
-	ProjectID           string    `json:"project_id"`
+	SpecID              string    `json:"spec_id"` // Reference to Spec (must match Feature's spec_id)
+	BacklogID           string    `json:"backlog_id"`
 	Name                string    `json:"name"`
 	Goal                string    `json:"goal"`
 	Priority            string    `json:"priority"`
 	Status              string    `json:"status"`
 	DependsOn           []string  `json:"depends_on,omitempty"`
 	Reason              string    `json:"reason,omitempty"`
-	IAEScenarios        []string  `json:"iae_scenarios,omitempty"`        // Array of "req-XXXX:scenario-YYYY" references
+	IAEScenarios        []string  `json:"iae_scenarios,omitempty"` // Array of "req-XXXX:scenario-YYYY" references
 	ImplementationSteps []string  `json:"implementation_steps,omitempty"`
 	TestCases           []string  `json:"test_cases,omitempty"`
 	LibraryNeeds        []string  `json:"library_needs,omitempty"`
-	ReadGates           ReadGates `json:"read_gates"`                     // Execution gates
+	ReadGates           ReadGates `json:"read_gates"` // Execution gates
 	CreatedAt           time.Time `json:"created_at"`
 	UpdatedAt           time.Time `json:"updated_at"`
 	CreatedBy           string    `json:"created_by"`
@@ -44,7 +44,7 @@ type Task struct {
 
 type TaskCreateInput struct {
 	FeatureID           string
-	SpecID              string   // Must match Feature's spec_id
+	SpecID              string // Must match Feature's spec_id
 	Name                string
 	Goal                string
 	IAEScenarios        []string // Array of "req-XXXX:scenario-YYYY" references (pipe-separated in CLI)
@@ -57,7 +57,7 @@ type TaskCreateInput struct {
 
 type TaskListInput struct {
 	FeatureID      string
-	ProjectID      string
+	BacklogID      string
 	Status         string
 	Priority       string
 	IncludeDeleted bool
@@ -103,7 +103,7 @@ type TaskListItem struct {
 	Status         string `json:"status"`
 	Priority       string `json:"priority"`
 	FeatureID      string `json:"feature_id"`
-	ProjectID      string `json:"project_id"`
+	BacklogID      string `json:"backlog_id"`
 	DependsOnCount int    `json:"depends_on_count"`
 	CreatedAt      string `json:"created_at"`
 	UpdatedAt      string `json:"updated_at"`
@@ -118,7 +118,7 @@ type TaskListOutput struct {
 type TaskDetailOutput struct {
 	ID                  string   `json:"id"`
 	FeatureID           string   `json:"feature_id"`
-	ProjectID           string   `json:"project_id"`
+	BacklogID           string   `json:"backlog_id"`
 	Name                string   `json:"name"`
 	Goal                string   `json:"goal"`
 	Priority            string   `json:"priority"`

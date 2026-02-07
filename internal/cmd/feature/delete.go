@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	deleteProjectID string
+	deleteBacklogID string
 	deleteForce     bool
 	deleteReason    string
 	deleteYes       bool
@@ -18,9 +18,9 @@ var (
 
 func NewDeleteCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "delete <feature_id> [--project <id>] [--reason <text>]",
+		Use:   "delete <feature_id> [--backlog <id>] [--reason <text>]",
 		Short: "Delete a feature",
-		Long:  "Delete a feature from a project. Requires reason unless --force is used.",
+		Long:  "Delete a feature from a backlog. Requires reason unless --force is used.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewFeatureService()
@@ -32,9 +32,9 @@ func NewDeleteCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			projectID := deleteProjectID
-			if projectID == "" {
-				return domain.NewValidationError("Project ID is required (--project).")
+			backlogID := deleteBacklogID
+			if backlogID == "" {
+				return domain.NewValidationError("Backlog ID is required (--backlog).")
 			}
 
 			featureID := args[0]
@@ -51,7 +51,7 @@ func NewDeleteCmd() *cobra.Command {
 			}
 
 			input := &domain.FeatureDeleteInput{
-				ProjectID: projectID,
+				BacklogID: backlogID,
 				FeatureID: featureID,
 				Force:     deleteForce,
 				Reason:    deleteReason,
@@ -79,7 +79,7 @@ func NewDeleteCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&deleteProjectID, "project", "p", "", "Project ID (required)")
+	cmd.Flags().StringVarP(&deleteBacklogID, "backlog", "b", "", "Backlog ID (required)")
 	cmd.Flags().StringVar(&deleteReason, "reason", "", "Reason for deletion")
 	cmd.Flags().BoolVar(&deleteForce, "force", false, "Force deletion without reason")
 	cmd.Flags().BoolVarP(&deleteYes, "yes", "y", false, "Skip confirmation")

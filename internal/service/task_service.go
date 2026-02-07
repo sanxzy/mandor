@@ -42,9 +42,9 @@ func (s *TaskService) WorkspaceInitialized() bool {
 	return s.reader.WorkspaceExists()
 }
 
-func (s *TaskService) ParseTaskID(taskID string) (projectID, featureID string, err error) {
-	// Task ID format: <project>-feature-<feature>-task-<nanoid>
-	// Find the last occurrence of "-task-" to handle project IDs with hyphens
+func (s *TaskService) ParseTaskID(taskID string) (backlogID, featureID string, err error) {
+	// Task ID format: <backlog>-feature-<feature>-task-<nanoid>
+	// Find the last occurrence of "-task-" to handle backlog IDs with hyphens
 	taskSeparator := "-task-"
 	taskIdx := strings.LastIndex(taskID, taskSeparator)
 	if taskIdx == -1 {
@@ -53,19 +53,19 @@ func (s *TaskService) ParseTaskID(taskID string) (projectID, featureID string, e
 
 	featureIDStr := taskID[:taskIdx]
 
-	// Parse feature ID: <project>-feature-<feature>
+	// Parse feature ID: <backlog>-feature-<feature>
 	featureSeparator := "-feature-"
 	featureIdx := strings.Index(featureIDStr, featureSeparator)
 	if featureIdx == -1 {
 		return "", "", domain.NewValidationError(fmt.Sprintf("Invalid task ID format: %s", taskID))
 	}
 
-	projectID = featureIDStr[:featureIdx]
+	backlogID = featureIDStr[:featureIdx]
 	featureID = featureIDStr
-	return projectID, featureID, nil
+	return backlogID, featureID, nil
 }
 
-func (s *TaskService) extractProjectIDFromFeatureID(featureID string) (string, error) {
+func (s *TaskService) extractBacklogIDFromFeatureID(featureID string) (string, error) {
 	parts := strings.Split(featureID, "-feature-")
 	if len(parts) != 2 {
 		return "", domain.NewValidationError(fmt.Sprintf("Invalid feature ID format: %s", featureID))
@@ -78,16 +78,16 @@ func (s *TaskService) ValidateCreateInput(input *domain.TaskCreateInput) error {
 		return domain.NewValidationError("Feature ID is required (--feature).")
 	}
 
-	projectID, err := s.extractProjectIDFromFeatureID(input.FeatureID)
+	backlogID, err := s.extractBacklogIDFromFeatureID(input.FeatureID)
 	if err != nil {
 		return domain.NewValidationError("Invalid feature ID format.")
 	}
 
-	if !s.reader.ProjectExists(projectID) {
-		return domain.NewValidationError("Project not found: " + projectID)
+	if !s.reader.BacklogExists(backlogID) {
+		return domain.NewValidationError("Backlog not found: " + backlogID)
 	}
 
-	feature, err := s.reader.ReadFeature(projectID, input.FeatureID)
+	feature, err := s.reader.ReadFeature(backlogID, input.FeatureID)
 	if err != nil {
 		return domain.NewValidationError("Feature not found: " + input.FeatureID)
 	}
@@ -112,7 +112,7 @@ func (s *TaskService) ValidateCreateInput(input *domain.TaskCreateInput) error {
 		return domain.NewValidationError("IAE scenarios are required (--iae-scenarios).")
 	}
 
-	if err := s.validateIAEScenariosExist(projectID, input.SpecID, input.IAEScenarios); err != nil {
+	if err := s.validateIAEScenariosExist(backlogID, input.SpecID, input.IAEScenarios); err != nil {
 		return err
 	}
 
@@ -120,7 +120,7 @@ func (s *TaskService) ValidateCreateInput(input *domain.TaskCreateInput) error {
 		return domain.NewValidationError("Task name is required.")
 	}
 
-	if err := s.validateNoDuplicateName(projectID, input.FeatureID, input.Name); err != nil {
+	if err := s.validateNoDuplicateName(backlogID, input.FeatureID, input.Name); err != nil {
 		return err
 	}
 
@@ -156,36 +156,36 @@ func (s *TaskService) ValidateCreateInput(input *domain.TaskCreateInput) error {
 		return domain.NewValidationError("Invalid priority. Valid options: P0, P1, P2, P3, P4, P5")
 	}
 
-	if err := s.validateDependencies(projectID, "", input.DependsOn); err != nil {
+	if err := s.validateDependencies(backlogID, "", input.DependsOn); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *TaskService) validateDependencies(projectID, selfID string, dependsOn []string) error {
-	// Read schema to check if cross-project dependencies are allowed
-	schema, err := s.reader.ReadProjectSchema(projectID)
+func (s *TaskService) validateDependencies(backlogID, selfID string, dependsOn []string) error {
+	// Read schema to check if cross-backlog dependencies are allowed
+	schema, err := s.reader.ReadBacklogSchema(backlogID)
 	if err != nil {
-		return domain.NewSystemError("Cannot read project schema", err)
+		return domain.NewSystemError("Cannot read backlog schema", err)
 	}
-	allowCrossProject := schema.Rules.Task.Dependency != "same_project_only" && schema.Rules.Task.Dependency != "disabled"
+	allowCrossBacklog := schema.Rules.Task.Dependency != "same_backlog_only" && schema.Rules.Task.Dependency != "disabled"
 
 	for _, depID := range dependsOn {
 		if depID == selfID {
 			return domain.NewValidationError("Self-dependency detected. Task cannot depend on itself.")
 		}
 
-		depProjectID, _, err := s.ParseTaskID(depID)
+		depBacklogID, _, err := s.ParseTaskID(depID)
 		if err != nil {
 			return domain.NewValidationError("Invalid dependency ID format: " + depID)
 		}
 
-		if depProjectID != projectID && !allowCrossProject {
-			return domain.NewValidationError(fmt.Sprintf("Cross-project dependency detected: %s -> %s. Cross-project dependencies are disabled.", selfID, depID))
+		if depBacklogID != backlogID && !allowCrossBacklog {
+			return domain.NewValidationError(fmt.Sprintf("Cross-backlog dependency detected: %s -> %s. Cross-backlog dependencies are disabled.", selfID, depID))
 		}
 
-		dep, err := s.reader.ReadTask(depProjectID, depID)
+		dep, err := s.reader.ReadTask(depBacklogID, depID)
 		if err != nil {
 			if _, ok := err.(*domain.MandorError); ok {
 				return domain.NewValidationError("Dependency not found: " + depID)
@@ -198,14 +198,14 @@ func (s *TaskService) validateDependencies(projectID, selfID string, dependsOn [
 		}
 	}
 
-	if err := s.validateNoCycle(projectID, selfID, dependsOn); err != nil {
+	if err := s.validateNoCycle(backlogID, selfID, dependsOn); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *TaskService) validateNoCycle(projectID, selfID string, dependsOn []string) error {
+func (s *TaskService) validateNoCycle(backlogID, selfID string, dependsOn []string) error {
 	visited := make(map[string]bool)
 	var dfs func(taskID string) bool
 
@@ -218,13 +218,13 @@ func (s *TaskService) validateNoCycle(projectID, selfID string, dependsOn []stri
 		}
 		visited[taskID] = true
 
-		// Extract project ID from task ID for cross-project dependencies
-		depProjectID, _, err := s.ParseTaskID(taskID)
+		// Extract backlog ID from task ID for cross-backlog dependencies
+		depBacklogID, _, err := s.ParseTaskID(taskID)
 		if err != nil {
 			return false
 		}
 
-		t, err := s.reader.ReadTask(depProjectID, taskID)
+		t, err := s.reader.ReadTask(depBacklogID, taskID)
 		if err != nil {
 			return false
 		}
@@ -247,9 +247,9 @@ func (s *TaskService) validateNoCycle(projectID, selfID string, dependsOn []stri
 	return nil
 }
 
-func (s *TaskService) validateNoDuplicateName(projectID, featureID, name string) error {
+func (s *TaskService) validateNoDuplicateName(backlogID, featureID, name string) error {
 	var tasks []domain.Task
-	err := s.reader.ReadNDJSON(s.paths.ProjectTasksPath(projectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogTasksPath(backlogID), func(raw []byte) error {
 		var t domain.Task
 		if err := json.Unmarshal(raw, &t); err != nil {
 			return err
@@ -268,10 +268,10 @@ func (s *TaskService) validateNoDuplicateName(projectID, featureID, name string)
 	return nil
 }
 
-func (s *TaskService) validateIAEScenariosExist(projectID, specID string, iaeScenarios []string) error {
+func (s *TaskService) validateIAEScenariosExist(backlogID, specID string, iaeScenarios []string) error {
 	// Load the spec to validate scenarios exist
 	specService := NewSpecServiceWithPaths(s.paths)
-	spec, err := specService.ReadSpec(projectID, specID)
+	spec, err := specService.ReadSpec(backlogID, specID)
 	if err != nil {
 		return domain.NewValidationError(fmt.Sprintf("Spec not found: %s", specID))
 	}
@@ -299,7 +299,7 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 	creator := util.GetGitUsername()
 	now := time.Now().UTC()
 
-	projectID, err := s.extractProjectIDFromFeatureID(input.FeatureID)
+	backlogID, err := s.extractBacklogIDFromFeatureID(input.FeatureID)
 	if err != nil {
 		return nil, domain.NewValidationError("Invalid feature ID format.")
 	}
@@ -315,7 +315,7 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 		ID:                  taskID,
 		FeatureID:           input.FeatureID,
 		SpecID:              input.SpecID,
-		ProjectID:           projectID,
+		BacklogID:           backlogID,
 		Name:                input.Name,
 		Goal:                input.Goal,
 		Priority:            input.Priority,
@@ -326,18 +326,18 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 		TestCases:           input.TestCases,
 		LibraryNeeds:        input.LibraryNeeds,
 		ReadGates: domain.ReadGates{
-			IsReadBrief:         false,
-			IsReadSpec:          false,
-			IsReadSessionNotes:  false,
+			IsReadBrief:        false,
+			IsReadSpec:         false,
+			IsReadSessionNotes: false,
 		},
-		CreatedAt:           now,
-		UpdatedAt:           now,
-		CreatedBy:           creator,
-		UpdatedBy:           creator,
+		CreatedAt: now,
+		UpdatedAt: now,
+		CreatedBy: creator,
+		UpdatedBy: creator,
 	}
 
 	if len(input.DependsOn) > 0 {
-		allDone, err := s.checkDependenciesDone(projectID, input.DependsOn)
+		allDone, err := s.checkDependenciesDone(backlogID, input.DependsOn)
 		if err != nil {
 			return nil, err
 		}
@@ -348,7 +348,7 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 		}
 	}
 
-	if err := s.writer.WriteTask(projectID, task); err != nil {
+	if err := s.writer.WriteTask(backlogID, task); err != nil {
 		return nil, err
 	}
 
@@ -360,8 +360,9 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 	// 	By:    creator,
 	// 	Ts:    now,
 	// }
-	// if err := s.writer.AppendTaskEvent(projectID, event); err != nil {
-	// 	return nil, err
+	// 	if err := s.writer.AppendTaskEvent(backlogID, event); err != nil {
+	// 		return nil, err
+	// 	}
 	// }
 
 	// if task.Status == domain.TaskStatusReady && len(input.DependsOn) == 0 {
@@ -372,7 +373,7 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 	// 		By:    "system",
 	// 		Ts:    now,
 	// 	}
-	// 	if err := s.writer.AppendTaskEvent(projectID, readyEvent); err != nil {
+	// 	if err := s.writer.AppendTaskEvent(backlogID, readyEvent); err != nil {
 	// 		return nil, err
 	// 	}
 	// }
@@ -385,7 +386,7 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 	// 		By:    "system",
 	// 		Ts:    now,
 	// 	}
-	// 	if err := s.writer.AppendTaskEvent(projectID, blockedEvent); err != nil {
+	// 	if err := s.writer.AppendTaskEvent(backlogID, blockedEvent); err != nil {
 	// 		return nil, err
 	// 	}
 	// }
@@ -393,15 +394,15 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 	return task, nil
 }
 
-func (s *TaskService) checkDependenciesDone(projectID string, dependsOn []string) (bool, error) {
+func (s *TaskService) checkDependenciesDone(backlogID string, dependsOn []string) (bool, error) {
 	for _, depID := range dependsOn {
-		// Extract project ID from task ID for cross-project dependencies
-		depProjectID, _, err := s.ParseTaskID(depID)
+		// Extract backlog ID from task ID for cross-backlog dependencies
+		depBacklogID, _, err := s.ParseTaskID(depID)
 		if err != nil {
 			return false, domain.NewValidationError("Invalid dependency ID format: " + depID)
 		}
 
-		dep, err := s.reader.ReadTask(depProjectID, depID)
+		dep, err := s.reader.ReadTask(depBacklogID, depID)
 		if err != nil {
 			return false, domain.NewValidationError("Dependency not found: " + depID)
 		}
@@ -416,17 +417,17 @@ func (s *TaskService) ListTasks(input *domain.TaskListInput) (*domain.TaskListOu
 	var tasks []domain.TaskListItem
 	deletedCount := 0
 
-	projects, err := s.reader.ListProjects(false)
+	backlogs, err := s.reader.ListBacklogs(false)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, projectID := range projects {
-		if input.ProjectID != "" && projectID != input.ProjectID {
+	for _, backlogID := range backlogs {
+		if input.BacklogID != "" && backlogID != input.BacklogID {
 			continue
 		}
 
-		err := s.reader.ReadNDJSON(s.paths.ProjectTasksPath(projectID), func(raw []byte) error {
+		err := s.reader.ReadNDJSON(s.paths.BacklogTasksPath(backlogID), func(raw []byte) error {
 			var t domain.Task
 			if err := json.Unmarshal(raw, &t); err != nil {
 				return err
@@ -455,7 +456,7 @@ func (s *TaskService) ListTasks(input *domain.TaskListInput) (*domain.TaskListOu
 				Status:         t.Status,
 				Priority:       t.Priority,
 				FeatureID:      t.FeatureID,
-				ProjectID:      t.ProjectID,
+				BacklogID:      t.BacklogID,
 				DependsOnCount: len(t.DependsOn),
 				CreatedAt:      t.CreatedAt.Format(time.RFC3339),
 				UpdatedAt:      t.UpdatedAt.Format(time.RFC3339),
@@ -526,12 +527,12 @@ func ComparePriority(p1, p2 string) int {
 }
 
 func (s *TaskService) GetTaskDetail(input *domain.TaskDetailInput) (*domain.TaskDetailOutput, error) {
-	projectID, _, err := s.ParseTaskID(input.TaskID)
+	backlogID, _, err := s.ParseTaskID(input.TaskID)
 	if err != nil {
 		return nil, err
 	}
 
-	task, err := s.reader.ReadTask(projectID, input.TaskID)
+	task, err := s.reader.ReadTask(backlogID, input.TaskID)
 	if err != nil {
 		return nil, err
 	}
@@ -543,7 +544,7 @@ func (s *TaskService) GetTaskDetail(input *domain.TaskDetailInput) (*domain.Task
 	return &domain.TaskDetailOutput{
 		ID:                  task.ID,
 		FeatureID:           task.FeatureID,
-		ProjectID:           task.ProjectID,
+		BacklogID:           task.BacklogID,
 		Name:                task.Name,
 		Goal:                task.Goal,
 		Priority:            task.Priority,
@@ -562,12 +563,12 @@ func (s *TaskService) GetTaskDetail(input *domain.TaskDetailInput) (*domain.Task
 }
 
 func (s *TaskService) ValidateUpdateInput(input *domain.TaskUpdateInput) error {
-	projectID, _, err := s.ParseTaskID(input.TaskID)
+	backlogID, _, err := s.ParseTaskID(input.TaskID)
 	if err != nil {
 		return err
 	}
 
-	task, err := s.reader.ReadTask(projectID, input.TaskID)
+	task, err := s.reader.ReadTask(backlogID, input.TaskID)
 	if err != nil {
 		return err
 	}
@@ -593,14 +594,14 @@ func (s *TaskService) ValidateUpdateInput(input *domain.TaskUpdateInput) error {
 	}
 
 	if input.DependsOn != nil {
-		if err := s.validateDependencies(projectID, input.TaskID, *input.DependsOn); err != nil {
+		if err := s.validateDependencies(backlogID, input.TaskID, *input.DependsOn); err != nil {
 			return err
 		}
 	}
 
 	if input.DependsAdd != nil {
 		allDeps := append(task.DependsOn, *input.DependsAdd...)
-		if err := s.validateDependencies(projectID, input.TaskID, allDeps); err != nil {
+		if err := s.validateDependencies(backlogID, input.TaskID, allDeps); err != nil {
 			return err
 		}
 	}
@@ -617,7 +618,7 @@ func (s *TaskService) ValidateUpdateInput(input *domain.TaskUpdateInput) error {
 		for dep := range depSet {
 			remaining = append(remaining, dep)
 		}
-		if err := s.validateDependencies(projectID, input.TaskID, remaining); err != nil {
+		if err := s.validateDependencies(backlogID, input.TaskID, remaining); err != nil {
 			return err
 		}
 	}
@@ -626,12 +627,12 @@ func (s *TaskService) ValidateUpdateInput(input *domain.TaskUpdateInput) error {
 }
 
 func (s *TaskService) UpdateTask(input *domain.TaskUpdateInput) ([]string, error) {
-	projectID, _, err := s.ParseTaskID(input.TaskID)
+	backlogID, _, err := s.ParseTaskID(input.TaskID)
 	if err != nil {
 		return nil, err
 	}
 
-	task, err := s.reader.ReadTask(projectID, input.TaskID)
+	task, err := s.reader.ReadTask(backlogID, input.TaskID)
 	if err != nil {
 		return nil, err
 	}
@@ -658,7 +659,7 @@ func (s *TaskService) UpdateTask(input *domain.TaskUpdateInput) ([]string, error
 			return nil, domain.NewValidationError("Task is already cancelled.")
 		}
 
-		dependents, err := s.findDependents(projectID, input.TaskID)
+		dependents, err := s.findDependents(backlogID, input.TaskID)
 		if err != nil {
 			return nil, err
 		}
@@ -752,12 +753,12 @@ func (s *TaskService) UpdateTask(input *domain.TaskUpdateInput) ([]string, error
 	task.UpdatedAt = now
 	task.UpdatedBy = updater
 
-	if err := s.writer.ReplaceTask(projectID, task); err != nil {
+	if err := s.writer.ReplaceTask(backlogID, task); err != nil {
 		return nil, err
 	}
 
 	if input.Status != nil && *input.Status == domain.TaskStatusDone {
-		unblocked, err := s.unblockDependents(projectID, input.TaskID)
+		unblocked, err := s.unblockDependents(backlogID, input.TaskID)
 		if err != nil {
 			return nil, err
 		}
@@ -775,7 +776,7 @@ func (s *TaskService) UpdateTask(input *domain.TaskUpdateInput) ([]string, error
 	// 	Ts:      now,
 	// 	Changes: changes,
 	// }
-	// if err := s.writer.AppendTaskEvent(projectID, event); err != nil {
+	// if err := s.writer.AppendTaskEvent(backlogID, event); err != nil {
 	// 	return nil, err
 	// }
 
@@ -806,7 +807,7 @@ func (s *TaskService) validateStatusTransition(current, next string) error {
 
 func (s *TaskService) checkGatesBeforeInProgress(gates domain.ReadGates) error {
 	unmetGates := []string{}
-	
+
 	if !gates.IsReadBrief {
 		unmetGates = append(unmetGates, "is-read-brief")
 	}
@@ -816,24 +817,24 @@ func (s *TaskService) checkGatesBeforeInProgress(gates domain.ReadGates) error {
 	if !gates.IsReadSessionNotes {
 		unmetGates = append(unmetGates, "is-read-session-notes")
 	}
-	
+
 	if len(unmetGates) > 0 {
 		solution := "Set all gates before transitioning to in_progress:\n"
 		for _, gate := range unmetGates {
 			solution += fmt.Sprintf("  mandor task set-gate <task-id> --%s\n", gate)
 		}
-		return domain.NewValidationError(fmt.Sprintf("Error: Cannot transition to in_progress - %d unmet gates: %s\nSolution: %s", 
-			len(unmetGates), 
+		return domain.NewValidationError(fmt.Sprintf("Error: Cannot transition to in_progress - %d unmet gates: %s\nSolution: %s",
+			len(unmetGates),
 			strings.Join(unmetGates, ", "),
 			strings.TrimSuffix(solution, "\n")))
 	}
-	
+
 	return nil
 }
 
-func (s *TaskService) findDependents(projectID, taskID string) ([]string, error) {
+func (s *TaskService) findDependents(backlogID, taskID string) ([]string, error) {
 	var dependents []string
-	err := s.reader.ReadNDJSON(s.paths.ProjectTasksPath(projectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogTasksPath(backlogID), func(raw []byte) error {
 		var t domain.Task
 		if err := json.Unmarshal(raw, &t); err != nil {
 			return err
@@ -848,13 +849,13 @@ func (s *TaskService) findDependents(projectID, taskID string) ([]string, error)
 	return dependents, err
 }
 
-func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, error) {
+func (s *TaskService) unblockDependents(backlogID, doneTaskID string) (bool, error) {
 	unblockedAny := false
 	now := time.Now().UTC()
 
-	// First handle same-project dependencies
+	// First handle same-backlog dependencies
 	var allTasks []*domain.Task
-	err := s.reader.ReadNDJSON(s.paths.ProjectTasksPath(projectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogTasksPath(backlogID), func(raw []byte) error {
 		var task domain.Task
 		if err := json.Unmarshal(raw, &task); err != nil {
 			return err
@@ -881,12 +882,12 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 			if depID == doneTaskID {
 				hasDone = true
 			}
-			// Parse the dependency ID to get the project it belongs to
-			depProjectID, _, err := s.ParseTaskID(depID)
+			// Parse the dependency ID to get the backlog it belongs to
+			depBacklogID, _, err := s.ParseTaskID(depID)
 			if err != nil {
 				return false, err
 			}
-			dep, err := s.reader.ReadTask(depProjectID, depID)
+			dep, err := s.reader.ReadTask(depBacklogID, depID)
 			if err != nil {
 				return false, err
 			}
@@ -903,41 +904,41 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 		}
 	}
 
-	// If we have same-project updates, write them
+	// If we have same-backlog updates, write them
 	if unblockedAny {
-		if err := s.writer.ReplaceTasks(projectID, allTasks, tasksToWrite); err != nil {
+		if err := s.writer.ReplaceTasks(backlogID, allTasks, tasksToWrite); err != nil {
 			return false, err
 		}
 	}
 
-	// Now handle cross-project dependencies: find all projects and check for tasks that depend on doneTaskID
-	projects, err := s.reader.ListProjects(false)
+	// Now handle cross-backlog dependencies: find all backlogs and check for tasks that depend on doneTaskID
+	backlogs, err := s.reader.ListBacklogs(false)
 	if err != nil {
 		return unblockedAny, err
 	}
 
-	for _, otherProjectID := range projects {
-		if otherProjectID == projectID {
+	for _, otherBacklogID := range backlogs {
+		if otherBacklogID == backlogID {
 			continue // Already handled
 		}
 
-		var otherProjectTasks []*domain.Task
-		err := s.reader.ReadNDJSON(s.paths.ProjectTasksPath(otherProjectID), func(raw []byte) error {
+		var otherBacklogTasks []*domain.Task
+		err := s.reader.ReadNDJSON(s.paths.BacklogTasksPath(otherBacklogID), func(raw []byte) error {
 			var task domain.Task
 			if err := json.Unmarshal(raw, &task); err != nil {
 				return err
 			}
-			otherProjectTasks = append(otherProjectTasks, &task)
+			otherBacklogTasks = append(otherBacklogTasks, &task)
 			return nil
 		})
 		if err != nil {
-			continue // Skip if project tasks can't be read
+			continue // Skip if backlog tasks can't be read
 		}
 
 		otherTasksToWrite := make(map[string]*domain.Task)
 
-		// Process all tasks in other project
-		for _, task := range otherProjectTasks {
+		// Process all tasks in other backlog
+		for _, task := range otherBacklogTasks {
 			if task.Status != domain.TaskStatusBlocked {
 				continue
 			}
@@ -948,11 +949,11 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 				if depID == doneTaskID {
 					hasDone = true
 				}
-				depProjectID, _, err := s.ParseTaskID(depID)
+				depBacklogID, _, err := s.ParseTaskID(depID)
 				if err != nil {
 					continue
 				}
-				dep, err := s.reader.ReadTask(depProjectID, depID)
+				dep, err := s.reader.ReadTask(depBacklogID, depID)
 				if err != nil {
 					allDone = false
 					continue
@@ -970,10 +971,10 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 			}
 		}
 
-		// Write updates for other project if any
+		// Write updates for other backlog if any
 		if len(otherTasksToWrite) > 0 {
-			if err := s.writer.ReplaceTasks(otherProjectID, otherProjectTasks, otherTasksToWrite); err != nil {
-				continue // Skip error for other project
+			if err := s.writer.ReplaceTasks(otherBacklogID, otherBacklogTasks, otherTasksToWrite); err != nil {
+				continue // Skip error for other backlog
 			}
 		}
 	}
@@ -993,13 +994,13 @@ func (s *TaskService) getTaskGoalMinLength() int {
 }
 
 // ReadTask reads a task by ID from filesystem
-func (s *TaskService) ReadTask(projectID, featureID, taskID string) (*domain.Task, error) {
-	return s.reader.ReadTask(projectID, taskID)
+func (s *TaskService) ReadTask(backlogID, featureID, taskID string) (*domain.Task, error) {
+	return s.reader.ReadTask(backlogID, taskID)
 }
 
 // SaveTask saves a task object directly to filesystem (used by gates commands)
-func (s *TaskService) SaveTask(projectID, featureID string, task *domain.Task) error {
+func (s *TaskService) SaveTask(backlogID, featureID string, task *domain.Task) error {
 	task.UpdatedAt = time.Now().UTC()
 	task.UpdatedBy = util.GetGitUsername()
-	return s.writer.ReplaceTask(projectID, task)
+	return s.writer.ReplaceTask(backlogID, task)
 }

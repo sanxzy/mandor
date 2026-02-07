@@ -27,7 +27,7 @@ func init() {
 	createCmd.Flags().StringVar(&createCapability, "capability", "", "Capability ID from Brief (required)")
 	createCmd.Flags().StringVar(&createSummary, "summary", "", "Brief spec description (required)")
 	createCmd.Flags().StringVar(&createRequirements, "requirements", "", "Requirements in format 'summary:intent:action:expect|...' (required, min 1)")
-	
+
 	createCmd.MarkFlagRequired("capability")
 	createCmd.MarkFlagRequired("summary")
 	createCmd.MarkFlagRequired("requirements")
@@ -43,15 +43,15 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 	}
 
-	var projID string
+	var backlogID string
 	for p := cmd; p != nil; p = p.Parent() {
-		if val, err := p.Flags().GetString("project"); err == nil && val != "" {
-			projID = val
+		if val, err := p.Flags().GetString("backlog"); err == nil && val != "" {
+			backlogID = val
 			break
 		}
 	}
-	if projID == "" {
-		return domain.NewValidationError("Project ID is required (--project).")
+	if backlogID == "" {
+		return domain.NewValidationError("Backlog ID is required (--backlog).")
 	}
 
 	// Parse requirements
@@ -65,7 +65,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	input := &domain.SpecCreateInput{
-		ProjectID:    projID,
+		BacklogID:    backlogID,
 		CapabilityID: createCapability,
 		Summary:      createSummary,
 		Requirements: requirements,
@@ -88,6 +88,16 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(out, "    Req %d: %s (scenarios: %d)\n", i+1, req.Summary, len(req.IAEScenarios))
 	}
 
+	// AI-friendly next steps
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, "  ─────────────────────────────────────────────────────────")
+	fmt.Fprintln(out, "  NEXT STEPS:")
+	fmt.Fprintln(out, "  ─────────────────────────────────────────────────────────")
+	fmt.Fprintf(out, "  • Create blueprint: mandor blueprint create --backlog %s --brief <brief-id> ...\n", backlogID)
+	fmt.Fprintf(out, "  • Create feature from this spec: mandor feature create <name> --backlog %s --capability %s --spec-id %s ...\n", backlogID, createCapability, spec.ID)
+	fmt.Fprintf(out, "  • View spec details: mandor spec detail %s --backlog %s\n", spec.ID, backlogID)
+	fmt.Fprintf(out, "  • List all specs: mandor spec list --backlog %s\n", backlogID)
+
 	_, warning := util.GetGitUsernameWithWarning()
 	if warning != "" {
 		fmt.Fprintln(out)
@@ -101,37 +111,37 @@ func runCreate(cmd *cobra.Command, args []string) error {
 // parseRequirements parses "summary:intent:action:expect|..." format
 func parseRequirements(input string) ([]domain.RequirementInput, error) {
 	var requirements []domain.RequirementInput
-	
+
 	reqStrs := strings.Split(input, "|")
 	for _, reqStr := range reqStrs {
 		parts := strings.SplitN(reqStr, ":", 4)
 		if len(parts) < 4 {
 			return nil, fmt.Errorf("Error: Invalid requirement format '%s'\nSolution: use 'summary:intent:action:expect' or multiple separated by |", reqStr)
 		}
-		
+
 		summary := strings.TrimSpace(parts[0])
 		intent := strings.TrimSpace(parts[1])
 		action := strings.TrimSpace(parts[2])
 		expect := strings.TrimSpace(parts[3])
-		
+
 		if summary == "" || intent == "" || action == "" || expect == "" {
 			return nil, fmt.Errorf("Error: Requirement fields cannot be empty\nSolution: ensure all fields (summary, intent, action, expect) have values")
 		}
-		
+
 		scenario := domain.IAEScenarioInput{
 			Intent: intent,
 			Action: action,
 			Expect: expect,
 		}
-		
+
 		requirement := domain.RequirementInput{
 			Summary:      summary,
 			IAEScenarios: []domain.IAEScenarioInput{scenario},
 		}
-		
+
 		requirements = append(requirements, requirement)
 	}
-	
+
 	return requirements, nil
 }
 

@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	readyProjectID string
+	readyBacklogID string
 	readyType      string
 	readyPriority  string
 	readyJSON      bool
@@ -20,10 +20,10 @@ var (
 
 func NewReadyCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:        "ready [--project <id>] [--type <type>] [--priority <priority>] [--json]",
+		Use:        "ready [--backlog <id>] [--type <type>] [--priority <priority>] [--json]",
 		Short:      "List ready issues",
-		Deprecated: "Use 'mandor track project <id>' instead. All issues are shown; use '--group-by status' to filter by status.",
-		Long:       "List all issues with status='ready' that are available to work on (no blocking dependencies).\n\nDEPRECATED: Use 'mandor track project <id>' instead to view all issues, optionally with '--group-by status' to organize by status.",
+		Deprecated: "Use 'mandor track backlog <id>' instead. All issues are shown; use '--group-by status' to filter by status.",
+		Long:       "List all issues with status='ready' that are available to work on (no blocking dependencies).\n\nDEPRECATED: Use 'mandor track backlog <id>' instead to view all issues, optionally with '--group-by status' to organize by status.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewIssueService()
 			if err != nil {
@@ -34,20 +34,20 @@ func NewReadyCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			projectID := readyProjectID
-			if projectID == "" {
+			backlogID := readyBacklogID
+			if backlogID == "" {
 				ws, err := svc.GetWorkspace()
 				if err != nil {
-					return domain.NewValidationError("No project specified and no default project set.")
+					return domain.NewValidationError("No backlog specified and no default backlog set.")
 				}
-				projectID = ws.Config.DefaultProject
-				if projectID == "" {
-					return domain.NewValidationError("No project specified and no default project set.")
+				backlogID = ws.Config.DefaultBacklog
+				if backlogID == "" {
+					return domain.NewValidationError("No backlog specified and no default backlog set.")
 				}
 			}
 
-			if !svc.ProjectExists(projectID) {
-				return domain.NewValidationError("Project not found: " + projectID)
+			if !svc.BacklogExists(backlogID) {
+				return domain.NewValidationError("Backlog not found: " + backlogID)
 			}
 
 			if readyType != "" && !domain.ValidateIssueType(readyType) {
@@ -59,7 +59,7 @@ func NewReadyCmd() *cobra.Command {
 			}
 
 			input := &domain.IssueListInput{
-				ProjectID:      projectID,
+				BacklogID:      backlogID,
 				IssueType:      readyType,
 				Status:         domain.IssueStatusReady,
 				Priority:       readyPriority,
@@ -85,8 +85,8 @@ func NewReadyCmd() *cobra.Command {
 
 			if readyJSON {
 				result := map[string]interface{}{
-					"issues": issues,
-					"total":  output.Total,
+					" issues": issues,
+					"total":   output.Total,
 				}
 				jsonBytes, err := json.MarshalIndent(result, "", "  ")
 				if err != nil {
@@ -98,14 +98,14 @@ func NewReadyCmd() *cobra.Command {
 
 			if len(issues) == 0 {
 				fmt.Fprintln(out, "No ready issues found.")
-				fmt.Fprintf(out, "\nCreate an issue: mandor issue create <name> --project %s --type <type>\n", projectID)
+				fmt.Fprintf(out, "\nCreate an issue: mandor issue create <name> --backlog %s --type <type>\n", backlogID)
 				return nil
 			}
 
 			if readyType != "" {
-				fmt.Fprintf(out, "Ready issues of type '%s' in project %s:\n", readyType, projectID)
+				fmt.Fprintf(out, "Ready issues of type '%s' in backlog %s:\n", readyType, backlogID)
 			} else {
-				fmt.Fprintf(out, "Ready issues in project %s:\n", projectID)
+				fmt.Fprintf(out, "Ready issues in backlog %s:\n", backlogID)
 			}
 
 			fmt.Fprintf(out, "%-24s %-14s %-8s %s\n", "ID", "TYPE", "PRIORITY", "NAME")
@@ -125,7 +125,7 @@ func NewReadyCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&readyProjectID, "project", "p", "", "Project ID filter")
+	cmd.Flags().StringVarP(&readyBacklogID, "backlog", "b", "", "Backlog ID filter")
 	cmd.Flags().StringVar(&readyType, "type", "", "Filter by issue type (bug, improvement, debt, security, performance)")
 	cmd.Flags().StringVar(&readyPriority, "priority", "", "Filter by priority (P0-P5)")
 	cmd.Flags().BoolVar(&readyJSON, "json", false, "Output as JSON")

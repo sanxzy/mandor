@@ -6,12 +6,13 @@ import (
 
 	"github.com/spf13/cobra"
 	"mandor/internal/cmd/ai"
+	"mandor/internal/cmd/backlog"
 	"mandor/internal/cmd/blueprint"
 	"mandor/internal/cmd/brief"
+	"mandor/internal/cmd/change"
 	"mandor/internal/cmd/feature"
 	"mandor/internal/cmd/issue"
 	"mandor/internal/cmd/populate"
-	"mandor/internal/cmd/project"
 	"mandor/internal/cmd/session"
 	"mandor/internal/cmd/spec"
 	"mandor/internal/cmd/task"
@@ -35,8 +36,8 @@ For more information, visit: https://github.com/budisantoso/mandor`,
 	rootCmd.AddCommand(workspace.NewInitCmd())
 	rootCmd.AddCommand(workspace.NewConfigCmd())
 
-	// Add project commands
-	rootCmd.AddCommand(project.NewProjectCmd())
+	// Add backlog commands
+	rootCmd.AddCommand(backlog.NewBacklogCmd())
 
 	// Add Brief/Spec/Blueprint commands (Phase 1-3)
 	rootCmd.AddCommand(brief.GetBriefCmd())
@@ -54,6 +55,9 @@ For more information, visit: https://github.com/budisantoso/mandor`,
 
 	// Add track command (unified tracking)
 	rootCmd.AddCommand(track.NewTrackCmd())
+
+	// Add change governance commands
+	rootCmd.AddCommand(change.NewChangeCmd())
 
 	// Add completion command
 	rootCmd.AddCommand(NewCompletionCmd(rootCmd))

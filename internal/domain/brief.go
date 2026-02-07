@@ -10,25 +10,25 @@ const (
 
 // Capability represents a new or modified capability in a Brief
 type Capability struct {
-	ID          string `json:"id"`           // capability-id (derived from name via ToSlug)
-	Name        string `json:"name"`         // Display name
+	ID          string `json:"id"`          // capability-id (derived from name via ToSlug)
+	Name        string `json:"name"`        // Display name
 	Description string `json:"description"` // Description of what capability provides
 }
 
-// Brief represents the root intent document for a project
+// Brief represents the root intent document for a backlog
 type Brief struct {
-	ID                   string        `json:"id"`                    // brief-id (derived from name via ToSlug)
-	ProjectID            string        `json:"project_id"`            // Reference to project
-	Status               string        `json:"status"`                // draft | active | archived
-	Why                  string        `json:"why"`                   // Problem statement, 100-5000 chars
-	WhatChanges          []string      `json:"what_changes"`          // List of capability descriptions
-	Impact               BriefImpact   `json:"impact"`                // Technical stack, affected systems, dependencies
-	NewCapabilities      []Capability  `json:"new_capabilities"`      // New capabilities being added
-	ModifiedCapabilities []Capability  `json:"modified_capabilities"` // Existing capabilities being modified
-	CreatedAt            time.Time     `json:"created_at"`
-	UpdatedAt            time.Time     `json:"updated_at"`
-	CreatedBy            string        `json:"created_by"`
-	UpdatedBy            string        `json:"updated_by"`
+	ID                   string       `json:"id"`                    // brief-id (derived from name via ToSlug)
+	BacklogID            string       `json:"backlog_id"`            // Reference to backlog
+	Status               string       `json:"status"`                // draft | active | archived
+	Why                  string       `json:"why"`                   // Problem statement, 100-5000 chars
+	WhatChanges          []string     `json:"what_changes"`          // List of capability descriptions
+	Impact               BriefImpact  `json:"impact"`                // Technical stack, affected systems, dependencies
+	NewCapabilities      []Capability `json:"new_capabilities"`      // New capabilities being added
+	ModifiedCapabilities []Capability `json:"modified_capabilities"` // Existing capabilities being modified
+	CreatedAt            time.Time    `json:"created_at"`
+	UpdatedAt            time.Time    `json:"updated_at"`
+	CreatedBy            string       `json:"created_by"`
+	UpdatedBy            string       `json:"updated_by"`
 }
 
 // BriefImpact describes the technical and systemic impact
@@ -40,11 +40,11 @@ type BriefImpact struct {
 
 // BriefCreateInput represents input for creating a Brief
 type BriefCreateInput struct {
-	ProjectID   string
-	Name        string             // Brief name (converted to ID via ToSlug)
-	Why         string             // 100-5000 chars
-	WhatChanges []string           // Capability descriptions
-	Impact      *BriefImpact       // Optional, defaults to empty
+	BacklogID    string
+	Name         string            // Brief name (converted to ID via ToSlug)
+	Why          string            // 100-5000 chars
+	WhatChanges  []string          // Capability descriptions
+	Impact       *BriefImpact      // Optional, defaults to empty
 	Capabilities []CapabilityInput // New and modified capabilities
 }
 

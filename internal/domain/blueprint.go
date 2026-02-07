@@ -10,10 +10,10 @@ const (
 
 // ArchitectureDecision represents a key architectural decision
 type ArchitectureDecision struct {
-	ID                  string   `json:"id"`                    // Decision identifier
-	Title               string   `json:"title"`                 // Decision title
-	Decision            string   `json:"decision"`              // What decision was made
-	Rationale           string   `json:"rationale"`             // Why this decision was made (min 50 chars)
+	ID                     string   `json:"id"`                      // Decision identifier
+	Title                  string   `json:"title"`                   // Decision title
+	Decision               string   `json:"decision"`                // What decision was made
+	Rationale              string   `json:"rationale"`               // Why this decision was made (min 50 chars)
 	AlternativesConsidered []string `json:"alternatives_considered"` // Options that were rejected
 }
 
@@ -34,30 +34,30 @@ type DataModelField struct {
 
 // Risk represents a risk and its mitigation
 type Risk struct {
-	ID          string `json:"id"`           // Risk identifier
+	ID          string `json:"id"`          // Risk identifier
 	Description string `json:"description"` // What could go wrong
 	Mitigation  string `json:"mitigation"`  // How we will prevent or handle
 }
 
 // Blueprint represents the technical architecture document
 type Blueprint struct {
-	ID                    string                   `json:"id"`                     // blueprint-id ({project-id}-blueprint)
-	BriefID               string                   `json:"brief_id"`               // Reference to Brief
-	ProjectID             string                   `json:"project_id"`             // Reference to project
-	Status                string                   `json:"status"`                 // draft | active | archived
-	Version               string                   `json:"version"`                // Version number
-	ProblemStatement      string                   `json:"problem_statement"`      // Context: problem being solved
-	Constraints           []string                 `json:"constraints"`            // Context: constraints
-	UserTypes             []string                 `json:"user_types"`             // Context: types of users
-	Goals                 BlueprintGoals           `json:"goals"`                  // In scope and out of scope
-	ArchitectureDecisions []ArchitectureDecision   `json:"architecture_decisions"` // Min 1 decision required
-	DataModels            []DataModel              `json:"data_models"`            // Data models
-	ImplementationStrategy string                  `json:"implementation_strategy"` // High-level implementation approach
-	Risks                 []Risk                   `json:"risks"`                  // Risks and mitigations
-	CreatedAt             time.Time                `json:"created_at"`
-	UpdatedAt             time.Time                `json:"updated_at"`
-	CreatedBy             string                   `json:"created_by"`
-	UpdatedBy             string                   `json:"updated_by"`
+	ID                     string                 `json:"id"`                      // blueprint-id ({backlog-id}-blueprint)
+	BriefID                string                 `json:"brief_id"`                // Reference to Brief
+	BacklogID              string                 `json:"backlog_id"`              // Reference to backlog
+	Status                 string                 `json:"status"`                  // draft | active | archived
+	Version                string                 `json:"version"`                 // Version number
+	ProblemStatement       string                 `json:"problem_statement"`       // Context: problem being solved
+	Constraints            []string               `json:"constraints"`             // Context: constraints
+	UserTypes              []string               `json:"user_types"`              // Context: types of users
+	Goals                  BlueprintGoals         `json:"goals"`                   // In scope and out of scope
+	ArchitectureDecisions  []ArchitectureDecision `json:"architecture_decisions"`  // Min 1 decision required
+	DataModels             []DataModel            `json:"data_models"`             // Data models
+	ImplementationStrategy string                 `json:"implementation_strategy"` // High-level implementation approach
+	Risks                  []Risk                 `json:"risks"`                   // Risks and mitigations
+	CreatedAt              time.Time              `json:"created_at"`
+	UpdatedAt              time.Time              `json:"updated_at"`
+	CreatedBy              string                 `json:"created_by"`
+	UpdatedBy              string                 `json:"updated_by"`
 }
 
 // BlueprintGoals represents in-scope and out-of-scope items
@@ -68,7 +68,7 @@ type BlueprintGoals struct {
 
 // BlueprintCreateInput represents input for creating a Blueprint
 type BlueprintCreateInput struct {
-	ProjectID              string
+	BacklogID              string
 	BriefID                string
 	ProblemStatement       string
 	Constraints            []string
@@ -96,16 +96,16 @@ type RiskInput struct {
 
 // BlueprintUpdateInput represents input for updating a Blueprint
 type BlueprintUpdateInput struct {
-	ID                    string
-	Status                *string
-	ProblemStatement      *string
-	Constraints           *[]string
-	UserTypes             *[]string
-	Goals                 *BlueprintGoals
-	ArchitectureDecisions *[]ArchitectureDecision
-	DataModels            *[]DataModel
+	ID                     string
+	Status                 *string
+	ProblemStatement       *string
+	Constraints            *[]string
+	UserTypes              *[]string
+	Goals                  *BlueprintGoals
+	ArchitectureDecisions  *[]ArchitectureDecision
+	DataModels             *[]DataModel
 	ImplementationStrategy *string
-	Risks                 *[]Risk
+	Risks                  *[]Risk
 }
 
 // ValidateBlueprintStructure validates minimum Blueprint structure
@@ -119,8 +119,8 @@ func ValidateBlueprintStructure(bp *Blueprint) bool {
 
 // ValidateArchitectureDecision validates a decision has rationale (min 50 chars)
 func ValidateArchitectureDecision(decision *ArchitectureDecision) bool {
-	return decision != nil && 
-		len(decision.Title) > 0 && 
-		len(decision.Decision) > 0 && 
+	return decision != nil &&
+		len(decision.Title) > 0 &&
+		len(decision.Decision) > 0 &&
 		len(decision.Rationale) >= 50
 }
