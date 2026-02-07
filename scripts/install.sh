@@ -15,6 +15,9 @@
 
 set -e
 
+# Change to temp directory to avoid cwd issues
+cd /tmp 2>/dev/null || cd / 2>/dev/null || true
+
 REPO="sanxzy/mandor"
 INSTALL_DIR="${HOME}/.local/bin"
 VERSION="latest"
