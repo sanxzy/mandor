@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.2] - 2026-02-07
+
+### Changed
+- Removed `mandor ai` command - AI documentation is now auto-generated during `mandor init`
+- `mandor init` prompts for AI agent selection (Claude Code or General)
+- AI documentation file generated automatically: CLAUDE.md or AGENTS.md
+
+### Added
+- `--ai-agent` flag for `mandor init` (claude, general, none)
+- New `internal/ai/generator.go` module for AI documentation generation
+- Interactive AI agent selection prompt using survey library
+
+### Removed
+- `internal/cmd/ai/` - Entire ai command package
+- `-y, --yes` flag from `mandor init` (no confirmation prompts)
+- Tests folder (outdated test implementation)
+- `.pre-commit-config.yaml` (simplified workflow)
+
+### Technical
+- Added `github.com/AlecAivazis/survey/v2` dependency for interactive prompts
+- Updated `mandor init` help output
+
 ## [0.6.1] - 2026-02-07
 
 ### Added
