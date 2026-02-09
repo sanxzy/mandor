@@ -10,14 +10,14 @@ import (
 )
 
 var (
-	detailProjectID      string
+	detailBacklogID      string
 	detailJSON           bool
 	detailIncludeDeleted bool
 )
 
 func NewDetailCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "detail <feature_id> [--project <id>]",
+		Use:   "detail <feature_id> [--backlog <id>]",
 		Short: "Show feature details",
 		Long:  "Show detailed information about a specific feature.",
 		Args:  cobra.ExactArgs(1),
@@ -31,15 +31,15 @@ func NewDetailCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			projectID := detailProjectID
-			if projectID == "" {
-				return domain.NewValidationError("Project ID is required (--project).")
+			backlogID := detailBacklogID
+			if backlogID == "" {
+				return domain.NewValidationError("Backlog ID is required (--backlog).")
 			}
 
 			featureID := args[0]
 
 			input := &domain.FeatureDetailInput{
-				ProjectID:      projectID,
+				BacklogID:      backlogID,
 				FeatureID:      featureID,
 				JSON:           detailJSON,
 				IncludeDeleted: detailIncludeDeleted,
@@ -59,16 +59,16 @@ func NewDetailCmd() *cobra.Command {
 
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "Feature: %s\n", output.ID)
-			fmt.Fprintf(out, "  Name:      %s\n", output.Name)
-			fmt.Fprintf(out, "  Project:   %s\n", output.ProjectID)
-			fmt.Fprintf(out, "  Goal:      %s\n", output.Goal)
-			fmt.Fprintf(out, "  Scope:     %s\n", output.Scope)
-			fmt.Fprintf(out, "  Priority:  %s\n", output.Priority)
-			fmt.Fprintf(out, "  Status:    %s\n", output.Status)
+			fmt.Fprintf(out, "  Name:     %s\n", output.Name)
+			fmt.Fprintf(out, "  Backlog:  %s\n", output.BacklogID)
+			fmt.Fprintf(out, "  Goal:     %s\n", output.Goal)
+			fmt.Fprintf(out, "  Scope:    %s\n", output.Scope)
+			fmt.Fprintf(out, "  Priority: %s\n", output.Priority)
+			fmt.Fprintf(out, "  Status:   %s\n", output.Status)
 			fmt.Fprintf(out, "  DependsOn: %v\n", output.DependsOn)
-			fmt.Fprintf(out, "  Reason:    %s\n", output.Reason)
-			fmt.Fprintf(out, "  Created:   %s\n", output.CreatedAt)
-			fmt.Fprintf(out, "  Updated:   %s\n", output.UpdatedAt)
+			fmt.Fprintf(out, "  Reason:   %s\n", output.Reason)
+			fmt.Fprintf(out, "  Created:  %s\n", output.CreatedAt)
+			fmt.Fprintf(out, "  Updated:  %s\n", output.UpdatedAt)
 			fmt.Fprintf(out, "  CreatedBy: %s\n", output.CreatedBy)
 			fmt.Fprintf(out, "  UpdatedBy: %s\n", output.UpdatedBy)
 
@@ -76,7 +76,7 @@ func NewDetailCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&detailProjectID, "project", "p", "", "Project ID (required)")
+	cmd.Flags().StringVarP(&detailBacklogID, "backlog", "b", "", "Backlog ID (required)")
 	cmd.Flags().BoolVar(&detailJSON, "json", false, "Output as JSON")
 	cmd.Flags().BoolVar(&detailIncludeDeleted, "include-deleted", false, "Include cancelled features")
 

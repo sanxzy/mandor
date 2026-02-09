@@ -60,7 +60,7 @@ func NewDetailCmd() *cobra.Command {
 			fmt.Fprintf(out, "Task: %s\n", output.ID)
 			fmt.Fprintf(out, "  Name:               %s\n", output.Name)
 			fmt.Fprintf(out, "  Feature:            %s\n", output.FeatureID)
-			fmt.Fprintf(out, "  Project:            %s\n", output.ProjectID)
+			fmt.Fprintf(out, "  Backlog:            %s\n", output.BacklogID)
 			fmt.Fprintf(out, "  Status:             %s\n", output.Status)
 			fmt.Fprintf(out, "  Priority:           %s\n", output.Priority)
 			fmt.Fprintf(out, "  Goal:               %s\n", output.Goal)

@@ -60,7 +60,7 @@ func NewSummaryCmd() *cobra.Command {
 				}
 
 				input := &domain.FeatureListInput{
-					ProjectID: pID,
+					BacklogID: pID,
 				}
 
 				output, err := fsvc.ListFeatures(input)

@@ -5,12 +5,12 @@ category: Planning
 tags: [specs, documentation, requirements]
 ---
 
-**Input**: Optional backlog ID (kebab-case). Ask if missing.
+**Input**: Optional project ID (kebab-case). Ask if missing.
 
 **PREREQUISITE CHECK**
 
-1. Get backlog ID from input or ask user.
-2. Verify `.mandor/backlogs/<backlog_id>/brief.md` exists.
+1. Get project ID from input or ask user.
+2. Verify `.mandor/projects/<project_id>/brief.md` exists.
 3. **ERROR if missing**: "brief.md required. Run `Project Planner` first."
 4. Load Specs Index from brief.md. Process specs in priority order (P0→P1→P2→P3→P4→P5).
 
@@ -42,7 +42,7 @@ tags: [specs, documentation, requirements]
 
 13. **Validation** - Summarize ALL info. Ask user to confirm/correct EACH assumption. List all IAE scenarios, negative cases, assumptions, dependencies. Refuse to proceed without full confirmation.
 
-14. **Generate spec file** - Create `.mandor/backlogs/<backlog_id>/specs/<spec-id>.md` with human-readable kebab-case ID. Include ALL IAE scenarios, assumptions, dependencies. Ensure traceability and independent testability.
+14. **Generate spec file** - Create `.mandor/projects/<project_id>/specs/<spec-id>.md` with human-readable kebab-case ID. Include ALL IAE scenarios, assumptions, dependencies. Ensure traceability and independent testability.
 
 **Output**
 

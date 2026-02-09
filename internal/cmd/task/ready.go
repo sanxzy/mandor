@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	readyProjectID string
+	readyBacklogID string
 	readyFeatureID string
 	readyPriority  string
 	readyJSON      bool
@@ -44,7 +44,7 @@ func NewReadyCmd() *cobra.Command {
 
 			input := &domain.TaskListInput{
 				FeatureID:      readyFeatureID,
-				ProjectID:      readyProjectID,
+				BacklogID:      readyBacklogID,
 				Status:         domain.TaskStatusReady,
 				Priority:       readyPriority,
 				IncludeDeleted: false,
@@ -77,16 +77,16 @@ func NewReadyCmd() *cobra.Command {
 				fmt.Fprintln(out, "No ready tasks found.")
 				if readyFeatureID != "" {
 					fmt.Fprintf(out, "\nCreate a task: mandor task create <name> --feature %s\n", readyFeatureID)
-				} else if readyProjectID != "" {
-					fmt.Fprintf(out, "\nCreate a feature: mandor feature create <name> --project %s\n", readyProjectID)
+				} else if readyBacklogID != "" {
+					fmt.Fprintf(out, "\nCreate a feature: mandor feature create <name> --backlog %s\n", readyBacklogID)
 				}
 				return nil
 			}
 
 			if readyFeatureID != "" {
 				fmt.Fprintf(out, "Ready tasks in %s:\n", readyFeatureID)
-			} else if readyProjectID != "" {
-				fmt.Fprintf(out, "Ready tasks in project %s:\n", readyProjectID)
+			} else if readyBacklogID != "" {
+				fmt.Fprintf(out, "Ready tasks in backlog %s:\n", readyBacklogID)
 			} else {
 				fmt.Fprintln(out, "Ready tasks (available to work on):")
 			}

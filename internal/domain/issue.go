@@ -24,7 +24,7 @@ const IssueGoalMinLength = 200
 
 type Issue struct {
 	ID                  string    `json:"id"`
-	ProjectID           string    `json:"project_id"`
+	BacklogID           string    `json:"backlog_id"`
 	Name                string    `json:"name"`
 	Goal                string    `json:"goal,omitempty"`
 	IssueType           string    `json:"issue_type"`
@@ -43,7 +43,7 @@ type Issue struct {
 }
 
 type IssueCreateInput struct {
-	ProjectID           string
+	BacklogID           string
 	Name                string
 	Goal                string
 	IssueType           string
@@ -56,7 +56,7 @@ type IssueCreateInput struct {
 }
 
 type IssueListInput struct {
-	ProjectID      string
+	BacklogID      string
 	IssueType      string
 	Status         string
 	Priority       string
@@ -67,7 +67,7 @@ type IssueListInput struct {
 }
 
 type IssueDetailInput struct {
-	ProjectID      string
+	BacklogID      string
 	IssueID        string
 	JSON           bool
 	IncludeDeleted bool
@@ -77,7 +77,7 @@ type IssueDetailInput struct {
 }
 
 type IssueUpdateInput struct {
-	ProjectID           string
+	BacklogID           string
 	IssueID             string
 	Name                *string
 	Goal                *string
@@ -107,7 +107,7 @@ type IssueListItem struct {
 	IssueType                string `json:"issue_type"`
 	Status                   string `json:"status"`
 	Priority                 string `json:"priority"`
-	ProjectID                string `json:"project_id"`
+	BacklogID                string `json:"backlog_id"`
 	DependsOnCount           int    `json:"depends_on_count"`
 	AffectedFilesCount       int    `json:"affected_files_count"`
 	AffectedTestsCount       int    `json:"affected_tests_count"`
@@ -125,7 +125,7 @@ type IssueListOutput struct {
 
 type IssueDetailOutput struct {
 	ID                  string   `json:"id"`
-	ProjectID           string   `json:"project_id"`
+	BacklogID           string   `json:"backlog_id"`
 	Name                string   `json:"name"`
 	Goal                string   `json:"goal,omitempty"`
 	IssueType           string   `json:"issue_type"`

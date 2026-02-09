@@ -55,11 +55,13 @@ Mandor is a CLI tool for managing tasks, features, and issues in AI agent workfl
 
 | Type | Purpose | Status Values |
 |------|---------|---------------|
-| **Workspace** | Top-level container for all projects | (single instance per directory) |
-| **Project** | Container for features and issues | (active/deleted) |
+| **Workspace** | Top-level container for all backlogs | (single instance per directory) |
+| **Backlog** | Container for features and issues | initial, active, done, deleted |
 | **Feature** | Logical grouping of related tasks | draft, active, done, blocked, cancelled |
 | **Task** | Work items within a feature | pending, ready, in_progress, done, blocked, cancelled |
 | **Issue** | Problems, bugs, or improvement requests | open, ready, in_progress, resolved, wontfix, blocked, cancelled |
+
+> **Note**: Backlogs replace Projects. The system automatically migrates existing projects to backlogs on first use.
 
 ### Dependency Types
 
@@ -129,17 +131,20 @@ mandor --help
 mandor init "My Project"
 ```
 
-### 2. Create a Project
+This initializes your workspace and automatically migrates any existing projects to backlogs.
+
+### 2. Create a Backlog
 
 ```bash
-mandor project create api --name "API Development" \
-  --goal "Build REST API service with authentication and endpoints"
+mandor backlog create api --name "API Development" \
+  --goal "Build REST API service with authentication and endpoints. This backlog covers the complete implementation of secure API endpoints including authentication, authorization, and comprehensive testing to ensure production-ready quality."
 ```
 
 ### 3. Create a Feature
 
 ```bash
-mandor feature create "Authentication" --project api \
+mandor feature create auth-feature --backlog api \
+  --name "JWT Authentication" \
   --goal "Implement JWT-based authentication with login and refresh flows for secure API access" \
   --scope backend
 ```
@@ -148,19 +153,21 @@ mandor feature create "Authentication" --project api \
 
 ```bash
 # Create first task (no dependencies)
-mandor task create api-feature-xxxx "JWT Parser" \
-  --goal "Parse and validate JWT tokens in incoming requests with expiry and signature verification" \
+mandor task create jwt-parser auth-feature \
+  --backlog api \
+  --goal "Parse and validate JWT tokens in incoming requests with expiry and signature verification including error handling" \
   --implementation-steps "Setup crypto library|Add token validation|Handle expiry|Return errors" \
   --test-cases "Valid token accepted|Expired token rejected|Invalid signature rejected" \
   --library-needs "golang-jwt" \
   --priority P1
 
 # Create dependent task (depends on JWT Parser)
-mandor task create api-feature-xxxx "Login Endpoint" \
+mandor task create login-endpoint auth-feature \
+  --backlog api \
   --goal "Accept user credentials and return JWT token with refresh token flow" \
   --implementation-steps "Setup endpoint|Validate credentials|Generate JWT|Return tokens" \
   --test-cases "Valid creds return token|Invalid creds rejected|Tokens properly formatted" \
-  --depends-on api-feature-xxxx-task-xxxx \
+  --depends-on jwt-parser \
   --priority P1
 ```
 
@@ -168,21 +175,21 @@ mandor task create api-feature-xxxx "Login Endpoint" \
 
 ```bash
 # See all tasks in feature with visualization
-mandor track feature api-feature-xxxx
+mandor track feature auth-feature
 
 # Get task details
-mandor task detail <task-id>
+mandor task detail jwt-parser
 ```
 
 ### 6. Mark Tasks Complete
 
 ```bash
 # Get task ID from track output
-mandor task update <task-id> --status in_progress
-mandor task update <task-id> --status done
+mandor task update jwt-parser --status in_progress
+mandor task update jwt-parser --status done
 
 # Dependent tasks auto-transition to "ready"
-mandor track feature api-feature-xxxx  # Now shows "Login Endpoint" as ready
+mandor track feature auth-feature  # Now shows "login-endpoint" as ready
 ```
 
 ---
@@ -224,8 +231,8 @@ mandor ai --help
 # Track workspace status
 mandor track
 
-# Track project status
-mandor track project <project-id>
+# Track backlog status
+mandor track backlog <backlog-id>
 
 # Track feature with tasks
 mandor track feature <feature-id> [--verbose]
@@ -235,6 +242,28 @@ mandor track task <task-id>
 
 # Track issue
 mandor track issue <issue-id>
+```
+
+### Backlog Commands
+
+```bash
+# Create a new backlog
+mandor backlog create <backlog-id> --name "<name>" --goal "<goal>"
+
+# Show backlog details
+mandor backlog detail <backlog-id>
+
+# Update backlog metadata
+mandor backlog update <backlog-id> [--name "<name>"] [--goal "<goal>"]
+
+# Delete a backlog (soft-delete)
+mandor backlog delete <backlog-id> [-y]
+
+# Reopen a deleted backlog
+mandor backlog reopen <backlog-id> [-y]
+
+# List all backlogs
+mandor backlog list [--deleted]
 ```
 
 ### Session Commands
@@ -480,9 +509,15 @@ Goals should include:
 - Technical requirements
 - Acceptance criteria
 
+Minimum goal lengths:
+- **Backlog**: 500 characters
+- **Feature**: 300 characters
+- **Task**: 500 characters
+- **Issue**: 200 characters
+
 ```bash
 # Good
---goal "Implement JWT-based authentication with login and refresh flows for secure API access"
+--goal "Implement JWT-based authentication with login and refresh flows for secure API access with proper error handling and comprehensive test coverage for all edge cases."
 
 # Avoid
 --goal "Add authentication"
@@ -490,45 +525,52 @@ Goals should include:
 
 ### 3. Use Scopes for Features
 
-Organize by scope:
+Organize features by scope to group related work:
 - `frontend`, `backend`, `fullstack`
 - `cli`, `desktop`, `android`, `flutter`, `react-native`, `ios`, `swift`
 
 ```bash
-mandor feature create "Login UI" --project api --scope frontend
-mandor feature create "Login API" --project api --scope backend
+mandor feature create login-ui --backlog api --scope frontend \
+  --goal "Create responsive login user interface with form validation and error handling for web and mobile platforms"
+
+mandor feature create login-api --backlog api --scope backend \
+  --goal "Implement login API endpoint with JWT token generation and refresh token management for secure user authentication"
 ```
 
 ### 4. Keep Dependencies Shallow
 
-Deep dependency chains (>5 levels) are hard to manage. Consider breaking into smaller features.
+Deep dependency chains (>5 levels) are hard to manage. Consider breaking into smaller features or backlogs.
 
 ```bash
-# Good: tasks depend on other tasks in same feature
-mandor task create api-feature-xxxx "Task B" \
-  --goal "..." \
-  --implementation-steps "..." \
-  --test-cases "..." \
-  --depends-on api-feature-xxxx-task-xxxx
+# Good: tasks depend on other tasks in same feature/backlog
+mandor task create task-b auth-feature \
+  --backlog api \
+  --goal "Implement token refresh logic with automatic expiration handling and validation" \
+  --implementation-steps "Parse refresh token|Validate expiration|Generate new token|Return response" \
+  --test-cases "Valid refresh accepted|Expired refresh rejected|Token properly formatted" \
+  --depends-on jwt-parser
 
 # Consider splitting if: task chains exceed 5 levels
+# Move related features to a new backlog if single backlog becomes too large
 ```
 
 ### 5. Use Issues for Bugs, Tasks for Features
 
-- **Tasks**: Feature work, implementation, refactoring
-- **Issues**: Bugs, improvements, technical debt, security, performance
+- **Tasks**: Feature work, implementation, refactoring within a feature
+- **Issues**: Bugs, improvements, technical debt, security, performance within a backlog
 
 ```bash
-# Feature work
-mandor task create api-feature-xxxx "Add OAuth2" \
-  --goal "..." \
-  --implementation-steps "..." \
-  --test-cases "..." \
+# Feature work - task within a feature
+mandor task create oauth-integration auth-feature \
+  --backlog api \
+  --goal "Integrate OAuth2 authentication provider with existing JWT system for third-party integrations" \
+  --implementation-steps "Setup OAuth2 client|Add provider endpoints|Implement token exchange|Update user model" \
+  --test-cases "OAuth flow complete|Token exchange succeeds|User created|Session established" \
   --library-needs "oauth2-lib"
 
-# Bug fix
-mandor issue create "Fix auth timeout" --project api --type bug
+# Bug fix - issue within a backlog
+mandor issue create auth-timeout --backlog api --type bug \
+  --goal "Fix authentication timeout issue where tokens expire prematurely causing user sessions to terminate unexpectedly"
 ```
 
 ### 6. Document Cancellation Reasons
@@ -536,8 +578,8 @@ mandor issue create "Fix auth timeout" --project api --type bug
 Always provide clear reasons when cancelling:
 
 ```bash
-mandor task update api-feature-xxxx-task-xxxx --cancel --reason "Superseded by feature X"
-mandor feature update api-feature-xxxx --project api --cancel --reason "Sticking with JWT, OAuth2 adds too much complexity"
+mandor task update jwt-parser --status cancelled --reason "Superseded by feature X"
+mandor feature update oauth-feature --backlog api --status cancelled --reason "Sticking with JWT, OAuth2 adds too much complexity"
 ```
 
 ### 7. Use Pipe Separators For Lists
@@ -555,13 +597,19 @@ For flags accepting multiple values, use pipe separators:
 --depends-on task-1|task-2|task-3
 ```
 
-### 8. Use --dry-run Before Major Changes
+### 8. Use -y Flag for Automatic Confirmation
 
-Before making significant updates, preview with `--dry-run`:
+For non-interactive automation, use the `-y` or `--yes` flag:
 
 ```bash
-mandor task update api-feature-xxxx-task-xxxx --status done --dry-run
-mandor feature update api-feature-xxxx --project api --cancel --reason "..." --dry-run
+# Create without prompt
+mandor backlog create api --name "API" --goal "..." --yes
+
+# Delete without prompt
+mandor backlog delete api --yes
+
+# Reopen without prompt
+mandor backlog reopen api --yes
 ```
 
 ### 9. Dependency Auto-Resolution
@@ -586,17 +634,17 @@ mandor config set strict_mode true
 # Workspace overview
 mandor status
 
-# Project summary
-mandor status --project api
+# Backlog summary
+mandor status --backlog api
 
-# See feature progress
-mandor track project api
+# See backlog progress
+mandor track backlog api
 
 # See feature tasks
-mandor track feature api-feature-xxxx
+mandor track feature auth-feature
 
 # See task details
-mandor track task api-feature-xxxx-task-xxxx
+mandor track task jwt-parser
 ```
 
 ---
@@ -612,12 +660,13 @@ Ensure mandor is in your PATH:
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-### "Project not found"
+### "Backlog not found"
 
-Check the project ID and ensure you're in the correct workspace:
+Check the backlog ID and ensure you're in the correct workspace:
 
 ```bash
 mandor status
+mandor backlog list
 ```
 
 ### "Entity not found"
@@ -626,19 +675,20 @@ Verify the entity ID exists:
 
 ```bash
 mandor track feature <feature-id>
-mandor track project <project-id>
+mandor track backlog <backlog-id>
+mandor track task <task-id>
 ```
 
-### "Cross-project dependency detected"
+### "Cross-backlog dependency detected"
 
-The project doesn't allow cross-project dependencies:
+If you need dependencies across backlogs, plan your backlog structure accordingly:
 
 ```bash
-# Check project config
-mandor project detail <project-id>
+# Check backlog details
+mandor backlog detail <backlog-id>
 
-# Create new project with cross-project enabled
-mandor project create <id> --name "..." --goal "..." --task-dep cross_project_allowed
+# Dependencies are typically scoped within a backlog or feature
+# Consider merging related work into the same backlog if dependencies are complex
 ```
 
 ### "Invalid status transition"
@@ -656,7 +706,7 @@ The transition isn't allowed by the state machine:
 Reopen the feature first:
 
 ```bash
-mandor feature update <feature-id> --project <project-id> --reopen
+mandor feature update <feature-id> --status active
 ```
 
 ---
@@ -683,13 +733,17 @@ mandor feature update <feature-id> --project <project-id> --reopen
 ├── workspace.json          # Workspace metadata
 ├── config.json             # Workspace configuration
 ├── session-notes.jsonl     # AI agent session progress notes (NDJSON)
-└── projects/
-    └── <project-id>/
-        ├── project.json    # Project metadata
-        ├── features.jsonl  # Feature records
-        ├── tasks.jsonl     # Task records
-        └── issues.jsonl    # Issue records
+├── backlogs/               # Backlog containers (replaces projects/)
+│   └── <backlog-id>/
+│       ├── backlog.json    # Backlog metadata
+│       ├── schema.json     # Backlog dependency rules
+│       ├── features.jsonl  # Feature records
+│       ├── tasks.jsonl     # Task records
+│       └── issues.jsonl    # Issue records
+└── .projects_backup_*      # Automatic backup of old projects/ directory
 ```
+
+**Note**: The `projects/` directory is automatically migrated to `backlogs/` on first use. Backups are retained for safety.
 
 **Session Notes Format (session-notes.jsonl):**
 ```json

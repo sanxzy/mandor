@@ -5,14 +5,14 @@ category: Planning
 tags: [architecture, design, blueprint]
 ---
 
-**Input**: Optional backlog ID (kebab-case). Ask if missing.
+**Input**: Optional project ID (kebab-case). Ask if missing.
 
 **PREREQUISITE CHECK**
 
-1. Get backlog ID from input or ask user.
-2. Verify `.mandor/backlogs/<backlog_id>/brief.md` exists.
+1. Get project ID from input or ask user.
+2. Verify `.mandor/projects/<project_id>/brief.md` exists.
 3. **ERROR if missing**: "brief.md required. Run `Project Planner` first."
-4. Load brief.md for backlog context, architecture requirements, tech stack.
+4. Load brief.md for project context, architecture requirements, tech stack.
 
 **Steps**
 
@@ -34,16 +34,16 @@ tags: [architecture, design, blueprint]
 
 9. **Validation** - Summarize ALL architectural info. Ask user to confirm/correct EACH assumption. List all decisions, trade-offs. Refuse to proceed without confirmation.
 
-10. **Generate blueprint.md** - Create `.mandor/backlogs/<backlog_id>/blueprint.md`. Reference brief.md as source of truth. Document high-level architecture, components/boundaries, data flows, decisions with rationale. Trace to brief.md. Independent from specs.
+10. **Generate blueprint.md** - Create `.mandor/projects/<project_id>/blueprint.md`. Reference brief.md as source of truth. Document high-level architecture, components/boundaries, data flows, decisions with rationale. Trace to brief.md. Independent from specs.
 
 **Output**
 
 Generate `blueprint.md`:
 
 ```markdown
-# Architecture Blueprint: <Backlog Title>
+# Architecture Blueprint: <Project Title>
 
-**Backlog ID:** <backlog-id>
+**Project ID:** <project-id>
 **Created:** <date>
 **Brief Reference:** [brief.md](./brief.md)
 **Status:** ARCHITECTED

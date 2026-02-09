@@ -75,13 +75,8 @@ function createArchive(platform) {
 }
 
 function uploadToGithubReleases(results) {
-  let version;
-  try {
-    version = execSync('git describe --tags --abbrev=0', { encoding: 'utf8' }).trim();
-  } catch {
-    const pkg = require(path.join(ROOT_DIR, 'package.json'));
-    version = pkg.version;
-  }
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+  const version = pkg.version;
 
   const archives = results.filter(r => r.archivePath && fs.existsSync(r.archivePath));
 
@@ -94,11 +89,11 @@ function uploadToGithubReleases(results) {
 
   for (const archive of archives) {
     const assetPath = archive.archivePath;
-    const assetName = `${path.basename(path.dirname(assetPath))}.tar.gz`;
+    const assetName = path.basename(assetPath);
 
     try {
       console.log(`  Uploading ${assetName}...`);
-      execSync(`gh release upload "${version}" "${assetPath}" --repo "${process.env.GITHUB_REPOSITORY || 'sanxzy/mandor'}"`, {
+      execSync(`gh release upload "v${version}" "${assetPath}" --clobber --repo "${process.env.GITHUB_REPOSITORY || 'sanxzy/mandor'}"`, {
         stdio: 'pipe',
         shell: true
       });

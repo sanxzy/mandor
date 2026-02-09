@@ -6,9 +6,10 @@ import (
 )
 
 const (
-	MandorDir     = ".mandor"
-	ProjectsDir   = "projects"
-	WorkspaceFile = "workspace.json"
+	MandorDir      = ".mandor"
+	BacklogsDir    = "backlogs"
+	WorkspaceFile  = "workspace.json"
+	ProjectsDir    = "projects" // Deprecated: kept for backward compatibility
 )
 
 // Paths manages filesystem paths for the workspace
@@ -40,37 +41,72 @@ func (p *Paths) WorkspacePath() string {
 	return filepath.Join(p.MandorDirPath(), WorkspaceFile)
 }
 
-// ProjectsDirPath returns the path to projects directory
+// BacklogsDirPath returns the path to backlogs directory
+func (p *Paths) BacklogsDirPath() string {
+	return filepath.Join(p.MandorDirPath(), BacklogsDir)
+}
+
+// BacklogDirPath returns the path to a specific backlog directory
+func (p *Paths) BacklogDirPath(backlogID string) string {
+	return filepath.Join(p.BacklogsDirPath(), backlogID)
+}
+
+// BacklogMetadataPath returns the path to backlog.jsonl
+func (p *Paths) BacklogMetadataPath(backlogID string) string {
+	return filepath.Join(p.BacklogDirPath(backlogID), "backlog.jsonl")
+}
+
+// BacklogSchemaPath returns the path to schema.json
+func (p *Paths) BacklogSchemaPath(backlogID string) string {
+	return filepath.Join(p.BacklogDirPath(backlogID), "schema.json")
+}
+
+// BacklogFeaturesPath returns the path to features.jsonl
+func (p *Paths) BacklogFeaturesPath(backlogID string) string {
+	return filepath.Join(p.BacklogDirPath(backlogID), "features.jsonl")
+}
+
+// BacklogTasksPath returns the path to tasks.jsonl
+func (p *Paths) BacklogTasksPath(backlogID string) string {
+	return filepath.Join(p.BacklogDirPath(backlogID), "tasks.jsonl")
+}
+
+// BacklogIssuesPath returns the path to issues.jsonl
+func (p *Paths) BacklogIssuesPath(backlogID string) string {
+	return filepath.Join(p.BacklogDirPath(backlogID), "issues.jsonl")
+}
+
+// Deprecated: Use BacklogsDirPath instead
 func (p *Paths) ProjectsDirPath() string {
 	return filepath.Join(p.MandorDirPath(), ProjectsDir)
 }
 
-// ProjectDirPath returns the path to a specific project directory
+// Deprecated: Use BacklogDirPath instead
 func (p *Paths) ProjectDirPath(projectID string) string {
 	return filepath.Join(p.ProjectsDirPath(), projectID)
 }
 
-// ProjectMetadataPath returns the path to project.jsonl
+// Deprecated: Use BacklogMetadataPath instead
 func (p *Paths) ProjectMetadataPath(projectID string) string {
 	return filepath.Join(p.ProjectDirPath(projectID), "project.jsonl")
 }
 
-// ProjectSchemaPath returns the path to schema.json
+// Deprecated: Use BacklogSchemaPath instead
 func (p *Paths) ProjectSchemaPath(projectID string) string {
 	return filepath.Join(p.ProjectDirPath(projectID), "schema.json")
 }
 
-// ProjectFeaturesPath returns the path to features.jsonl
+// Deprecated: Use BacklogFeaturesPath instead
 func (p *Paths) ProjectFeaturesPath(projectID string) string {
 	return filepath.Join(p.ProjectDirPath(projectID), "features.jsonl")
 }
 
-// ProjectTasksPath returns the path to tasks.jsonl
+// Deprecated: Use BacklogTasksPath instead
 func (p *Paths) ProjectTasksPath(projectID string) string {
 	return filepath.Join(p.ProjectDirPath(projectID), "tasks.jsonl")
 }
 
-// ProjectIssuesPath returns the path to issues.jsonl
+// Deprecated: Use BacklogIssuesPath instead
 func (p *Paths) ProjectIssuesPath(projectID string) string {
 	return filepath.Join(p.ProjectDirPath(projectID), "issues.jsonl")
 }
@@ -80,7 +116,13 @@ func (p *Paths) SessionNotesPath() string {
 	return filepath.Join(p.MandorDirPath(), "session-notes.jsonl")
 }
 
-// ProjectDirExists checks if a project directory exists
+// BacklogDirExists checks if a backlog directory exists
+func (p *Paths) BacklogDirExists(backlogID string) bool {
+	_, err := os.Stat(p.BacklogDirPath(backlogID))
+	return err == nil
+}
+
+// Deprecated: Use BacklogDirExists instead
 func (p *Paths) ProjectDirExists(projectID string) bool {
 	_, err := os.Stat(p.ProjectDirPath(projectID))
 	return err == nil

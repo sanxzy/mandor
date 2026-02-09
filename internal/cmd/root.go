@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"mandor/internal/cmd/backlog"
 	"mandor/internal/cmd/feature"
 	"mandor/internal/cmd/issue"
 	"mandor/internal/cmd/populate"
@@ -31,8 +32,14 @@ For more information, visit: https://github.com/budisantoso/mandor`,
 	rootCmd.AddCommand(workspace.NewInitCmd())
 	rootCmd.AddCommand(workspace.NewConfigCmd())
 
-	// Add project commands
-	rootCmd.AddCommand(project.NewProjectCmd())
+	// Add backlog commands
+	rootCmd.AddCommand(backlog.NewBacklogCmd())
+
+	// Add project commands (deprecated, kept for backward compatibility)
+	projectCmd := project.NewProjectCmd()
+	projectCmd.Deprecated = "use 'backlog' instead"
+	projectCmd.Hidden = true
+	rootCmd.AddCommand(projectCmd)
 
 	// Add feature commands
 	rootCmd.AddCommand(feature.NewFeatureCmd())

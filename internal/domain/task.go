@@ -16,7 +16,7 @@ const TaskGoalMinLength = 500
 type Task struct {
 	ID                  string    `json:"id"`
 	FeatureID           string    `json:"feature_id"`
-	ProjectID           string    `json:"project_id"`
+	BacklogID           string    `json:"backlog_id"`
 	Name                string    `json:"name"`
 	Goal                string    `json:"goal"`
 	Priority            string    `json:"priority"`
@@ -45,7 +45,7 @@ type TaskCreateInput struct {
 
 type TaskListInput struct {
 	FeatureID      string
-	ProjectID      string
+	BacklogID      string
 	Status         string
 	Priority       string
 	IncludeDeleted bool
@@ -90,7 +90,7 @@ type TaskListItem struct {
 	Status         string `json:"status"`
 	Priority       string `json:"priority"`
 	FeatureID      string `json:"feature_id"`
-	ProjectID      string `json:"project_id"`
+	BacklogID      string `json:"backlog_id"`
 	DependsOnCount int    `json:"depends_on_count"`
 	CreatedAt      string `json:"created_at"`
 	UpdatedAt      string `json:"updated_at"`
@@ -105,7 +105,7 @@ type TaskListOutput struct {
 type TaskDetailOutput struct {
 	ID                  string   `json:"id"`
 	FeatureID           string   `json:"feature_id"`
-	ProjectID           string   `json:"project_id"`
+	BacklogID           string   `json:"backlog_id"`
 	Name                string   `json:"name"`
 	Goal                string   `json:"goal"`
 	Priority            string   `json:"priority"`

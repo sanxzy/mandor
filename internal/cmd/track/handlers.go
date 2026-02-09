@@ -80,7 +80,7 @@ func handleProject(cmd *cobra.Command, projectID string) error {
 	}
 
 	input := &domain.IssueListInput{
-		ProjectID: projectID,
+		BacklogID: projectID,
 	}
 
 	issuesOutput, err := issueSvc.ListIssues(input)
@@ -106,7 +106,7 @@ func handleProject(cmd *cobra.Command, projectID string) error {
 			Type:      issue.IssueType,
 			Status:    issue.Status,
 			Priority:  issue.Priority,
-			ProjectID: issue.ProjectID,
+			BacklogID: issue.BacklogID,
 			CreatedAt: issue.CreatedAt,
 			UpdatedAt: issue.LastUpdatedAt,
 		}
@@ -149,7 +149,7 @@ func handleFeature(cmd *cobra.Command, featureID string) error {
 
 	// Get feature detail
 	input := &domain.FeatureDetailInput{
-		ProjectID: projectID,
+		BacklogID: projectID,
 		FeatureID: featureID,
 	}
 
@@ -166,7 +166,7 @@ func handleFeature(cmd *cobra.Command, featureID string) error {
 
 	taskListInput := &domain.TaskListInput{
 		FeatureID: featureID,
-		ProjectID: projectID,
+		BacklogID: projectID,
 	}
 
 	tasksOutput, err := taskSvc.ListTasks(taskListInput)
@@ -310,7 +310,7 @@ func handleIssue(cmd *cobra.Command, issueID string) error {
 
 	// Get issue detail
 	input := &domain.IssueDetailInput{
-		ProjectID: projectID,
+		BacklogID: projectID,
 		IssueID:   issueID,
 	}
 
@@ -330,7 +330,7 @@ func handleIssue(cmd *cobra.Command, issueID string) error {
 				Type:        issue.IssueType,
 				Status:      issue.Status,
 				Priority:    issue.Priority,
-				ProjectID:   issue.ProjectID,
+				BacklogID:   issue.BacklogID,
 				CreatedAt:   issue.CreatedAt,
 				UpdatedAt:   issue.LastUpdatedAt,
 				Description: issue.Goal,

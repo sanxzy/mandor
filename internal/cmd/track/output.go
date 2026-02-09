@@ -176,7 +176,7 @@ func outputIssueTable(out io.Writer, response *TrackResponse) error {
 	fmt.Fprintf(out, "Type:     %s\n", issue.Type)
 	fmt.Fprintf(out, "Status:   %s\n", issue.Status)
 	fmt.Fprintf(out, "Priority: %s\n", issue.Priority)
-	fmt.Fprintf(out, "Project:  %s\n", issue.ProjectID)
+	fmt.Fprintf(out, "Project:  %s\n", issue.BacklogID)
 
 	if globalFlags.Verbose {
 		fmt.Fprintf(out, "Description: %s\n", issue.Description)

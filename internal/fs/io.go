@@ -697,3 +697,155 @@ func (w *Writer) ReplaceIssue(projectID string, issue *domain.Issue) error {
 
 	return nil
 }
+
+// =============================================================================
+// BACKLOG METHODS - New API (Project internally uses these paths)
+// =============================================================================
+
+// BacklogExists checks if a backlog directory exists
+func (r *Reader) BacklogExists(backlogID string) bool {
+	_, err := os.Stat(r.paths.BacklogDirPath(backlogID))
+	return err == nil
+}
+
+// ListBacklogs lists all backlog directories
+func (r *Reader) ListBacklogs(includeDeleted bool) ([]string, error) {
+	backlogsDir := r.paths.BacklogsDirPath()
+
+	// Check if backlogs directory exists
+	_, err := os.Stat(backlogsDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []string{}, nil // Empty workspace
+		}
+		return nil, domain.NewSystemError("Cannot read backlogs directory", err)
+	}
+
+	entries, err := os.ReadDir(backlogsDir)
+	if err != nil {
+		return nil, domain.NewSystemError("Cannot list backlogs", err)
+	}
+
+	var backlogs []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			backlogs = append(backlogs, entry.Name())
+		}
+	}
+	return backlogs, nil
+}
+
+// ReadBacklogMetadata reads backlog metadata from backlog.jsonl
+func (r *Reader) ReadBacklogMetadata(backlogID string) (*domain.Backlog, error) {
+	data, err := os.ReadFile(r.paths.BacklogMetadataPath(backlogID))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, domain.NewValidationError(fmt.Sprintf("Backlog not found: %s", backlogID))
+		}
+		return nil, domain.NewSystemError("Cannot read backlog metadata", err)
+	}
+
+	var backlog domain.Backlog
+	if err := json.Unmarshal(data, &backlog); err != nil {
+		return nil, domain.NewSystemError("Cannot parse backlog metadata", err)
+	}
+	return &backlog, nil
+}
+
+// ReadBacklogSchema reads the schema.json file for a backlog
+func (r *Reader) ReadBacklogSchema(backlogID string) (*domain.BacklogSchema, error) {
+	data, err := os.ReadFile(r.paths.BacklogSchemaPath(backlogID))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, domain.NewValidationError(fmt.Sprintf("Backlog schema not found: %s", backlogID))
+		}
+		return nil, domain.NewSystemError("Cannot read backlog schema", err)
+	}
+
+	var schema domain.BacklogSchema
+	if err := json.Unmarshal(data, &schema); err != nil {
+		return nil, domain.NewSystemError("Cannot parse backlog schema", err)
+	}
+	return &schema, nil
+}
+
+// CreateBacklogDir creates the backlog directory structure
+func (w *Writer) CreateBacklogDir(backlogID string) error {
+	backlogDir := w.paths.BacklogDirPath(backlogID)
+	if err := os.MkdirAll(backlogDir, 0755); err != nil {
+		if os.IsPermission(err) {
+			return domain.NewPermissionError("Permission denied. Cannot create backlog directory.")
+		}
+		return domain.NewSystemError("Cannot create backlog directory", err)
+	}
+	return nil
+}
+
+// WriteBacklogMetadata writes backlog metadata to backlog.jsonl (atomic)
+func (w *Writer) WriteBacklogMetadata(backlogID string, backlog *domain.Backlog) error {
+	data, err := json.MarshalIndent(backlog, "", "  ")
+	if err != nil {
+		return domain.NewSystemError("Cannot marshal backlog", err)
+	}
+
+	path := w.paths.BacklogMetadataPath(backlogID)
+
+	// Write to temporary file first for atomic operation
+	tmpPath := path + ".tmp"
+	if err := os.WriteFile(tmpPath, data, 0644); err != nil {
+		if os.IsPermission(err) {
+			return domain.NewPermissionError("Permission denied. Cannot write backlog metadata.")
+		}
+		return domain.NewSystemError("Cannot write backlog metadata", err)
+	}
+
+	// Atomic move
+	if err := os.Rename(tmpPath, path); err != nil {
+		os.Remove(tmpPath)
+		return domain.NewSystemError("Cannot finalize backlog metadata write", err)
+	}
+
+	return nil
+}
+
+// WriteBacklogSchema writes schema.json for a backlog
+func (w *Writer) WriteBacklogSchema(backlogID string, schema *domain.BacklogSchema) error {
+	return w.WriteJSON(w.paths.BacklogSchemaPath(backlogID), schema)
+}
+
+// DeleteBacklogDir removes the backlog directory and all contents
+func (w *Writer) DeleteBacklogDir(backlogID string) error {
+	backlogDir := w.paths.BacklogDirPath(backlogID)
+	err := os.RemoveAll(backlogDir)
+	if err != nil {
+		if os.IsPermission(err) {
+			return domain.NewPermissionError("Permission denied. Cannot delete backlog directory.")
+		}
+		return domain.NewSystemError("Cannot delete backlog directory", err)
+	}
+	return nil
+}
+
+// CheckBacklogWritable checks if a backlog directory is writable
+func (w *Writer) CheckBacklogWritable(backlogID string) bool {
+	backlogDir := w.paths.BacklogDirPath(backlogID)
+	testFile := filepath.Join(backlogDir, ".write-test")
+	err := os.WriteFile(testFile, []byte("test"), 0644)
+	if err == nil {
+		os.Remove(testFile)
+		return true
+	}
+	return false
+}
+
+// BacklogsDirWritable checks if the backlogs directory is writable
+func (w *Writer) BacklogsDirWritable() bool {
+	backlogsDir := w.paths.BacklogsDirPath()
+	testFile := filepath.Join(backlogsDir, ".write-test")
+	err := os.WriteFile(testFile, []byte("test"), 0644)
+	if err == nil {
+		os.Remove(testFile)
+		return true
+	}
+	return false
+}

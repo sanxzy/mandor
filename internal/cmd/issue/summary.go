@@ -41,7 +41,7 @@ func NewSummaryCmd() *cobra.Command {
 			}
 
 			input := &domain.IssueListInput{
-				ProjectID: projectID,
+				BacklogID: projectID,
 			}
 
 			output, err := svc.ListIssues(input)
@@ -50,7 +50,7 @@ func NewSummaryCmd() *cobra.Command {
 			}
 
 			if output == nil || output.Total == 0 {
-				fmt.Fprintf(cmd.OutOrStdout(), "No issues in project %s.\n", projectID)
+				fmt.Fprintf(cmd.OutOrStdout(), "No issues in backlog %s.\n", projectID)
 				return nil
 			}
 

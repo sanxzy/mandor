@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	readyProjectID string
+	readyBacklogID string
 	readyType      string
 	readyPriority  string
 	readyJSON      bool
@@ -34,7 +34,7 @@ func NewReadyCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			projectID := readyProjectID
+			projectID := readyBacklogID
 			if projectID == "" {
 				ws, err := svc.GetWorkspace()
 				if err != nil {
@@ -59,7 +59,7 @@ func NewReadyCmd() *cobra.Command {
 			}
 
 			input := &domain.IssueListInput{
-				ProjectID:      projectID,
+				BacklogID:      projectID,
 				IssueType:      readyType,
 				Status:         domain.IssueStatusReady,
 				Priority:       readyPriority,
@@ -98,14 +98,14 @@ func NewReadyCmd() *cobra.Command {
 
 			if len(issues) == 0 {
 				fmt.Fprintln(out, "No ready issues found.")
-				fmt.Fprintf(out, "\nCreate an issue: mandor issue create <name> --project %s --type <type>\n", projectID)
+				fmt.Fprintf(out, "\nCreate an issue: mandor issue create <name> --backlog %s --type <type>\n", projectID)
 				return nil
 			}
 
 			if readyType != "" {
-				fmt.Fprintf(out, "Ready issues of type '%s' in project %s:\n", readyType, projectID)
+				fmt.Fprintf(out, "Ready issues of type '%s' in backlog %s:\n", readyType, projectID)
 			} else {
-				fmt.Fprintf(out, "Ready issues in project %s:\n", projectID)
+				fmt.Fprintf(out, "Ready issues in backlog %s:\n", projectID)
 			}
 
 			fmt.Fprintf(out, "%-24s %-14s %-8s %s\n", "ID", "TYPE", "PRIORITY", "NAME")
@@ -125,7 +125,7 @@ func NewReadyCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&readyProjectID, "project", "p", "", "Project ID filter")
+	cmd.Flags().StringVarP(&readyBacklogID, "backlog", "p", "", "Project ID filter")
 	cmd.Flags().StringVar(&readyType, "type", "", "Filter by issue type (bug, improvement, debt, security, performance)")
 	cmd.Flags().StringVar(&readyPriority, "priority", "", "Filter by priority (P0-P5)")
 	cmd.Flags().BoolVar(&readyJSON, "json", false, "Output as JSON")

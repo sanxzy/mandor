@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	blockedProjectID string
+	blockedBacklogID string
 	blockedType      string
 	blockedPriority  string
 	blockedJSON      bool
@@ -34,7 +34,7 @@ func NewBlockedCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			projectID := blockedProjectID
+			projectID := blockedBacklogID
 			if projectID == "" {
 				ws, err := svc.GetWorkspace()
 				if err != nil {
@@ -59,7 +59,7 @@ func NewBlockedCmd() *cobra.Command {
 			}
 
 			input := &domain.IssueListInput{
-				ProjectID:      projectID,
+				BacklogID:      projectID,
 				IssueType:      blockedType,
 				Status:         domain.IssueStatusBlocked,
 				Priority:       blockedPriority,
@@ -103,9 +103,9 @@ func NewBlockedCmd() *cobra.Command {
 			}
 
 			if blockedType != "" {
-				fmt.Fprintf(out, "Blocked issues of type '%s' in project %s:\n", blockedType, projectID)
+				fmt.Fprintf(out, "Blocked issues of type '%s' in backlog %s:\n", blockedType, projectID)
 			} else {
-				fmt.Fprintf(out, "Blocked issues in project %s:\n", projectID)
+				fmt.Fprintf(out, "Blocked issues in backlog %s:\n", projectID)
 			}
 
 			fmt.Fprintf(out, "%-24s %-14s %-8s %s\n", "ID", "TYPE", "PRIORITY", "NAME")
@@ -125,7 +125,7 @@ func NewBlockedCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&blockedProjectID, "project", "p", "", "Project ID filter")
+	cmd.Flags().StringVarP(&blockedBacklogID, "backlog", "p", "", "Project ID filter")
 	cmd.Flags().StringVar(&blockedType, "type", "", "Filter by issue type (bug, improvement, debt, security, performance)")
 	cmd.Flags().StringVar(&blockedPriority, "priority", "", "Filter by priority (P0-P5)")
 	cmd.Flags().BoolVar(&blockedJSON, "json", false, "Output as JSON")

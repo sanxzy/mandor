@@ -42,15 +42,15 @@ func (s *FeatureService) WorkspaceInitialized() bool {
 }
 
 func (s *FeatureService) ValidateCreateInput(input *domain.FeatureCreateInput) error {
-	if !s.reader.ProjectExists(input.ProjectID) {
-		return domain.NewValidationError("Project not found: " + input.ProjectID)
+	if !s.reader.BacklogExists(input.BacklogID) {
+		return domain.NewValidationError("Project not found: " + input.BacklogID)
 	}
 
 	if strings.TrimSpace(input.Name) == "" {
 		return domain.NewValidationError("Feature name is required.")
 	}
 
-	if err := s.validateNoDuplicateName(input.ProjectID, input.Name); err != nil {
+	if err := s.validateNoDuplicateName(input.BacklogID, input.Name); err != nil {
 		return err
 	}
 
@@ -82,7 +82,7 @@ func (s *FeatureService) ValidateCreateInput(input *domain.FeatureCreateInput) e
 		return domain.NewValidationError("Invalid priority. Valid options: P0, P1, P2, P3, P4, P5")
 	}
 
-	if err := s.validateDependencies(input.ProjectID, "", input.DependsOn); err != nil {
+	if err := s.validateDependencies(input.BacklogID, "", input.DependsOn); err != nil {
 		return err
 	}
 
@@ -91,7 +91,7 @@ func (s *FeatureService) ValidateCreateInput(input *domain.FeatureCreateInput) e
 
 func (s *FeatureService) validateNoDuplicateName(projectID, name string) error {
 	var features []domain.Feature
-	err := s.reader.ReadNDJSON(s.paths.ProjectFeaturesPath(projectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogFeaturesPath(projectID), func(raw []byte) error {
 		var f domain.Feature
 		if err := json.Unmarshal(raw, &f); err != nil {
 			return err
@@ -204,11 +204,11 @@ func (s *FeatureService) CreateFeature(input *domain.FeatureCreateInput) (*domai
 		return nil, domain.NewSystemError("Failed to generate feature ID", err)
 	}
 
-	featureID := input.ProjectID + "-feature-" + nanoid
+	featureID := input.BacklogID + "-feature-" + nanoid
 
 	feature := &domain.Feature{
 		ID:        featureID,
-		ProjectID: input.ProjectID,
+		BacklogID: input.BacklogID,
 		Name:      input.Name,
 		Goal:      input.Goal,
 		Scope:     input.Scope,
@@ -222,7 +222,7 @@ func (s *FeatureService) CreateFeature(input *domain.FeatureCreateInput) (*domai
 	}
 
 	if len(input.DependsOn) > 0 {
-		allDone, err := s.checkDependenciesDone(input.ProjectID, input.DependsOn)
+		allDone, err := s.checkDependenciesDone(input.BacklogID, input.DependsOn)
 		if err != nil {
 			return nil, err
 		}
@@ -231,7 +231,7 @@ func (s *FeatureService) CreateFeature(input *domain.FeatureCreateInput) (*domai
 		}
 	}
 
-	if err := s.writer.WriteFeature(input.ProjectID, feature); err != nil {
+	if err := s.writer.WriteFeature(input.BacklogID, feature); err != nil {
 		return nil, err
 	}
 
@@ -243,7 +243,7 @@ func (s *FeatureService) CreateFeature(input *domain.FeatureCreateInput) (*domai
 	// 	By:    creator,
 	// 	Ts:    now,
 	// }
-	// if err := s.writer.AppendFeatureEvent(input.ProjectID, event); err != nil {
+	// if err := s.writer.AppendFeatureEvent(input.BacklogID, event); err != nil {
 	// 	return nil, err
 	// }
 
@@ -264,14 +264,14 @@ func (s *FeatureService) checkDependenciesDone(projectID string, dependsOn []str
 }
 
 func (s *FeatureService) ListFeatures(input *domain.FeatureListInput) (*domain.FeatureListOutput, error) {
-	if !s.reader.ProjectExists(input.ProjectID) {
-		return nil, domain.NewValidationError("Project not found: " + input.ProjectID)
+	if !s.reader.BacklogExists(input.BacklogID) {
+		return nil, domain.NewValidationError("Project not found: " + input.BacklogID)
 	}
 
 	var features []domain.FeatureListItem
 	deletedCount := 0
 
-	err := s.reader.ReadNDJSON(s.paths.ProjectFeaturesPath(input.ProjectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogFeaturesPath(input.BacklogID), func(raw []byte) error {
 		var f domain.Feature
 		if err := json.Unmarshal(raw, &f); err != nil {
 			return err
@@ -315,7 +315,7 @@ func (s *FeatureService) ListFeatures(input *domain.FeatureListInput) (*domain.F
 }
 
 func (s *FeatureService) GetFeatureDetail(input *domain.FeatureDetailInput) (*domain.FeatureDetailOutput, error) {
-	feature, err := s.reader.ReadFeature(input.ProjectID, input.FeatureID)
+	feature, err := s.reader.ReadFeature(input.BacklogID, input.FeatureID)
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +326,7 @@ func (s *FeatureService) GetFeatureDetail(input *domain.FeatureDetailInput) (*do
 
 	return &domain.FeatureDetailOutput{
 		ID:        feature.ID,
-		ProjectID: feature.ProjectID,
+		BacklogID: feature.BacklogID,
 		Name:      feature.Name,
 		Goal:      feature.Goal,
 		Scope:     feature.Scope,
@@ -343,7 +343,7 @@ func (s *FeatureService) GetFeatureDetail(input *domain.FeatureDetailInput) (*do
 }
 
 func (s *FeatureService) ValidateUpdateInput(input *domain.FeatureUpdateInput) error {
-	feature, err := s.reader.ReadFeature(input.ProjectID, input.FeatureID)
+	feature, err := s.reader.ReadFeature(input.BacklogID, input.FeatureID)
 	if err != nil {
 		return err
 	}
@@ -386,7 +386,7 @@ func (s *FeatureService) ValidateUpdateInput(input *domain.FeatureUpdateInput) e
 	}
 
 	if input.DependsOn != nil {
-		if err := s.validateDependencies(input.ProjectID, input.FeatureID, *input.DependsOn); err != nil {
+		if err := s.validateDependencies(input.BacklogID, input.FeatureID, *input.DependsOn); err != nil {
 			return err
 		}
 	}
@@ -395,7 +395,7 @@ func (s *FeatureService) ValidateUpdateInput(input *domain.FeatureUpdateInput) e
 }
 
 func (s *FeatureService) UpdateFeature(input *domain.FeatureUpdateInput) ([]string, error) {
-	feature, err := s.reader.ReadFeature(input.ProjectID, input.FeatureID)
+	feature, err := s.reader.ReadFeature(input.BacklogID, input.FeatureID)
 	if err != nil {
 		return nil, err
 	}
@@ -422,7 +422,7 @@ func (s *FeatureService) UpdateFeature(input *domain.FeatureUpdateInput) ([]stri
 			return nil, domain.NewValidationError("Feature is already cancelled.")
 		}
 
-		dependents, err := s.findDependents(input.ProjectID, input.FeatureID)
+		dependents, err := s.findDependents(input.BacklogID, input.FeatureID)
 		if err != nil {
 			return nil, err
 		}
@@ -472,7 +472,7 @@ func (s *FeatureService) UpdateFeature(input *domain.FeatureUpdateInput) ([]stri
 	feature.UpdatedAt = now
 	feature.UpdatedBy = updater
 
-	if err := s.writer.ReplaceFeature(input.ProjectID, feature); err != nil {
+	if err := s.writer.ReplaceFeature(input.BacklogID, feature); err != nil {
 		return nil, err
 	}
 
@@ -485,13 +485,13 @@ func (s *FeatureService) UpdateFeature(input *domain.FeatureUpdateInput) ([]stri
 	// 	Ts:      now,
 	// 	Changes: changes,
 	// }
-	// if err := s.writer.AppendFeatureEvent(input.ProjectID, event); err != nil {
+	// if err := s.writer.AppendFeatureEvent(input.BacklogID, event); err != nil {
 	// 	return nil, err
 	// }
 
 	// If feature is marked as done, unblock dependent features
 	if input.Status != nil && *input.Status == domain.FeatureStatusDone {
-		if unblocked, err := s.unblockDependents(input.ProjectID, input.FeatureID); err == nil && unblocked {
+		if unblocked, err := s.unblockDependents(input.BacklogID, input.FeatureID); err == nil && unblocked {
 			changes = append(changes, "dependent_unblocked")
 		}
 	}
@@ -505,7 +505,7 @@ func (s *FeatureService) unblockDependents(projectID, doneFeatureID string) (boo
 
 	// Load all features in this project
 	var allFeatures []*domain.Feature
-	err := s.reader.ReadNDJSON(s.paths.ProjectFeaturesPath(projectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogFeaturesPath(projectID), func(raw []byte) error {
 		var feature domain.Feature
 		if err := json.Unmarshal(raw, &feature); err != nil {
 			return err
@@ -561,7 +561,7 @@ func (s *FeatureService) unblockDependents(projectID, doneFeatureID string) (boo
 
 func (s *FeatureService) findDependents(projectID, featureID string) ([]string, error) {
 	var dependents []string
-	err := s.reader.ReadNDJSON(s.paths.ProjectFeaturesPath(projectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogFeaturesPath(projectID), func(raw []byte) error {
 		var f domain.Feature
 		if err := json.Unmarshal(raw, &f); err != nil {
 			return err

@@ -1,11 +1,11 @@
 ---
-name: "Backlog Planner"
-description: Rigorous backlog planning for NEW/EXISTING backlogs. Generates comprehensive brief.md through exhaustive questioning.
+name: "Project Planner"
+description: Rigorous project planning for NEW/EXISTING projects. Generates comprehensive brief.md through exhaustive questioning.
 category: Planning
-tags: [planning, requirements, analysis, backlog]
+tags: [planning, requirements, analysis]
 ---
 
-**Input**: Backlog identifier (kebab-case) or description. Ask if incomplete.
+**Input**: Project identifier (kebab-case) or description. Ask if incomplete.
 
 **Steps**
 
@@ -24,15 +24,7 @@ tags: [planning, requirements, analysis, backlog]
 
 7. **Validation** - Summarize all info. Ask user to confirm/correct EACH assumption. Explicitly list: non-goals, OUT OF SCOPE, IN SCOPE, ASSUMPTIONS, RISKS, CONSTRAINTS. Refuse to proceed without full confirmation.
 
-8. **Create Backlog** - Run mandor CLI command to create the backlog:
-   ```bash
-   mandor backlog create <backlog-id> \
-     --name "<Backlog Name>" \
-     --goal "<Complete goal statement (500+ characters)>"
-   ```
-   This creates the `.mandor/backlogs/<backlog_id>/` directory structure with all necessary files.
-
-9. **Generate brief.md** - Create `.mandor/backlogs/<backlog_id>/brief.md` with ALL gathered info including Background & Motivation, Scope (in/out), Repository Context (NEW/EXISTING), and **Specs Index** with human-readable kebab-case IDs.
+8. **Generate brief.md** - Create `.mandor/projects/<project_id>/brief.md` with ALL gathered info including Background & Motivation, Scope (in/out), Repository Context (NEW/EXISTING), and **Specs Index** with human-readable kebab-case IDs.
 
 **Output**
 

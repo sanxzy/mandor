@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	detailProjectID      string
+	detailBacklogID      string
 	detailJSON           bool
 	detailIncludeDeleted bool
 	detailEvents         bool
@@ -36,7 +36,7 @@ func NewDetailCmd() *cobra.Command {
 
 			issueID := args[0]
 
-			projectID := detailProjectID
+			projectID := detailBacklogID
 			if projectID == "" {
 				parts := strings.Split(issueID, "-issue-")
 				if len(parts) < 2 {
@@ -50,7 +50,7 @@ func NewDetailCmd() *cobra.Command {
 			}
 
 			input := &domain.IssueDetailInput{
-				ProjectID:      projectID,
+				BacklogID:      projectID,
 				IssueID:        issueID,
 				JSON:           detailJSON,
 				IncludeDeleted: detailIncludeDeleted,
@@ -85,7 +85,7 @@ func NewDetailCmd() *cobra.Command {
 			fmt.Fprintf(out, "  Type:        %s\n", output.IssueType)
 			fmt.Fprintf(out, "  Priority:    %s\n", output.Priority)
 			fmt.Fprintf(out, "  Status:      %s\n", output.Status)
-			fmt.Fprintf(out, "  Project:     %s\n", output.ProjectID)
+			fmt.Fprintf(out, "  Project:     %s\n", output.BacklogID)
 
 			if output.Goal != "" {
 				fmt.Fprintf(out, "\n  Goal:        %s\n", output.Goal)
@@ -139,7 +139,7 @@ func NewDetailCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&detailProjectID, "project", "p", "", "Project ID (optional, extracted from issue ID)")
+	cmd.Flags().StringVarP(&detailBacklogID, "backlog", "p", "", "Project ID (optional, extracted from issue ID)")
 	cmd.Flags().BoolVar(&detailJSON, "json", false, "Output as JSON")
 	cmd.Flags().BoolVar(&detailIncludeDeleted, "include-deleted", false, "Include cancelled issues")
 	cmd.Flags().BoolVar(&detailEvents, "events", false, "Show event history")

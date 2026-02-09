@@ -83,7 +83,7 @@ func (s *TaskService) ValidateCreateInput(input *domain.TaskCreateInput) error {
 		return domain.NewValidationError("Invalid feature ID format.")
 	}
 
-	if !s.reader.ProjectExists(projectID) {
+	if !s.reader.BacklogExists(projectID) {
 		return domain.NewValidationError("Project not found: " + projectID)
 	}
 
@@ -232,7 +232,7 @@ func (s *TaskService) validateNoCycle(projectID, selfID string, dependsOn []stri
 
 func (s *TaskService) validateNoDuplicateName(projectID, featureID, name string) error {
 	var tasks []domain.Task
-	err := s.reader.ReadNDJSON(s.paths.ProjectTasksPath(projectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogTasksPath(projectID), func(raw []byte) error {
 		var t domain.Task
 		if err := json.Unmarshal(raw, &t); err != nil {
 			return err
@@ -270,7 +270,7 @@ func (s *TaskService) CreateTask(input *domain.TaskCreateInput) (*domain.Task, e
 	task := &domain.Task{
 		ID:                  taskID,
 		FeatureID:           input.FeatureID,
-		ProjectID:           projectID,
+		BacklogID:           projectID,
 		Name:                input.Name,
 		Goal:                input.Goal,
 		Priority:            input.Priority,
@@ -371,11 +371,11 @@ func (s *TaskService) ListTasks(input *domain.TaskListInput) (*domain.TaskListOu
 	}
 
 	for _, projectID := range projects {
-		if input.ProjectID != "" && projectID != input.ProjectID {
+		if input.BacklogID != "" && projectID != input.BacklogID {
 			continue
 		}
 
-		err := s.reader.ReadNDJSON(s.paths.ProjectTasksPath(projectID), func(raw []byte) error {
+		err := s.reader.ReadNDJSON(s.paths.BacklogTasksPath(projectID), func(raw []byte) error {
 			var t domain.Task
 			if err := json.Unmarshal(raw, &t); err != nil {
 				return err
@@ -404,7 +404,7 @@ func (s *TaskService) ListTasks(input *domain.TaskListInput) (*domain.TaskListOu
 				Status:         t.Status,
 				Priority:       t.Priority,
 				FeatureID:      t.FeatureID,
-				ProjectID:      t.ProjectID,
+				BacklogID:      t.BacklogID,
 				DependsOnCount: len(t.DependsOn),
 				CreatedAt:      t.CreatedAt.Format(time.RFC3339),
 				UpdatedAt:      t.UpdatedAt.Format(time.RFC3339),
@@ -492,7 +492,7 @@ func (s *TaskService) GetTaskDetail(input *domain.TaskDetailInput) (*domain.Task
 	return &domain.TaskDetailOutput{
 		ID:                  task.ID,
 		FeatureID:           task.FeatureID,
-		ProjectID:           task.ProjectID,
+		BacklogID:           task.BacklogID,
 		Name:                task.Name,
 		Goal:                task.Goal,
 		Priority:            task.Priority,
@@ -749,7 +749,7 @@ func (s *TaskService) validateStatusTransition(current, next string) error {
 
 func (s *TaskService) findDependents(projectID, taskID string) ([]string, error) {
 	var dependents []string
-	err := s.reader.ReadNDJSON(s.paths.ProjectTasksPath(projectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogTasksPath(projectID), func(raw []byte) error {
 		var t domain.Task
 		if err := json.Unmarshal(raw, &t); err != nil {
 			return err
@@ -770,7 +770,7 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 
 	// First handle same-project dependencies
 	var allTasks []*domain.Task
-	err := s.reader.ReadNDJSON(s.paths.ProjectTasksPath(projectID), func(raw []byte) error {
+	err := s.reader.ReadNDJSON(s.paths.BacklogTasksPath(projectID), func(raw []byte) error {
 		var task domain.Task
 		if err := json.Unmarshal(raw, &task); err != nil {
 			return err
@@ -838,7 +838,7 @@ func (s *TaskService) unblockDependents(projectID, doneTaskID string) (bool, err
 		}
 
 		var otherProjectTasks []*domain.Task
-		err := s.reader.ReadNDJSON(s.paths.ProjectTasksPath(otherProjectID), func(raw []byte) error {
+		err := s.reader.ReadNDJSON(s.paths.BacklogTasksPath(otherProjectID), func(raw []byte) error {
 			var task domain.Task
 			if err := json.Unmarshal(raw, &task); err != nil {
 				return err

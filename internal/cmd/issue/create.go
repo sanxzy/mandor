@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	createProjectID     string
+	createBacklogID     string
 	createName          string
 	createGoal          string
 	createType          string
@@ -26,9 +26,9 @@ var (
 
 func NewCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create <name> --project <id> --type <type> --goal <text> --affected-files <files> --affected-tests <tests> --implementation-steps <steps> [--priority <P0-P5>] [--depends-on <ids>] [--library-needs <libs>] [-y]",
+		Use:   "create <name> --backlog <id> --type <type> --goal <text> --affected-files <files> --affected-tests <tests> --implementation-steps <steps> [--priority <P0-P5>] [--depends-on <ids>] [--library-needs <libs>] [-y]",
 		Short: "Create a new issue",
-		Long:  "Create a new issue in the specified project with the given details.",
+		Long:  "Create a new issue in the specified backlog with the given details.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewIssueService()
@@ -40,8 +40,8 @@ func NewCreateCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			if createProjectID == "" {
-				return domain.NewValidationError("Project ID is required (--project).")
+			if createBacklogID == "" {
+				return domain.NewValidationError("Backlog ID is required (--backlog).")
 			}
 
 			if createType == "" {
@@ -78,7 +78,7 @@ func NewCreateCmd() *cobra.Command {
 			}
 
 			input := &domain.IssueCreateInput{
-				ProjectID:           createProjectID,
+				BacklogID:           createBacklogID,
 				Name:                args[0],
 				Goal:                createGoal,
 				IssueType:           createType,
@@ -125,7 +125,7 @@ func NewCreateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&createProjectID, "project", "p", "", "Project ID (required, use -p or --project)")
+	cmd.Flags().StringVarP(&createBacklogID, "backlog", "b", "", "Backlog ID (required, use -b or --backlog)")
 	cmd.Flags().StringVarP(&createType, "type", "t", "", "Issue type: bug, improvement, debt, security, performance (required, use -t or --type)")
 	cmd.Flags().StringVar(&createName, "name", "", "Issue name (required for CLI, or use positional argument)")
 	cmd.Flags().StringVarP(&createGoal, "goal", "g", "", "Issue goal (required, min 200 chars, include problem description, impact analysis, and acceptance criteria)")

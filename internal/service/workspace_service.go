@@ -8,6 +8,7 @@ import (
 
 	"mandor/internal/domain"
 	"mandor/internal/fs"
+	"mandor/internal/migration"
 	"mandor/internal/util"
 )
 
@@ -98,6 +99,12 @@ func (s *WorkspaceService) InitWorkspace(workspaceName string) (*domain.Workspac
 	// Create directories
 	if err := s.writer.CreateMandorDir(); err != nil {
 		return nil, err
+	}
+
+	// Run migration if needed (projects → backlogs)
+	migrator := migration.NewMigration(s.paths)
+	if err := migrator.RunMigration(); err != nil {
+		return nil, domain.NewSystemError("Failed to migrate project data to backlog format", err)
 	}
 
 	// Write workspace.json

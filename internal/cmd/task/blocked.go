@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	blockedProjectID string
+	blockedBacklogID string
 	blockedFeatureID string
 	blockedPriority  string
 	blockedJSON      bool
@@ -44,7 +44,7 @@ func NewBlockedCmd() *cobra.Command {
 
 			input := &domain.TaskListInput{
 				FeatureID:      blockedFeatureID,
-				ProjectID:      blockedProjectID,
+				BacklogID:      blockedBacklogID,
 				Status:         domain.TaskStatusBlocked,
 				Priority:       blockedPriority,
 				IncludeDeleted: false,
@@ -77,16 +77,16 @@ func NewBlockedCmd() *cobra.Command {
 				fmt.Fprintln(out, "No blocked tasks found.")
 				if blockedFeatureID != "" {
 					fmt.Fprintf(out, "\nUnblock tasks: mandor task update <id> --depends <id,...>\n")
-				} else if blockedProjectID != "" {
-					fmt.Fprintf(out, "\nCreate a feature: mandor feature create <name> --project %s\n", blockedProjectID)
+				} else if blockedBacklogID != "" {
+					fmt.Fprintf(out, "\nCreate a feature: mandor feature create <name> --backlog %s\n", blockedBacklogID)
 				}
 				return nil
 			}
 
 			if blockedFeatureID != "" {
 				fmt.Fprintf(out, "Blocked tasks in %s:\n", blockedFeatureID)
-			} else if blockedProjectID != "" {
-				fmt.Fprintf(out, "Blocked tasks in project %s:\n", blockedProjectID)
+			} else if blockedBacklogID != "" {
+				fmt.Fprintf(out, "Blocked tasks in backlog %s:\n", blockedBacklogID)
 			} else {
 				fmt.Fprintln(out, "Blocked tasks (waiting for dependencies):")
 			}

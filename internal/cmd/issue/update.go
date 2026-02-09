@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	updateProjectID     string
+	updateBacklogID     string
 	updateName          string
 	updateGoal          string
 	updateType          string
@@ -51,7 +51,7 @@ func NewUpdateCmd() *cobra.Command {
 
 			issueID := args[0]
 
-			projectID := updateProjectID
+			projectID := updateBacklogID
 			if projectID == "" {
 				parts := strings.Split(issueID, "-issue-")
 				if len(parts) < 2 {
@@ -65,7 +65,7 @@ func NewUpdateCmd() *cobra.Command {
 			}
 
 			input := &domain.IssueUpdateInput{
-				ProjectID: projectID,
+				BacklogID: projectID,
 				IssueID:   issueID,
 			}
 
@@ -166,7 +166,7 @@ func NewUpdateCmd() *cobra.Command {
 			if input.Status == nil || *input.Status != domain.IssueStatusResolved {
 				fmt.Fprintln(out)
 				detailInput := &domain.IssueDetailInput{
-					ProjectID:      projectID,
+					BacklogID:      projectID,
 					IssueID:        issueID,
 					JSON:           false,
 					IncludeDeleted: false,
@@ -187,7 +187,7 @@ func NewUpdateCmd() *cobra.Command {
 					fmt.Fprintf(out, "  Type:        %s\n", detailOutput.IssueType)
 					fmt.Fprintf(out, "  Priority:    %s\n", detailOutput.Priority)
 					fmt.Fprintf(out, "  Status:      %s\n", detailOutput.Status)
-					fmt.Fprintf(out, "  Project:     %s\n", detailOutput.ProjectID)
+					fmt.Fprintf(out, "  Project:     %s\n", detailOutput.BacklogID)
 
 					if detailOutput.Goal != "" {
 						fmt.Fprintf(out, "\n  Goal:        %s\n", detailOutput.Goal)
@@ -243,7 +243,7 @@ func NewUpdateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&updateProjectID, "project", "p", "", "Project ID (optional, extracted from issue ID)")
+	cmd.Flags().StringVarP(&updateBacklogID, "backlog", "p", "", "Project ID (optional, extracted from issue ID)")
 	cmd.Flags().StringVar(&updateName, "name", "", "Update issue name")
 	cmd.Flags().StringVar(&updateGoal, "goal", "", "Update issue goal")
 	cmd.Flags().StringVar(&updateType, "type", "", "Update issue type (bug/improvement/debt/security/performance)")

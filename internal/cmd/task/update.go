@@ -158,7 +158,7 @@ func NewUpdateCmd() *cobra.Command {
 					fmt.Fprintf(out, "Task: %s\n", detailOutput.ID)
 					fmt.Fprintf(out, "  Name:               %s\n", detailOutput.Name)
 					fmt.Fprintf(out, "  Feature:            %s\n", detailOutput.FeatureID)
-					fmt.Fprintf(out, "  Project:            %s\n", detailOutput.ProjectID)
+					fmt.Fprintf(out, "  Backlog:            %s\n", detailOutput.BacklogID)
 					fmt.Fprintf(out, "  Status:             %s\n", detailOutput.Status)
 					fmt.Fprintf(out, "  Priority:           %s\n", detailOutput.Priority)
 					fmt.Fprintf(out, "  Goal:               %s\n", detailOutput.Goal)

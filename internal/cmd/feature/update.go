@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	updateProjectID string
+	updateBacklogID string
 	updateName      string
 	updateGoal      string
 	updateScope     string
@@ -27,7 +27,7 @@ var (
 
 func NewUpdateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "update <feature_id> [--project <id>] [--name] [--goal] [--scope] [--priority] [--status] [--cancel --reason] [--reopen] [--depends]",
+		Use:   "update <feature_id> [--backlog <id>] [--name] [--goal] [--scope] [--priority] [--status] [--cancel --reason] [--reopen] [--depends]",
 		Short: "Update a feature",
 		Long:  "Update feature properties, change status, cancel, or reopen.",
 		Args:  cobra.ExactArgs(1),
@@ -41,9 +41,9 @@ func NewUpdateCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			projectID := updateProjectID
-			if projectID == "" {
-				return domain.NewValidationError("Project ID is required (--project).")
+			backlogID := updateBacklogID
+			if backlogID == "" {
+				return domain.NewValidationError("Backlog ID is required (--backlog).")
 			}
 
 			featureID := args[0]
@@ -75,7 +75,7 @@ func NewUpdateCmd() *cobra.Command {
 			}
 
 			input := &domain.FeatureUpdateInput{
-				ProjectID: projectID,
+				BacklogID: backlogID,
 				FeatureID: featureID,
 				Name:      namePtr,
 				Goal:      goalPtr,
@@ -120,7 +120,7 @@ func NewUpdateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&updateProjectID, "project", "p", "", "Project ID (required)")
+	cmd.Flags().StringVarP(&updateBacklogID, "backlog", "b", "", "Backlog ID (required)")
 	cmd.Flags().StringVar(&updateName, "name", "", "New feature name")
 	cmd.Flags().StringVar(&updateGoal, "goal", "", "New feature goal")
 	cmd.Flags().StringVar(&updateScope, "scope", "", "New scope (frontend, backend, fullstack, cli, desktop, android, flutter, react-native, ios, swift)")

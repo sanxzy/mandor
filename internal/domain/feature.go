@@ -14,7 +14,7 @@ const FeatureGoalMinLength = 300
 
 type Feature struct {
 	ID        string    `json:"id"`
-	ProjectID string    `json:"project_id"`
+	BacklogID string    `json:"backlog_id"`
 	Name      string    `json:"name"`
 	Goal      string    `json:"goal"`
 	Scope     string    `json:"scope,omitempty"`
@@ -29,7 +29,7 @@ type Feature struct {
 }
 
 type FeatureCreateInput struct {
-	ProjectID string
+	BacklogID string
 	Name      string
 	Goal      string
 	Scope     string
@@ -38,21 +38,21 @@ type FeatureCreateInput struct {
 }
 
 type FeatureListInput struct {
-	ProjectID      string
+	BacklogID      string
 	Scope          string
 	IncludeDeleted bool
 	JSON           bool
 }
 
 type FeatureDetailInput struct {
-	ProjectID      string
+	BacklogID      string
 	FeatureID      string
 	JSON           bool
 	IncludeDeleted bool
 }
 
 type FeatureUpdateInput struct {
-	ProjectID string
+	BacklogID string
 	FeatureID string
 	Name      *string
 	Goal      *string
@@ -87,7 +87,7 @@ type FeatureListOutput struct {
 
 type FeatureDetailOutput struct {
 	ID        string   `json:"id"`
-	ProjectID string   `json:"project_id"`
+	BacklogID string   `json:"backlog_id"`
 	Name      string   `json:"name"`
 	Goal      string   `json:"goal"`
 	Scope     string   `json:"scope,omitempty"`

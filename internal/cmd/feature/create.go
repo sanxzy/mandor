@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	projectID string
+	backlogID string
 	name      string
 	goal      string
 	scope     string
@@ -20,9 +20,9 @@ var (
 
 func NewCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create <name> --project <id> --goal <text>",
+		Use:   "create <name> --backlog <id> --goal <text>",
 		Short: "Create a new feature",
-		Long:  "Create a new feature in the specified project with the given name and goal.",
+		Long:  "Create a new feature in the specified backlog with the given name and goal.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := service.NewFeatureService()
@@ -34,9 +34,9 @@ func NewCreateCmd() *cobra.Command {
 				return domain.NewValidationError("Workspace not initialized. Run `mandor init` first.")
 			}
 
-			projectID, _ := cmd.Flags().GetString("project")
-			if projectID == "" {
-				return domain.NewValidationError("Project ID is required (--project).")
+			backlogID, _ := cmd.Flags().GetString("backlog")
+			if backlogID == "" {
+				return domain.NewValidationError("Backlog ID is required (--backlog).")
 			}
 
 			if goal == "" {
@@ -49,7 +49,7 @@ func NewCreateCmd() *cobra.Command {
 			}
 
 			input := &domain.FeatureCreateInput{
-				ProjectID: projectID,
+				BacklogID: backlogID,
 				Name:      args[0],
 				Goal:      goal,
 				Scope:     scope,
@@ -68,12 +68,12 @@ func NewCreateCmd() *cobra.Command {
 
 			out := cmd.OutOrStdout()
 			fmt.Fprintf(out, "Feature created: %s\n", feature.ID)
-			fmt.Fprintf(out, "  Name:     %s\n", feature.Name)
-			fmt.Fprintf(out, "  Project:  %s\n", feature.ProjectID)
-			fmt.Fprintf(out, "  Goal:     %s\n", feature.Goal)
-			fmt.Fprintf(out, "  Scope:    %s\n", feature.Scope)
+			fmt.Fprintf(out, "  Name:    %s\n", feature.Name)
+			fmt.Fprintf(out, "  Backlog: %s\n", feature.BacklogID)
+			fmt.Fprintf(out, "  Goal:    %s\n", feature.Goal)
+			fmt.Fprintf(out, "  Scope:   %s\n", feature.Scope)
 			fmt.Fprintf(out, "  Priority: %s\n", feature.Priority)
-			fmt.Fprintf(out, "  Status:   %s\n", feature.Status)
+			fmt.Fprintf(out, "  Status:  %s\n", feature.Status)
 
 			_, warning := util.GetGitUsernameWithWarning()
 			if warning != "" {
@@ -86,7 +86,7 @@ func NewCreateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&projectID, "project", "p", "", "Project ID (required, use -p or --project)")
+	cmd.Flags().StringVarP(&backlogID, "backlog", "b", "", "Backlog ID (required, use -b or --backlog)")
 	cmd.Flags().StringVarP(&goal, "goal", "g", "", "Feature goal (required, min 300 chars, include technical user flow and complete requirements)")
 	cmd.Flags().StringVarP(&name, "name", "n", "", "Feature name (alternative to positional)")
 	cmd.Flags().StringVar(&scope, "scope", "", "Feature scope (frontend, backend, fullstack, cli, desktop, android, flutter, react-native, ios, swift)")

@@ -90,7 +90,7 @@ type IssueTrackItem struct {
 	Type        string   `json:"type"`
 	Status      string   `json:"status"`
 	Priority    string   `json:"priority"`
-	ProjectID   string   `json:"project_id"`
+	BacklogID   string   `json:"project_id"`
 	CreatedAt   string   `json:"created_at"`
 	UpdatedAt   string   `json:"updated_at"`
 	Description string   `json:"description,omitempty"`
